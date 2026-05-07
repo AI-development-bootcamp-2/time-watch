@@ -1,10 +1,31 @@
 # Claude Code
+.claude/
 
-# Node
+# Dependencies
 node_modules/
-coverage/
-npm-debug.log*
 
 # Environment
 .env
 .env.local
+.env.example
+
+# Build output
+frontend/dist/
+backend/dist/
+
+# Coverage
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local DB files
+db/
+
+# Personal planning (local only)
+openspec/nadav/
