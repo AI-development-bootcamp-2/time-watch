@@ -4,10 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Time Watch** (מערכת דיווחי שעות) — A web app for employees to report daily work hours and absences, with an admin panel for managing users, clients, projects, and tasks.
+**Time Watch** — A web app for employees to report daily work hours and absences, with an admin panel for managing users, clients, projects, and tasks.
 
-- **Frontend**: React, mobile-first responsive, Hebrew (RTL) only
-- **Backend**: Node.js REST API
+- **Frontend**: React with Vite + TypeScript (convert exiting files from js to ts if needed), mobile-first responsive, Hebrew (RTL) only
+- **Backend**: Node.js REST API (TypeScript)
 - **Database**: PostgreSQL
 - **Containerization**: Docker + Docker Compose (all services run in containers)
 - **CI/CD**: GitHub Actions; deployment to a free service (Vercel, Render, or Railway)
@@ -20,18 +20,19 @@ docker compose up --build  # Rebuild and start
 docker compose down        # Stop all services
 ```
 
-Tests must pass before any merge to `main`. Minimum 60% code coverage required. Write tests per feature during development (not after):
+Tests must pass before any merge to `main`. Minimum 80% code coverage required. Write tests per feature during development (not after):
 ```bash
 npm test   # or equivalent per package (Jest / Vitest — TBD at scaffold time)
 ```
+Every new route must include a @swagger JSDoc comment before the PR is merged.
 
 Swagger API docs available at `/api-docs` when the backend is running.
 
 ## Architecture
 
 ```
-frontend/   React app (Hebrew/RTL, mobile-first)
-backend/    Node.js REST API
+frontend/   React + Vite + TypeScript (Hebrew/RTL, mobile-first)
+backend/    Node.js REST API (TypeScript)
 db/         PostgreSQL schema and migrations
 ```
 
@@ -52,13 +53,11 @@ Users are assigned to **tasks** (not clients/projects). The reporting UI derives
 
 Implement in this sequence (per spec roadmap):
 
-1. **Setup & Infrastructure** — Docker Compose, DB schema, CI pipeline, CD pipeline
-2. **Authentication** — Admin-created user registration, email/password login, JWT session management
-3. **Admin CRUD** — Users, clients, projects, tasks, user-task assignments
-4. **Employee Time Reporting** — Manual entry, multi-task per day, edit, monthly calendar view
+1. **Setup & Infrastructure & Documentation** — Docker Compose, DB schema, CI pipeline, CD pipeline
+2. **Employee Time Reporting** — Manual entry, multi-task per day, edit, monthly calendar view, Timer (start/stop work), month close/lock
+3. **Authentication** — Admin-created user registration, email/password login, JWT session management
+4. **Admin CRUD** — Users, clients, projects, tasks, user-task assignments, admin editing employee reports
 5. **Absences** — Types: חופשה/מחלה/מילואים/אחר; date ranges; partial-day; mandatory document uploads for sick/reserves
-6. **Advanced Features** — Timer (start/stop work), month close/lock, admin editing employee reports
-7. **Documentation** — Swagger API docs, README with setup instructions
 
 ## Business Rules
 

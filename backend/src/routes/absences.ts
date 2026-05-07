@@ -1,8 +1,10 @@
-const router = require('express').Router()
+import { Router } from 'express'
 
 // GET  /api/absences
 // POST /api/absences
 // PUT  /api/absences/:id
 // POST /api/absences/:id/document
 
-module.exports = router
+const router = Router()
+
+export default router

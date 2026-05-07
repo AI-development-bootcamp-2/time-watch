@@ -1,8 +1,10 @@
-const router = require('express').Router()
+import { Router } from 'express'
 
 // GET    /api/users
 // POST   /api/users
 // PUT    /api/users/:id
 // PATCH  /api/users/:id/deactivate
 
-module.exports = router
+const router = Router()
+
+export default router
