@@ -202,7 +202,7 @@ Friday and Saturday are automatically excluded from absence date range calculati
 ## Testing
 
 - Tests are written **per feature during development** (not after)
-- Minimum **60% code coverage** required
+- Minimum **80% code coverage** required
 - All tests must pass before any merge to `main`
 
 ```bash
@@ -216,8 +216,28 @@ npm test   # or equivalent per package (Jest / Vitest)
 | Component | Tool |
 |---|---|
 | CI Pipeline | GitHub Actions |
-| CD Pipeline | Free service of team's choice (Vercel, Render, Railway, etc.) |
+| Frontend Hosting | Vercel — https://time-watch.vercel.app |
+| Backend Hosting | Render — https://time-watch-backend.onrender.com |
 | Gate | All tests must pass before merge |
+
+---
+
+## Environment Variables
+
+### Backend (set in Render dashboard)
+
+| Variable | Description | Example |
+|---|---|---|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@host/db` |
+| `JWT_SECRET` | Secret key for signing JWT tokens | `random-32-char-string` |
+| `NODE_ENV` | Runtime environment | `production` |
+| `PORT` | Port the server listens on | `3000` |
+
+### Frontend (set in Vercel dashboard)
+
+| Variable | Description | Example |
+|---|---|---|
+| `VITE_API_URL` | Backend API base URL | `https://time-watch-backend.onrender.com` |
 
 ---
 
