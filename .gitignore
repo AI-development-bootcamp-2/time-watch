@@ -1,1 +1,20 @@
 # Claude Code
+.claude/
+
+# Dependencies
+node_modules/
+
+# Environment
+.env
+
+# Build output
+frontend/dist/
+backend/dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
