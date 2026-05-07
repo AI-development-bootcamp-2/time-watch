@@ -5,7 +5,7 @@ Time Watch is a greenfield Hebrew-language employee time-reporting web applicati
 Key constraints from the course spec:
 - React + Vite + Node.js + PostgreSQL stack (non-negotiable)
 - Docker + Docker Compose for all services
-- GitHub Actions CI; ≥60% unit test coverage required for merge
+- GitHub Actions CI; ≥80% unit test coverage required for merge
 - Hebrew RTL only
 - Tests written per feature during development
 
@@ -71,7 +71,7 @@ Key constraints from the course spec:
 
 ---
 
-### D5: File uploads stored on local Docker volume (dev) / cloud bucket (prod)
+### D5: File uploads stored on local Docker volume (dev) 
 
 **Decision:** Use `multer` for multipart upload handling. In dev, files land in a mounted Docker volume. The backend serves them via a static route. Production deployment can swap to S3/R2/GCS by changing the storage adapter.
 
@@ -129,6 +129,94 @@ Key constraints from the course spec:
 | Last-admin guard race condition (two admins deactivate simultaneously) | Use a DB transaction with a count check before committing deactivation |
 | Auto-lock fires while a timer is running for a user | Q20 answer: timer running at lock time "can't be" — block lock if any user has active timer |
 | Questions 32–40 partially unanswered | Reasonable defaults applied (see Open Questions); revisit with instructor |
+
+## Folder Layout
+
+```
+time-watch/
+├── docker-compose.yml
+├── .github/
+│   └── workflows/
+│       ├── ci.yml
+│       └── cd.yml
+│
+├── frontend/
+│   ├── Dockerfile
+│   ├── index.html
+│   ├── vite.config.js
+│   ├── package.json
+│   ├── public/
+│   └── src/
+│       ├── main.jsx
+│       ├── App.jsx
+│       ├── index.css
+│       ├── assets/
+│       ├── components/           # Shared/reusable UI components
+│       │   ├── ui/               # Generic primitives (Button, Input, Modal…)
+│       │   └── layout/           # AppShell, Sidebar, Header, BottomNav
+│       ├── features/             # Feature-scoped modules
+│       │   ├── auth/
+│       │   │   ├── LoginPage.jsx
+│       │   │   └── authSlice.js
+│       │   ├── daily-reporting/
+│       │   │   ├── DailyReportPage.jsx
+│       │   │   ├── ReportForm.jsx
+│       │   │   └── TimerWidget.jsx
+│       │   ├── absences/
+│       │   │   ├── AbsencePage.jsx
+│       │   │   └── AbsenceForm.jsx
+│       │   ├── monthly-view/
+│       │   │   └── MonthlyCalendar.jsx
+│       │   └── admin/
+│       │       ├── UsersPage.jsx
+│       │       ├── ClientsPage.jsx
+│       │       ├── ProjectsPage.jsx
+│       │       ├── TasksPage.jsx
+│       │       └── AdminReportsPage.jsx
+│       ├── hooks/                # Shared custom hooks
+│       ├── services/             # API client (axios/fetch wrappers)
+│       ├── store/                # Redux / Zustand global state
+│       └── utils/                # Helpers (date formatting, validation…)
+│
+├── backend/
+│   ├── Dockerfile
+│   ├── package.json
+│   └── src/
+│       ├── index.js              # Express app entry point
+│       ├── config/               # Env vars, constants
+│       ├── middleware/           # Auth (JWT), error handler, upload (multer)
+│       ├── routes/               # Express routers (one file per domain)
+│       │   ├── auth.js
+│       │   ├── users.js
+│       │   ├── clients.js
+│       │   ├── projects.js
+│       │   ├── tasks.js
+│       │   ├── reports.js
+│       │   ├── absences.js
+│       │   ├── timer.js
+│       │   ├── months.js
+│       │   └── admin.js
+│       ├── controllers/          # Request handlers (thin, delegates to services)
+│       ├── services/             # Business logic
+│       ├── repositories/         # DB queries (pg / Knex)
+│       └── utils/                # Helpers (jwt, bcrypt, date utils…)
+│
+├── db/
+│   ├── schema.sql                # Full DDL (tables, indexes, constraints)
+│   └── migrations/               # Incremental migration files
+│       └── 001_initial_schema.sql
+│
+└── uploads/                      # Local dev volume for document uploads
+```
+
+### Key Conventions
+
+- **Monorepo**: `frontend/` and `backend/` are independent Node packages; root has only Docker and CI config.
+- **Feature folders**: each feature owns its pages, components, and state slice — no cross-feature imports except through `services/` or `types/`.
+- **Backend layers**: routes → controllers → services → repositories. Controllers never touch the DB directly.
+- **Soft deletes**: all domain tables have an `is_active` (or `deleted_at`) column; hard deletes are never used.
+- **Uploads**: stored under `uploads/` in development (Docker volume); production uses a cloud bucket (TBD).
+- **Tests**: co-located with source files (`*.test.js`) or in a `__tests__/` folder per feature.
 
 ## Migration Plan
 
