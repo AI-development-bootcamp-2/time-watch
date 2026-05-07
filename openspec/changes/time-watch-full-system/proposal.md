@@ -47,5 +47,5 @@ _(none — this is a greenfield project)_
 - **Database**: PostgreSQL schema covering users, clients, projects, tasks, user_tasks, work_entries, absence_entries, timer_state, month_locks, audit_log
 - **Dependencies**: React + Vite, Node.js/Express, pg (or Prisma/Knex), JWT, multer (file upload), `@hebcal/core`, react-big-calendar, date-fns, Docker, GitHub Actions
 - **External services**: file storage for uploaded documents (local volume in dev; cloud bucket in prod TBD)
-- **Testing**: Jest or Vitest; ≥60% unit coverage; all tests pass in CI before merge
+- **Testing**: Jest or Vitest; ≥80% unit coverage; all tests pass in CI before merge
 - **Git workflow**: branch protection on main, mandatory PRs, minimum 1 reviewer
