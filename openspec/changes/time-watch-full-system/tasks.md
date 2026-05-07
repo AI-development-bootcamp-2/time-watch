@@ -28,7 +28,7 @@ Vite + React project with RTL Hebrew support (`dir="rtl"`, `lang="he"` on `<html
 ### Story 1.2 — Database & Migrations
 _As a developer, I want a versioned database schema so that the DB structure is reproducible and changes are tracked._
 
-#### Task 1.2.1 — Migration tool setup
+#### [x] Task 1.2.1 — Migration tool setup
 Install and configure Knex (or plain SQL runner). Create `migrations/` folder. Backend runs `knex migrate:latest` on startup.
 
 #### Task 1.2.2 — Core entity tables
