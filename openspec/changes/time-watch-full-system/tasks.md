@@ -49,7 +49,7 @@ Seed one admin user (email + hashed password from env variable) so the system is
 _As a team, I want automated tests on every PR and auto-deploy on merge so we catch regressions early and always have a live environment._
 
 #### Task 1.3.1 — GitHub Actions CI
-`.github/workflows/ci.yml`: install deps, run tests (backend + frontend), fail if coverage < 60%. Branch protection: no direct push to `main`, 1 reviewer required.
+`.github/workflows/ci.yml`: install deps, run tests (backend + frontend), fail if coverage < 80%. Branch protection: no direct push to `main`, 1 reviewer required.
 
 #### Task 1.3.2 — CD pipeline
 Configure chosen provider (Vercel for frontend, Render/Railway for backend). Auto-deploy on merge to `main`. Document env variable setup in README.
