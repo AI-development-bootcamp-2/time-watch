@@ -1,4 +1,5 @@
 # Claude Code
+<<<<<<< nadav
 .claude/
 
 # Dependencies
@@ -18,3 +19,14 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+=======
+
+# Node
+node_modules/
+coverage/
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+>>>>>>> dev
