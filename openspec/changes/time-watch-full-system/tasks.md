@@ -37,7 +37,7 @@ Migration: `users`, `clients`, `projects`, `tasks`, `user_tasks`.
 #### [x] Task 1.2.3 — Reporting tables
 Migration: `work_entries`, `timer_state`, `absence_entries`.
 
-#### Task 1.2.4 — Admin & audit tables
+#### [x] Task 1.2.4 — Admin & audit tables
 Migration: `month_locks`, `audit_log`.
 
 #### Task 1.2.5 — Seed script

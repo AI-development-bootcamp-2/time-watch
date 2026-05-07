@@ -1,4 +1,4 @@
-const migration = require("./20260507131000_create_reporting_tables.cjs");
+const migration = require("../../migrations/20260507132000_create_admin_audit_tables.cjs");
 
 function createChainableRecorder(operations) {
   let chain;
@@ -74,41 +74,36 @@ function methodsFor(table) {
   return table.operations.map((operation) => operation.method);
 }
 
-test("reporting migration creates work, timer, and absence tables", async () => {
+test("admin audit migration creates month lock and audit tables", async () => {
   const knex = createFakeKnex();
 
   await migration.up(knex);
 
-  expect(knex.createdTables.map((table) => table.name)).toEqual([
-    "work_entries",
-    "timer_state",
-    "absence_entries"
-  ]);
-  expect(methodsFor(knex.createdTables[0])).toEqual(expect.arrayContaining(["date", "time", "decimal", "text"]));
-  expect(methodsFor(knex.createdTables[1])).toEqual(expect.arrayContaining(["timestamp", "date", "enu"]));
-  expect(methodsFor(knex.createdTables[2])).toEqual(expect.arrayContaining(["date", "boolean", "decimal", "string"]));
+  expect(knex.createdTables.map((table) => table.name)).toEqual(["month_locks", "audit_log"]);
+  expect(methodsFor(knex.createdTables[0])).toEqual(expect.arrayContaining(["integer", "timestamp", "text", "index"]));
+  expect(methodsFor(knex.createdTables[1])).toEqual(expect.arrayContaining(["integer", "string", "jsonb", "timestamp", "index"]));
 });
 
-test("reporting migration adds database-level reporting constraints and active timer uniqueness", async () => {
+test("admin audit migration adds uniqueness, checks, and audit indexes", async () => {
   const knex = createFakeKnex();
 
   await migration.up(knex);
 
   expect(knex.rawStatements).toEqual(
     expect.arrayContaining([
-      expect.stringContaining("work_entries_time_order_check"),
-      expect.stringContaining("work_entries_duration_positive_check"),
-      expect.stringContaining("timer_state_one_active_per_user"),
-      expect.stringContaining("absence_entries_date_order_check"),
-      expect.stringContaining("absence_entries_partial_hours_check")
+      expect.stringContaining("month_locks_year_month_unique"),
+      expect.stringContaining("month_locks_month_range_check"),
+      expect.stringContaining("month_locks_year_range_check"),
+      expect.stringContaining("audit_log_actor_user_id_idx"),
+      expect.stringContaining("audit_log_entity_idx")
     ])
   );
 });
 
-test("reporting migration rolls back tables in reverse dependency order", async () => {
+test("admin audit migration rolls back audit table before month locks", async () => {
   const knex = createFakeKnex();
 
   await migration.down(knex);
 
-  expect(knex.droppedTables).toEqual(["absence_entries", "timer_state", "work_entries"]);
+  expect(knex.droppedTables).toEqual(["audit_log", "month_locks"]);
 });
