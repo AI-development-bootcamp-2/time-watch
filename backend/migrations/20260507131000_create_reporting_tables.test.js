@@ -1,4 +1,4 @@
-const migration = require("./20260507130000_create_core_entity_tables.cjs");
+const migration = require("./20260507131000_create_reporting_tables.cjs");
 
 function createChainableRecorder(operations) {
   let chain;
@@ -70,33 +70,45 @@ function createFakeKnex() {
   };
 }
 
-test("core entity migration creates all required tables in dependency order", async () => {
+function methodsFor(table) {
+  return table.operations.map((operation) => operation.method);
+}
+
+test("reporting migration creates work, timer, and absence tables", async () => {
   const knex = createFakeKnex();
 
   await migration.up(knex);
 
   expect(knex.createdTables.map((table) => table.name)).toEqual([
-    "users",
-    "clients",
-    "projects",
-    "tasks",
-    "user_tasks"
+    "work_entries",
+    "timer_state",
+    "absence_entries"
   ]);
+  expect(methodsFor(knex.createdTables[0])).toEqual(expect.arrayContaining(["date", "time", "decimal", "text"]));
+  expect(methodsFor(knex.createdTables[1])).toEqual(expect.arrayContaining(["timestamp", "date", "enu"]));
+  expect(methodsFor(knex.createdTables[2])).toEqual(expect.arrayContaining(["date", "boolean", "decimal", "string"]));
+});
+
+test("reporting migration adds database-level reporting constraints and active timer uniqueness", async () => {
+  const knex = createFakeKnex();
+
+  await migration.up(knex);
+
   expect(knex.rawStatements).toEqual(
     expect.arrayContaining([
-      expect.stringContaining("users_email_active_unique"),
-      expect.stringContaining("clients_name_active_unique"),
-      expect.stringContaining("projects_client_name_active_unique"),
-      expect.stringContaining("tasks_project_name_active_unique"),
-      expect.stringContaining("user_tasks_active_unique")
+      expect.stringContaining("work_entries_time_order_check"),
+      expect.stringContaining("work_entries_duration_positive_check"),
+      expect.stringContaining("timer_state_one_active_per_user"),
+      expect.stringContaining("absence_entries_date_order_check"),
+      expect.stringContaining("absence_entries_partial_hours_check")
     ])
   );
 });
 
-test("core entity migration rolls back tables in reverse dependency order", async () => {
+test("reporting migration rolls back tables in reverse dependency order", async () => {
   const knex = createFakeKnex();
 
   await migration.down(knex);
 
-  expect(knex.droppedTables).toEqual(["user_tasks", "tasks", "projects", "clients", "users"]);
+  expect(knex.droppedTables).toEqual(["absence_entries", "timer_state", "work_entries"]);
 });

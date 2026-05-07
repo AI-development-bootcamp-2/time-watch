@@ -34,7 +34,7 @@ Install and configure Knex (or plain SQL runner). Create `migrations/` folder. B
 #### [x] Task 1.2.2 — Core entity tables
 Migration: `users`, `clients`, `projects`, `tasks`, `user_tasks`.
 
-#### Task 1.2.3 — Reporting tables
+#### [x] Task 1.2.3 — Reporting tables
 Migration: `work_entries`, `timer_state`, `absence_entries`.
 
 #### Task 1.2.4 — Admin & audit tables
