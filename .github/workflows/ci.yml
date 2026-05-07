@@ -47,6 +47,20 @@ jobs:
           JWT_SECRET: ci-test-secret
           NODE_ENV: test
 
+  branch-check:
+    name: Branch Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    steps:
+      - name: Only dev can merge into main
+        run: |
+          if [ "${{ github.head_ref }}" != "dev" ]; then
+            echo "PRs to main are only allowed from the dev branch."
+            echo "Source branch: ${{ github.head_ref }}"
+            exit 1
+          fi
+          echo "Source branch is dev - allowed."
+
   frontend:
     name: Frontend Tests
     runs-on: ubuntu-latest
