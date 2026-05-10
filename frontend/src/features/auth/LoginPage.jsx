@@ -53,8 +53,8 @@ export default function LoginPage() {
         />
 
         <h1 className="login-welcome">
-          👋 ברוכים הבאים למערכת הניהול של אברא
-          <small className="login-subtitle">התחבר עם האימייל והסיסמה שלך</small>
+          👋 ברוכים הבאים למערכת<br />
+          הניהול של אברא
         </h1>
 
         <div className="login-form">
