@@ -5,16 +5,9 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  background: url('/login-bg.png') center / cover no-repeat, #F2F2F7;
+  background: url('/login-bg.png') center center / 1920px auto no-repeat, #101a3a;
 }
 
-.login-page::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(242,242,247,0.55), rgba(242,242,247,0.35));
-  pointer-events: none;
-}
 
 /* Card — exact values from HTML spec */
 .login-card {
@@ -36,44 +29,12 @@
   direction: rtl;
 }
 
-/* Logo */
+/* Logo image */
 .login-logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* 7-diamond logo mark — 70×48 container, each diamond 17×17 rotated 45° */
-.login-logo-mark {
-  display: inline-block;
-  width: 70px;
   height: 48px;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.lld {
-  position: absolute;
-  width: 17px;
-  height: 17px;
-  transform: rotate(45deg);
-  border-radius: 2.5px;
-}
-.lld1 { left: 0;    top: 15px; background: #F09A37; }
-.lld2 { left: 13px; top: 2px;  background: #F09A37; }
-.lld3 { left: 26px; top: 15px; background: #F09C1A; }
-.lld4 { left: 26px; top: 28px; background: #EA7693; }
-.lld5 { left: 39px; top: 15px; background: #F09A37; }
-.lld6 { left: 52px; top: 2px;  background: #F09A37; }
-.lld7 { left: 52px; top: 28px; background: #F09A37; }
-
-.login-logo-text {
-  font-family: "Assistant", sans-serif;
-  font-weight: 800;
-  font-size: 48px;
-  color: #141E3E;
-  letter-spacing: -0.5px;
-  line-height: 1;
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
 
 /* Welcome heading */

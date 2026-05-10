@@ -46,19 +46,11 @@ export default function LoginPage() {
     <div className="login-page">
       <form className="login-card" onSubmit={handleSubmit}>
 
-        {/* Logo: text first (goes right in RTL flex), mark second (goes left) */}
-        <div className="login-logo">
-          <span className="login-logo-text">abra</span>
-          <span className="login-logo-mark">
-            <span className="lld lld1" />
-            <span className="lld lld2" />
-            <span className="lld lld3" />
-            <span className="lld lld4" />
-            <span className="lld lld5" />
-            <span className="lld lld6" />
-            <span className="lld lld7" />
-          </span>
-        </div>
+        <img
+          src="/abra-logo.png"
+          alt="abra"
+          className="login-logo"
+        />
 
         <h1 className="login-welcome">
           👋 ברוכים הבאים למערכת הניהול של אברא
