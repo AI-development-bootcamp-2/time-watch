@@ -1,4 +1,4 @@
-###
+# SCRUM-104
 
 ## 1. Wire Route and Component
 
@@ -34,6 +34,8 @@
 
 - [x] 6.1 Render the error `<p>` only when `error` is non-empty; apply red color via CSS class
 - [x] 6.2 Confirm error clears at the start of each new submit (set `setError('')` before the API call)
+
+# SCRUM-105
 
 ## 7. Auth Service
 
@@ -89,16 +91,16 @@
 
 ## 14. Logout
 
-- [ ] 14.1 `auth.logout()` calls `authService.logout()` and then sets `user` to `null` — does NOT call `navigate()`
-- [ ] 14.2 If `authService.logout()` fails, still clear `user` — never leave the user stuck in a logged-in state
-- [ ] 14.3 Add a minimal logout button stub that: calls `await auth.logout()`, then calls `navigate('/login', { replace: true })`
+- [x] 14.1 `auth.logout()` calls `authService.logout()` and then sets `user` to `null` — does NOT call `navigate()`
+- [x] 14.2 If `authService.logout()` fails, still clear `user` — never leave the user stuck in a logged-in state
+- [x] 14.3 Add a minimal logout button stub that: calls `await auth.logout()`, then calls `navigate('/login', { replace: true })`
 
 ## 15. Testing Scenarios
 
-- [ ] 15.1 Hard refresh on `/` while session is valid (`GET /api/auth/me` returns 200): spinner shows briefly, then home renders (no flicker to `/login`)
-- [ ] 15.2 Hard refresh on `/` while session is expired (`GET /api/auth/me` returns 401): redirects to `/login`
-- [ ] 15.3 Login with `admin@test.com` / `1234`: `POST /api/auth/login` succeeds, `auth.user` is populated, redirects to `/`
-- [ ] 15.4 Login with wrong credentials: `POST /api/auth/login` returns 401, inline Hebrew error shown, stays on `/login`
-- [ ] 15.5 Login with `locked@test.com`: returns 423, distinct Hebrew locked-account error shown, stays on `/login`
-- [ ] 15.6 Login with `network@test.com`: request fails with no response, generic Hebrew error shown, stays on `/login`
-- [ ] 15.7 Logout: `POST /api/auth/logout` called, `auth.user` is null, browser back button does not restore the session
+- [x] 15.1 Hard refresh on `/` while session is valid (`GET /api/auth/me` returns 200): spinner shows briefly, then home renders (no flicker to `/login`)
+- [x] 15.2 Hard refresh on `/` while session is expired (`GET /api/auth/me` returns 401): redirects to `/login`
+- [x] 15.3 Login with `admin@test.com` / `1234`: `POST /api/auth/login` succeeds, `auth.user` is populated, redirects to `/`
+- [x] 15.4 Login with wrong credentials: `POST /api/auth/login` returns 401, inline Hebrew error shown, stays on `/login`
+- [x] 15.5 Login with `locked@test.com`: returns 423, distinct Hebrew locked-account error shown, stays on `/login`
+- [x] 15.6 Login with `network@test.com`: request fails with no response, generic Hebrew error shown, stays on `/login`
+- [x] 15.7 Logout: `POST /api/auth/logout` called, `auth.user` is null, browser back button does not restore the session

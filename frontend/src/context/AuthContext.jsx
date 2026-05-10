@@ -22,8 +22,11 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
-    await apiLogout()
-    setUser(null)
+    try {
+      await apiLogout()
+    } finally {
+      setUser(null)
+    }
   }
 
   if (isLoading) return <Spinner />

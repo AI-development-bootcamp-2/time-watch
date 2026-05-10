@@ -7,5 +7,10 @@ export default defineConfig({
     proxy: {
       '/api': { target: 'http://backend:3000', changeOrigin: true }
     }
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test-setup.js'
   }
 })
