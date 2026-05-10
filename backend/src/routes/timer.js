@@ -1,5 +1,6 @@
 const router = require('express').Router()
-const { findActiveTimer, createTimer } = require('../repositories/timerRepository')
+const { findActiveTimer, createTimer, deleteTimer } = require('../repositories/timerRepository')
+const knex = require('../db/knex')
 
 // Hardcoded until real auth middleware is wired in (Task N)
 const STUB_USER_ID = 1
@@ -72,6 +73,87 @@ router.post('/start', async (req, res) => {
   }
 })
 
-// POST /api/timer/stop
+/**
+ * @swagger
+ * /api/timer/stop:
+ *   post:
+ *     summary: Stop the active timer and save a work entry
+ *     tags: [Timer]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [task_id, location]
+ *             properties:
+ *               task_id:
+ *                 type: integer
+ *               location:
+ *                 type: string
+ *                 enum: [משרד, לקוח, בית]
+ *               description:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Work entry saved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 entry:
+ *                   $ref: '#/components/schemas/WorkEntry'
+ *       400:
+ *         description: Missing required fields
+ *       404:
+ *         description: No active timer
+ */
+router.post('/stop', async (req, res) => {
+  try {
+    const userId = STUB_USER_ID
+    const { task_id, location, description } = req.body
+
+    if (!task_id || !location) {
+      return res.status(400).json({ message: 'task_id and location are required' })
+    }
+
+    const timer = await findActiveTimer(userId)
+    if (!timer) {
+      return res.status(404).json({ message: 'No active timer' })
+    }
+
+    const timerStart = new Date(timer.start_time)
+    const startHH = String(timerStart.getUTCHours()).padStart(2, '0')
+    const startMM = String(timerStart.getUTCMinutes()).padStart(2, '0')
+    const startSS = String(timerStart.getUTCSeconds()).padStart(2, '0')
+    const start_time = `${startHH}:${startMM}:${startSS}`
+
+    const now = new Date()
+    const endHH = String(now.getUTCHours()).padStart(2, '0')
+    const endMM = String(now.getUTCMinutes()).padStart(2, '0')
+    const endSS = String(now.getUTCSeconds()).padStart(2, '0')
+    const end_time = `${endHH}:${endMM}:${endSS}`
+
+    const [entry] = await knex('work_entries')
+      .insert({
+        user_id: userId,
+        task_id,
+        date: timer.date,
+        location,
+        start_time,
+        end_time,
+        description: description ?? null,
+      })
+      .returning('*')
+
+    await deleteTimer(userId)
+
+    return res.status(200).json({ entry })
+  } catch (err) {
+    console.error('[POST /stop] error:', err.message)
+    res.status(500).json({ message: 'Internal server error' })
+  }
+})
 
 module.exports = router
