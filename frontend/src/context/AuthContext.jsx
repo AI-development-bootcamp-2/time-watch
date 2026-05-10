@@ -1,6 +1,5 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import { login as apiLogin, logout as apiLogout, getCurrentUser } from '../services/authService'
-import Spinner from '../components/Spinner'
 
 const AuthContext = createContext(null)
 
@@ -28,8 +27,6 @@ export function AuthProvider({ children }) {
       setUser(null)
     }
   }
-
-  if (isLoading) return <Spinner />
 
   return (
     <AuthContext.Provider value={{ user, isLoading, login, logout }}>
