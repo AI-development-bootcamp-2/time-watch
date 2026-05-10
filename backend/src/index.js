@@ -2,6 +2,7 @@ require('dotenv').config()
 
 const { createApp } = require('./app')
 const { runMigrations } = require('./db/knex')
+const { scheduleMidnightSplit } = require('./cron/midnightSplit')
 
 const PORT = process.env.PORT || 3000
 const shouldRunMigrations = process.env.RUN_MIGRATIONS_ON_STARTUP !== 'false'
@@ -12,6 +13,8 @@ async function startServer() {
   }
 
   const app = createApp()
+
+  scheduleMidnightSplit()
 
   app.listen(PORT, () => {
     console.log(`Backend running on port ${PORT}`)
