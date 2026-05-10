@@ -25,10 +25,10 @@
 
 ## 5. Loading and Submission Guard
 
-- [ ] 5.1 Bind `disabled={loading}` to the submit button
-- [ ] 5.2 Show a visual loading indicator on the button while `loading` is `true` (e.g., replace label text with "...")
+- [x] 5.1 Bind `disabled={loading}` to the submit button
+- [x] 5.2 Show a visual loading indicator on the button while `loading` is `true` (e.g., replace label text with "...")
 
 ## 6. Error Display
 
-- [ ] 6.1 Render the error `<p>` only when `error` is non-empty; apply red color via CSS class
-- [ ] 6.2 Confirm error clears at the start of each new submit (set `setError('')` before the API call)
+- [x] 6.1 Render the error `<p>` only when `error` is non-empty; apply red color via CSS class
+- [x] 6.2 Confirm error clears at the start of each new submit (set `setError('')` before the API call)

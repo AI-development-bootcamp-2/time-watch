@@ -70,8 +70,10 @@ export default function LoginPage() {
               placeholder="••••••••"
             />
           </div>
-          <p className="login-error" aria-live="polite"></p>
-          <button type="submit" className="login-submit">התחבר</button>
+          {error && <p className="login-error" aria-live="polite">{error}</p>}
+          <button type="submit" className="login-submit" disabled={loading}>
+            {loading ? '...' : 'התחבר'}
+          </button>
         </form>
       </div>
     </div>
