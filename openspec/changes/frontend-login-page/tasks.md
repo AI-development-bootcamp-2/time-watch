@@ -37,19 +37,19 @@
 
 ## 7. Auth Service
 
-- [ ] 7.1 Create `src/services/authService.js`
-- [ ] 7.2 Add `login({ email, password })`: calls `POST /api/auth/login`; on success returns parsed response body; on non-OK response throws an error with the HTTP status attached as `err.status`; network failures propagate as-is (no `.status`)
-- [ ] 7.3 Add `getCurrentUser()`: calls `GET /api/auth/me`; on 200 returns parsed response body; on any non-OK or network error throws (caller decides how to handle)
-- [ ] 7.4 Add `logout()`: calls `POST /api/auth/logout`; always resolves (swallow errors — AuthContext will clear state regardless)
+- [x] 7.1 Create `src/services/authService.js`
+- [x] 7.2 Add `login({ email, password })`: calls `POST /api/auth/login`; on success returns parsed response body; on non-OK response throws an error with the HTTP status attached as `err.status`; network failures propagate as-is (no `.status`)
+- [x] 7.3 Add `getCurrentUser()`: calls `GET /api/auth/me`; on 200 returns parsed response body; on any non-OK or network error throws (caller decides how to handle)
+- [x] 7.4 Add `logout()`: calls `POST /api/auth/logout`; always resolves (swallow errors — AuthContext will clear state regardless)
 
 ## 8. AuthContext Setup
 
-- [ ] 8.1 Create `src/context/AuthContext.jsx`: define `AuthContext` with `createContext` and export it
-- [ ] 8.2 Define `AuthProvider` component holding `user` (object or null) and `isLoading` (bool, starts `true`) state
-- [ ] 8.3 Export a `useAuth()` custom hook that calls `useContext(AuthContext)` and throws if used outside the provider
-- [ ] 8.4 Expose `login(credentials)` method on context: calls `authService.login(credentials)`, sets `user` from the response body on success, throws on failure — LoginPage handles error display
-- [ ] 8.5 Expose `logout()` method on context: calls `authService.logout()`, then sets `user` to `null` regardless of outcome — does NOT call `navigate()`
-- [ ] 8.6 Wrap the router root with `<AuthProvider>` in `main.jsx`
+- [x] 8.1 Create `src/context/AuthContext.jsx`: define `AuthContext` with `createContext` and export it
+- [x] 8.2 Define `AuthProvider` component holding `user` (object or null) and `isLoading` (bool, starts `true`) state
+- [x] 8.3 Export a `useAuth()` custom hook that calls `useContext(AuthContext)` and throws if used outside the provider
+- [x] 8.4 Expose `login(credentials)` method on context: calls `authService.login(credentials)`, sets `user` from the response body on success, throws on failure — LoginPage handles error display
+- [x] 8.5 Expose `logout()` method on context: calls `authService.logout()`, then sets `user` to `null` regardless of outcome — does NOT call `navigate()`
+- [x] 8.6 Wrap the router root with `<AuthProvider>` in `main.jsx`
 
 ## 9. Session Restore and Global Loading State
 

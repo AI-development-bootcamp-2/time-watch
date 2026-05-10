@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { login } from './authService'
+import { login } from '../../services/authService'
 import './LoginPage.css'
 
 export default function LoginPage() {
@@ -22,7 +22,7 @@ export default function LoginPage() {
     setLoading(true)
     const { email, password } = Object.fromEntries(new FormData(e.target))
     try {
-      const { token } = await login(email, password)
+      const { token } = await login({ email, password })
       localStorage.setItem('authToken', token)
       navigate('/', { replace: true })
     } catch (err) {
