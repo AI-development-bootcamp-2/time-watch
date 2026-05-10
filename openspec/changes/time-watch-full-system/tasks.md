@@ -31,13 +31,13 @@ _As a developer, I want a versioned database schema so that the DB structure is 
 #### [x] Task 1.2.1 — Migration tool setup
 Install and configure Knex (or plain SQL runner). Create `migrations/` folder. Backend runs `knex migrate:latest` on startup.
 
-#### Task 1.2.2 — Core entity tables
+#### [x] Task 1.2.2 — Core entity tables
 Migration: `users`, `clients`, `projects`, `tasks`, `user_tasks`.
 
-#### Task 1.2.3 — Reporting tables
+#### [x] Task 1.2.3 — Reporting tables
 Migration: `work_entries`, `timer_state`, `absence_entries`.
 
-#### Task 1.2.4 — Admin & audit tables
+#### [x] Task 1.2.4 — Admin & audit tables
 Migration: `month_locks`, `audit_log`.
 
 #### Task 1.2.5 — Seed script
