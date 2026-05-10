@@ -1,15 +1,44 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './LoginPage.css'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (localStorage.getItem('authToken')) {
       navigate('/', { replace: true })
     }
   }, [])
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    const { email, password } = Object.fromEntries(new FormData(e.target))
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      if (res.ok) {
+        const { token } = await res.json()
+        localStorage.setItem('authToken', token)
+        navigate('/', { replace: true })
+      } else if (res.status === 401) {
+        setError('האימייל או הסיסמה שגויים')
+      } else if (res.status === 423) {
+        setError('החשבון ננעל עקב ניסיונות התחברות מרובים')
+      }
+    } catch {
+      setError('אירעה שגיאה. נסי שוב מאוחר יותר')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="login-page">
@@ -22,7 +51,7 @@ export default function LoginPage() {
         </div>
         <p className="login-welcome">ברוכים הבאים למערכת</p>
         <p className="login-subtitle">הניהול של אברא</p>
-        <form className="login-form">
+        <form className="login-form" onSubmit={handleSubmit}>
           <div className="login-field">
             <label htmlFor="email">דואר אלקטרוני</label>
             <input

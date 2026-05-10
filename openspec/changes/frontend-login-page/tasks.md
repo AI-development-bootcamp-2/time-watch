@@ -15,13 +15,13 @@
 
 ## 4. API Integration
 
-- [ ] 4.1 Add `useState` for `loading`, `error` fields in `LoginPage`
-- [ ] 4.2 Implement `handleSubmit`: clear error, set loading, call `POST /api/auth/login` with `{ email, password }`
-- [ ] 4.3 On HTTP 200: save the returned JWT to `localStorage` as `authToken`, then `navigate('/', { replace: true })`
-- [ ] 4.4 On HTTP 401: set error to `"האימייל או הסיסמה שגויים"`
-- [ ] 4.5 On HTTP 423: set error to `"החשבון ננעל עקב ניסיונות התחברות מרובים"`
-- [ ] 4.6 On network error (catch block, no response): set error to `"אירעה שגיאה. נסי שוב מאוחר יותר"`
-- [ ] 4.7 In `finally`: set loading to `false`
+- [x] 4.1 Add `useState` for `loading`, `error` fields in `LoginPage`
+- [x] 4.2 Implement `handleSubmit`: clear error, set loading, call `POST /api/auth/login` with `{ email, password }`
+- [x] 4.3 On HTTP 200: save the returned JWT to `localStorage` as `authToken`, then `navigate('/', { replace: true })`
+- [x] 4.4 On HTTP 401: set error to `"האימייל או הסיסמה שגויים"`
+- [x] 4.5 On HTTP 423: set error to `"החשבון ננעל עקב ניסיונות התחברות מרובים"`
+- [x] 4.6 On network error (catch block, no response): set error to `"אירעה שגיאה. נסי שוב מאוחר יותר"`
+- [x] 4.7 In `finally`: set loading to `false`
 
 ## 5. Loading and Submission Guard
 
