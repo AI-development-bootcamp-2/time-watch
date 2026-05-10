@@ -2,8 +2,10 @@ import TimerWidget from './TimerWidget';
 
 export default function DailyReportPage() {
   return (
-    <main className="p-4">
-      <TimerWidget />
-    </main>
+    <div className="flex flex-col items-center justify-center min-h-[70vh]">
+      <div className="w-full">
+        <TimerWidget />
+      </div>
+    </div>
   );
 }
