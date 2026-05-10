@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { login } from './authService'
 import './LoginPage.css'
 
 export default function LoginPage() {
@@ -21,22 +22,17 @@ export default function LoginPage() {
     setLoading(true)
     const { email, password } = Object.fromEntries(new FormData(e.target))
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-      if (res.ok) {
-        const { token } = await res.json()
-        localStorage.setItem('authToken', token)
-        navigate('/', { replace: true })
-      } else if (res.status === 401) {
+      const { token } = await login(email, password)
+      localStorage.setItem('authToken', token)
+      navigate('/', { replace: true })
+    } catch (err) {
+      if (err.status === 401) {
         setError('האימייל או הסיסמה שגויים')
-      } else if (res.status === 423) {
+      } else if (err.status === 423) {
         setError('החשבון ננעל עקב ניסיונות התחברות מרובים')
+      } else {
+        setError('אירעה שגיאה. נסי שוב מאוחר יותר')
       }
-    } catch {
-      setError('אירעה שגיאה. נסי שוב מאוחר יותר')
     } finally {
       setLoading(false)
     }
