@@ -30,6 +30,7 @@ exports.up = async function up(knex) {
     await ensureColumn(knex, "users", "is_active", (table) => table.boolean("is_active").notNullable().defaultTo(true));
     await ensureColumn(knex, "users", "locked_until", (table) => table.timestamp("locked_until", { useTz: true }).nullable());
     await ensureColumn(knex, "users", "last_login_at", (table) => table.timestamp("last_login_at", { useTz: true }).nullable());
+    await ensureColumn(knex, "users", "created_at", (table) => table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(knex.fn.now()));
     await ensureColumn(knex, "users", "updated_at", (table) => table.timestamp("updated_at", { useTz: true }).notNullable().defaultTo(knex.fn.now()));
     await ensureColumn(knex, "users", "deleted_at", (table) => table.timestamp("deleted_at", { useTz: true }).nullable());
   }
@@ -45,6 +46,7 @@ exports.up = async function up(knex) {
   } else {
     await ensureColumn(knex, "clients", "contact", (table) => table.string("contact", 255).nullable());
     await ensureColumn(knex, "clients", "is_active", (table) => table.boolean("is_active").notNullable().defaultTo(true));
+    await ensureColumn(knex, "clients", "created_at", (table) => table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(knex.fn.now()));
     await ensureColumn(knex, "clients", "updated_at", (table) => table.timestamp("updated_at", { useTz: true }).notNullable().defaultTo(knex.fn.now()));
     await ensureColumn(knex, "clients", "deleted_at", (table) => table.timestamp("deleted_at", { useTz: true }).nullable());
   }
@@ -60,6 +62,7 @@ exports.up = async function up(knex) {
     });
   } else {
     await ensureColumn(knex, "projects", "is_active", (table) => table.boolean("is_active").notNullable().defaultTo(true));
+    await ensureColumn(knex, "projects", "created_at", (table) => table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(knex.fn.now()));
     await ensureColumn(knex, "projects", "updated_at", (table) => table.timestamp("updated_at", { useTz: true }).notNullable().defaultTo(knex.fn.now()));
     await ensureColumn(knex, "projects", "deleted_at", (table) => table.timestamp("deleted_at", { useTz: true }).nullable());
   }
@@ -74,6 +77,7 @@ exports.up = async function up(knex) {
       table.index(["project_id"]);
     });
   } else {
+    await ensureColumn(knex, "tasks", "created_at", (table) => table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(knex.fn.now()));
     await ensureColumn(knex, "tasks", "updated_at", (table) => table.timestamp("updated_at", { useTz: true }).notNullable().defaultTo(knex.fn.now()));
     await ensureColumn(knex, "tasks", "deleted_at", (table) => table.timestamp("deleted_at", { useTz: true }).nullable());
   }
@@ -85,10 +89,12 @@ exports.up = async function up(knex) {
       table.timestamp("assigned_at", { useTz: true }).notNullable().defaultTo(knex.fn.now());
       table.timestamp("updated_at", { useTz: true }).notNullable().defaultTo(knex.fn.now());
       table.timestamp("deleted_at", { useTz: true }).nullable();
+      table.primary(["user_id", "task_id"]);
       table.index(["user_id"]);
       table.index(["task_id"]);
     });
   } else {
+    await ensureColumn(knex, "user_tasks", "assigned_at", (table) => table.timestamp("assigned_at", { useTz: true }).notNullable().defaultTo(knex.fn.now()));
     await ensureColumn(knex, "user_tasks", "updated_at", (table) => table.timestamp("updated_at", { useTz: true }).notNullable().defaultTo(knex.fn.now()));
     await ensureColumn(knex, "user_tasks", "deleted_at", (table) => table.timestamp("deleted_at", { useTz: true }).nullable());
   }

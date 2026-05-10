@@ -25,6 +25,8 @@ exports.up = async function up(knex) {
       table.index(["locked_by"]);
     });
   } else {
+    await ensureColumn(knex, "month_locks", "year", (table) => table.integer("year").notNullable().defaultTo(2000));
+    await ensureColumn(knex, "month_locks", "month", (table) => table.integer("month").notNullable().defaultTo(1));
     await ensureColumn(knex, "month_locks", "locked_by", (table) => table.integer("locked_by").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL"));
     await ensureColumn(knex, "month_locks", "locked_at", (table) => table.timestamp("locked_at", { useTz: true }).notNullable().defaultTo(knex.fn.now()));
     await ensureColumn(knex, "month_locks", "notes", (table) => table.text("notes").nullable());
@@ -44,10 +46,6 @@ exports.up = async function up(knex) {
       table.jsonb("new_values").nullable();
       table.jsonb("metadata").nullable();
       table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(knex.fn.now());
-      table.index(["actor_user_id"]);
-      table.index(["target_user_id"]);
-      table.index(["entity_type", "entity_id"]);
-      table.index(["created_at"]);
     });
   } else {
     await ensureColumn(knex, "audit_log", "actor_user_id", (table) => table.integer("actor_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL"));
@@ -59,6 +57,7 @@ exports.up = async function up(knex) {
     await ensureColumn(knex, "audit_log", "new_values", (table) => table.jsonb("new_values").nullable());
     await ensureColumn(knex, "audit_log", "metadata", (table) => table.jsonb("metadata").nullable());
     await ensureColumn(knex, "audit_log", "created_at", (table) => table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(knex.fn.now()));
+    await ensureColumn(knex, "audit_log", "updated_at", (table) => table.timestamp("updated_at", { useTz: true }).notNullable().defaultTo(knex.fn.now()));
   }
 
   await knex.schema.raw("CREATE UNIQUE INDEX IF NOT EXISTS month_locks_year_month_unique ON month_locks (year, month)");
