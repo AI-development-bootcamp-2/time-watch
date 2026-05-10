@@ -70,11 +70,11 @@
 
 ## 11. ProtectedRoute
 
-- [ ] 11.1 Create `src/components/ProtectedRoute.jsx`: reads `auth.isLoading` and `auth.user` from `useAuth()`
-- [ ] 11.2 While `auth.isLoading` is `true`: render `null` (global spinner already shown — avoid double render)
-- [ ] 11.3 If `auth.user` is `null`: redirect to `/login` with `replace`
-- [ ] 11.4 Otherwise: render `<Outlet />`
-- [ ] 11.5 Wrap all authenticated routes in `App.jsx` with `<ProtectedRoute>` as a layout route
+- [x] 11.1 Create `src/components/ProtectedRoute.jsx`: reads `auth.isLoading` and `auth.user` from `useAuth()`
+- [x] 11.2 While `auth.isLoading` is `true`: render `null` (global spinner already shown — avoid double render)
+- [x] 11.3 If `auth.user` is `null`: redirect to `/login` with `replace`
+- [x] 11.4 Otherwise: render `<Outlet />`
+- [x] 11.5 Wrap all authenticated routes in `App.jsx` with `<ProtectedRoute>` as a layout route
 
 ## 12. AdminRoute
 
