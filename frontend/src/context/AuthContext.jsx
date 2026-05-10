@@ -1,11 +1,19 @@
-import { createContext, useContext, useState } from 'react'
-import { login as apiLogin, logout as apiLogout } from '../services/authService'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { login as apiLogin, logout as apiLogout, getCurrentUser } from '../services/authService'
+import Spinner from '../components/Spinner'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    getCurrentUser()
+      .then(data => setUser(data))
+      .catch(() => setUser(null))
+      .finally(() => setIsLoading(false))
+  }, [])
 
   async function login(credentials) {
     const data = await apiLogin(credentials)
@@ -17,6 +25,8 @@ export function AuthProvider({ children }) {
     await apiLogout()
     setUser(null)
   }
+
+  if (isLoading) return <Spinner />
 
   return (
     <AuthContext.Provider value={{ user, isLoading, login, logout }}>

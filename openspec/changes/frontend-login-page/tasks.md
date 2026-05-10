@@ -53,13 +53,13 @@
 
 ## 9. Session Restore and Global Loading State
 
-- [ ] 9.1 On `AuthProvider` mount, call `authService.getCurrentUser()` to restore the session
-- [ ] 9.2 If `getCurrentUser()` resolves: set `user` from the response body
-- [ ] 9.3 If `getCurrentUser()` throws (401 or network error): set `user` to `null` (session expired or never existed)
-- [ ] 9.4 In the `finally` block of the restore call: set `isLoading` to `false` — this must always run so the app never stays stuck on the spinner
-- [ ] 9.5 While `isLoading` is `true`, render a full-page `<Spinner />` instead of any route content
-- [ ] 9.6 Create `src/components/Spinner.jsx`: centered animated spinner, CSS only
-- [ ] 9.7 Create `src/components/Spinner.css` with a rotating circle keyframe animation
+- [x] 9.1 On `AuthProvider` mount, call `authService.getCurrentUser()` to restore the session
+- [x] 9.2 If `getCurrentUser()` resolves: set `user` from the response body
+- [x] 9.3 If `getCurrentUser()` throws (401 or network error): set `user` to `null` (session expired or never existed)
+- [x] 9.4 In the `finally` block of the restore call: set `isLoading` to `false` — this must always run so the app never stays stuck on the spinner
+- [x] 9.5 While `isLoading` is `true`, render a full-page `<Spinner />` instead of any route content
+- [x] 9.6 Create `src/components/Spinner.jsx`: centered animated spinner, CSS only
+- [x] 9.7 Create `src/components/Spinner.css` with a rotating circle keyframe animation
 
 ## 10. Integrate AuthContext into LoginPage
 
