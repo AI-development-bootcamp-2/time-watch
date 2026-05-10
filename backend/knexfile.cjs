@@ -27,6 +27,10 @@ const baseConfig = {
     loadExtensions: [".cjs"],
     tableName: "knex_migrations"
   },
+  seeds: {
+    directory: "./seeds",
+    extension: "cjs"
+  },
   pool: {
     min: 0,
     max: Number(process.env.DB_POOL_MAX || 10)
