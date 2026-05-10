@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1778405146746" clover="3.2.0">
-  <project timestamp="1778405146746" name="All files">
-    <metrics statements="33" coveredstatements="26" conditionals="28" coveredconditionals="13" methods="6" coveredmethods="1" elements="67" coveredelements="40" complexity="0" loc="33" ncloc="33" packages="4" files="4" classes="4"/>
+<coverage generated="1778409872993" clover="3.2.0">
+  <project timestamp="1778409872993" name="All files">
+    <metrics statements="42" coveredstatements="35" conditionals="30" coveredconditionals="15" methods="7" coveredmethods="2" elements="79" coveredelements="52" complexity="0" loc="42" ncloc="42" packages="4" files="4" classes="4"/>
     <package name="backend">
       <metrics statements="4" coveredstatements="4" conditionals="20" coveredconditionals="9" methods="0" coveredmethods="0"/>
       <file name="knexfile.cjs" path="C:\AI-First Bootcamp\time-watch\time-watch-n\backend\knexfile.cjs">
@@ -44,9 +44,9 @@
       </file>
     </package>
     <package name="backend.src.routes">
-      <metrics statements="10" coveredstatements="10" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
+      <metrics statements="19" coveredstatements="19" conditionals="4" coveredconditionals="4" methods="2" coveredmethods="2"/>
       <file name="timer.js" path="C:\AI-First Bootcamp\time-watch\time-watch-n\backend\src\routes\timer.js">
-        <metrics statements="10" coveredstatements="10" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
+        <metrics statements="19" coveredstatements="19" conditionals="4" coveredconditionals="4" methods="2" coveredmethods="2"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
         <line num="5" count="1" type="stmt"/>
@@ -56,7 +56,16 @@
         <line num="30" count="3" type="stmt"/>
         <line num="31" count="2" type="cond" truecount="2" falsecount="0"/>
         <line num="33" count="1" type="stmt"/>
-        <line num="40" count="1" type="stmt"/>
+        <line num="60" count="1" type="stmt"/>
+        <line num="61" count="3" type="stmt"/>
+        <line num="62" count="3" type="stmt"/>
+        <line num="63" count="3" type="stmt"/>
+        <line num="64" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="65" count="1" type="stmt"/>
+        <line num="67" count="1" type="stmt"/>
+        <line num="68" count="1" type="stmt"/>
+        <line num="70" count="1" type="stmt"/>
+        <line num="76" count="1" type="stmt"/>
       </file>
     </package>
   </project>
