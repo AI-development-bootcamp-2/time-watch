@@ -78,14 +78,14 @@
 
 ## 12. AdminRoute
 
-- [ ] 12.1 Create `src/components/AdminRoute.jsx`: reads `auth.user.role` from `useAuth()`; if role is not `'admin'`, redirects to `/` with `replace`; otherwise renders `<Outlet />`
-- [ ] 12.2 Nest `<AdminRoute>` inside `<ProtectedRoute>` in `App.jsx` for all `/admin/*` paths
+- [x] 12.1 Create `src/components/AdminRoute.jsx`: reads `auth.user.role` from `useAuth()`; if role is not `'admin'`, redirects to `/` with `replace`; otherwise renders `<Outlet />`
+- [x] 12.2 Nest `<AdminRoute>` inside `<ProtectedRoute>` in `App.jsx` for all `/admin/*` paths
 
 ## 13. Route Wiring in App.jsx
 
-- [ ] 13.1 Add a catch-all `<Route path="*" element={<Navigate to="/" replace />} />` for unknown paths
-- [ ] 13.2 Add a placeholder `/` route (inside `<ProtectedRoute>`) that renders a stub `<div>Home</div>` until the real employee home page is built
-- [ ] 13.3 Verify redirect chain: unauthenticated → any protected route → `/login`; authenticated non-admin → any admin route → `/`
+- [x] 13.1 Add a catch-all `<Route path="*" element={<Navigate to="/" replace />} />` for unknown paths
+- [x] 13.2 Add a placeholder `/` route (inside `<ProtectedRoute>`) that renders a stub `<div>Home</div>` until the real employee home page is built
+- [x] 13.3 Verify redirect chain: unauthenticated → any protected route → `/login`; authenticated non-admin → any admin route → `/`
 
 ## 14. Logout
 
