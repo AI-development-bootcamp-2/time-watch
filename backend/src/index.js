@@ -1,25 +1,25 @@
 require('dotenv').config()
-const express = require('express')
-const cookieParser = require('cookie-parser')
-const cors = require('cors')
-const swaggerUi = require('swagger-ui-express')
-const swaggerSpec = require('./config/swagger')
 
-const healthRouter = require('./routes/health')
-const timerRouter = require('./routes/timer')
+const { createApp } = require('./app')
+const { runMigrations } = require('./db/knex')
 
-const app = express()
 const PORT = process.env.PORT || 3000
+const shouldRunMigrations = process.env.RUN_MIGRATIONS_ON_STARTUP !== 'false'
 
-app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }))
-app.use(express.json())
-app.use(cookieParser())
+async function startServer() {
+  if (shouldRunMigrations) {
+    await runMigrations()
+  }
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
-app.use('/api/health', healthRouter)
-app.use('/api/timer', timerRouter)
+  const app = createApp()
 
-app.listen(PORT, () => {
-  console.log(`Backend running on port ${PORT}`)
-  console.log(`Swagger UI: http://localhost:${PORT}/api-docs`)
+  app.listen(PORT, () => {
+    console.log(`Backend running on port ${PORT}`)
+    console.log(`Swagger UI: http://localhost:${PORT}/api-docs`)
+  })
+}
+
+startServer().catch((error) => {
+  console.error('Failed to start backend', error)
+  process.exit(1)
 })
