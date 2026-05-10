@@ -5,8 +5,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "migrate": "knex migrate:latest",
-    "migrate:rollback": "knex migrate:rollback",
+    "migrate": "knex --knexfile knexfile.cjs migrate:latest",
+    "migrate:rollback": "knex --knexfile knexfile.cjs migrate:rollback",
     "test": "jest --coverage"
   },
   "dependencies": {
