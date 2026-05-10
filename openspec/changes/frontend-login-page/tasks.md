@@ -63,10 +63,10 @@
 
 ## 10. Integrate AuthContext into LoginPage
 
-- [ ] 10.1 Remove the call to `login()` imported from the existing `authService.js` — LoginPage now calls `auth.login()` from context instead
-- [ ] 10.2 Replace the `useEffect` localStorage check in `LoginPage` with `if (auth.user) navigate('/', { replace: true })` — driven by context, not localStorage
-- [ ] 10.3 On successful login, `LoginPage` calls `await auth.login({ email, password })` and then navigates to `/`; error handling (`401`, `423`, network) remains in `LoginPage`
-- [ ] 10.4 Remove all direct `localStorage` reads and writes from `LoginPage`
+- [x] 10.1 Remove the call to `login()` imported from the existing `authService.js` — LoginPage now calls `auth.login()` from context instead
+- [x] 10.2 Replace the `useEffect` localStorage check in `LoginPage` with `if (auth.user) navigate('/', { replace: true })` — driven by context, not localStorage
+- [x] 10.3 On successful login, `LoginPage` calls `await auth.login({ email, password })` and then navigates to `/`; error handling (`401`, `423`, network) remains in `LoginPage`
+- [x] 10.4 Remove all direct `localStorage` reads and writes from `LoginPage`
 
 ## 11. ProtectedRoute
 

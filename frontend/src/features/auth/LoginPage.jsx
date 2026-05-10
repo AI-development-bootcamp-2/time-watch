@@ -1,20 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { login } from '../../services/authService'
+import { useAuth } from '../../context/AuthContext'
 import './LoginPage.css'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const auth = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(false)
 
   useEffect(() => {
-    if (localStorage.getItem('authToken')) {
-      navigate('/', { replace: true })
-    }
-  }, [])
+    if (auth.user) navigate('/', { replace: true })
+  }, [auth.user])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -22,8 +21,7 @@ export default function LoginPage() {
     setLoading(true)
     const { email, password } = Object.fromEntries(new FormData(e.target))
     try {
-      const { token } = await login({ email, password })
-      localStorage.setItem('authToken', token)
+      await auth.login({ email, password })
       navigate('/', { replace: true })
     } catch (err) {
       if (err.status === 401) {
