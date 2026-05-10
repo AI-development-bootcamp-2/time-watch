@@ -1,4 +1,0 @@
--- Initial schema migration
--- Tables: users, clients, projects, tasks, user_tasks,
---         work_entries, timer_state, absence_entries,
---         month_locks, audit_log
