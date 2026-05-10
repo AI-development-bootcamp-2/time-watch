@@ -11,6 +11,7 @@ async function runMigrations(database = db) {
 }
 
 async function closeDatabase(database = db) {
+  console.log("nice print");
   return database.destroy();
 }
 
