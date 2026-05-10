@@ -1,3 +1,9 @@
+import TimerWidget from './TimerWidget';
+
 export default function DailyReportPage() {
-  return <div>Daily Report Page</div>
+  return (
+    <main className="p-4">
+      <TimerWidget />
+    </main>
+  );
 }
