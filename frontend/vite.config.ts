@@ -7,5 +7,12 @@ export default defineConfig({
     proxy: {
       '/api': { target: 'http://localhost:3000', changeOrigin: true }
     }
+  },
+  optimizeDeps: {
+    include: ['@hebcal/core'],
+    esbuildOptions: { target: 'es2022' }
+  },
+  build: {
+    target: 'es2022'
   }
 })
