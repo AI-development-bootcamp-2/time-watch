@@ -1,27 +1,14 @@
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
-import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { vi, describe, it, expect } from 'vitest'
 import LoginForm from './LoginForm'
 import { AUTH_ERRORS } from '../../utils/errorMessages'
-
-vi.mock('../../context/AuthContext', () => ({
-  useAuth: vi.fn(),
-}))
-
-import { useAuth } from '../../context/AuthContext'
+import { renderWithAuth } from '../../test-utils'
 
 function renderForm(loginFn = vi.fn()) {
-  useAuth.mockReturnValue({ login: loginFn })
-  const { container } = render(
-    <MemoryRouter>
-      <LoginForm />
-    </MemoryRouter>
-  )
+  const { container } = renderWithAuth(<LoginForm />, { login: loginFn })
   return { container }
 }
-
-beforeEach(() => vi.clearAllMocks())
 
 describe('RTL rendering', () => {
   it('form element has dir="rtl"', () => {

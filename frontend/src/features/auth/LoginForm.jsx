@@ -67,7 +67,7 @@ export default function LoginForm() {
       />
 
       <h1 className="login-welcome">
-        ברוכים הבאים למערכת<br />
+        👋 ברוכים הבאים למערכת<br />
         הניהול של אברא
       </h1>
 

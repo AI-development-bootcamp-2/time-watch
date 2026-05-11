@@ -5,11 +5,6 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  /*
-    Background-size = card_width × 3 (= 520 × 3 = 1560px).
-    This keeps the baked-in Figma card in the PNG at exactly 520px wide,
-    matching our React card so it is fully hidden behind it.
-  */
   background: url('/login-bg.png') center center / 1560px auto no-repeat, #101a3a;
 }
 
