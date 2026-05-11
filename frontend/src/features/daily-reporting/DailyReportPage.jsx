@@ -1,3 +1,10 @@
+import ReportForm from './ReportForm.jsx'
+import './ReportForm.css'
+
 export default function DailyReportPage() {
-  return <div>Daily Report Page</div>
+  return (
+    <div className="daily-report-page">
+      <ReportForm />
+    </div>
+  )
 }
