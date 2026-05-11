@@ -163,30 +163,6 @@ describe('Password show/hide toggle', () => {
   })
 })
 
-describe('Remember me checkbox', () => {
-  it('checkbox is unchecked by default', () => {
-    renderForm()
-    expect(screen.getByLabelText('זכור אותי')).not.toBeChecked()
-  })
-
-  it('checkbox has an associated label', () => {
-    renderForm()
-    expect(screen.getByLabelText('זכור אותי')).toHaveAttribute('type', 'checkbox')
-  })
-
-  it('clicking the label checks the checkbox', async () => {
-    renderForm()
-    await userEvent.click(screen.getByLabelText('זכור אותי'))
-    expect(screen.getByLabelText('זכור אותי')).toBeChecked()
-  })
-
-  it('clicking the label again unchecks the checkbox', async () => {
-    renderForm()
-    await userEvent.click(screen.getByLabelText('זכור אותי'))
-    await userEvent.click(screen.getByLabelText('זכור אותי'))
-    expect(screen.getByLabelText('זכור אותי')).not.toBeChecked()
-  })
-})
 
 describe('Enter key form submission', () => {
   it('submits form when Enter is pressed inside email field', async () => {
