@@ -246,6 +246,18 @@ describe('Global auth middleware — public path exemptions', () => {
     const res = await request(app).get('/api-docs');
     expect(res.status).not.toBe(401);
   });
+
+  it('POST /api/auth/login/ with trailing slash is reachable without a cookie', async () => {
+    const res = await request(app)
+      .post('/api/auth/login/')
+      .send({ email: 'not-an-email', password: '' });
+    expect(res.status).not.toBe(401);
+  });
+
+  it('GET /api/health/ with trailing slash returns 200 without a cookie', async () => {
+    const res = await request(app).get('/api/health/');
+    expect(res.status).toBe(200);
+  });
 });
 
 describe('POST /api/auth/logout', () => {

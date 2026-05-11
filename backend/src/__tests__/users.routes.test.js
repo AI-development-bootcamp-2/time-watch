@@ -5,31 +5,13 @@ process.env.JWT_SECRET = 'test-secret-used-only-in-jest-at-least-32-chars!!';
 
 const request = require('supertest');
 const knex = require('knex');
-const jwt = require('jsonwebtoken');
 const knexConfigs = require('../../knexfile.cjs');
 const { createApp } = require('../app');
 const { closeDatabase } = require('../db/knex');
+const { adminCookie, employeeCookie } = require('./helpers/cookies');
 
 let db;
 let app;
-
-function adminCookie() {
-  const token = jwt.sign(
-    { sub: 'test-admin-id', role: 'admin' },
-    process.env.JWT_SECRET,
-    { expiresIn: '1h' }
-  );
-  return `token=${token}`;
-}
-
-function employeeCookie() {
-  const token = jwt.sign(
-    { sub: 'test-employee-id', role: 'employee' },
-    process.env.JWT_SECRET,
-    { expiresIn: '1h' }
-  );
-  return `token=${token}`;
-}
 
 const validBody = {
   full_name: 'ישראל ישראלי',

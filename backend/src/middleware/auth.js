@@ -1,5 +1,6 @@
 'use strict';
 
+const { TokenExpiredError, JsonWebTokenError } = require('jsonwebtoken');
 const { verifyToken } = require('../utils/jwt');
 const { UnauthorizedError, ForbiddenError } = require('../utils/errors');
 
@@ -11,8 +12,11 @@ function authenticate(req, res, next) {
     const payload = verifyToken(token);
     req.user = { id: payload.sub, role: payload.role };
     next();
-  } catch {
-    next(new UnauthorizedError());
+  } catch (err) {
+    if (err instanceof TokenExpiredError || err instanceof JsonWebTokenError) {
+      return next(new UnauthorizedError());
+    }
+    next(err);
   }
 }
 

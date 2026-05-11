@@ -18,10 +18,11 @@ if (process.env.NODE_ENV === 'production' && !process.env.FRONTEND_URL) {
 }
 
 function isExemptFromAuth(req) {
-  if (req.path === '/api/health') return true;
-  if (req.path.startsWith('/api-docs')) return true;
-  if (req.method === 'POST' && req.path === '/api/auth/login') return true;
-  if (req.method === 'POST' && req.path === '/api/auth/logout') return true;
+  const path = req.path.replace(/\/+$/, '') || '/';
+  if (path === '/api/health') return true;
+  if (path.startsWith('/api-docs')) return true;
+  if (req.method === 'POST' && path === '/api/auth/login') return true;
+  if (req.method === 'POST' && path === '/api/auth/logout') return true;
   return false;
 }
 

@@ -3,28 +3,10 @@
 process.env.JWT_SECRET = 'test-secret-used-only-in-jest-at-least-32-chars!!';
 
 const request = require('supertest');
-const jwt = require('jsonwebtoken');
 const { createApp } = require('../app');
+const { adminCookie, employeeCookie } = require('./helpers/cookies');
 
 const app = createApp();
-
-function employeeCookie() {
-  const token = jwt.sign(
-    { sub: 'test-employee-id', role: 'employee' },
-    process.env.JWT_SECRET,
-    { expiresIn: '1h' }
-  );
-  return `token=${token}`;
-}
-
-function adminCookie() {
-  const token = jwt.sign(
-    { sub: 'test-admin-id', role: 'admin' },
-    process.env.JWT_SECRET,
-    { expiresIn: '1h' }
-  );
-  return `token=${token}`;
-}
 
 describe('Admin-only route guards', () => {
   it('GET /api/clients — unauthenticated request returns 401', async () => {
@@ -47,5 +29,6 @@ describe('Admin-only route guards', () => {
       .set('Cookie', adminCookie());
     expect(res.status).not.toBe(401);
     expect(res.status).not.toBe(403);
+    expect(res.status).toBe(404); // guard passed; no GET handler on the skeleton route
   });
 });

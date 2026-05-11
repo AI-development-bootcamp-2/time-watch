@@ -28,7 +28,7 @@ class UnauthorizedError extends AppError {
 }
 
 class ForbiddenError extends AppError {
-  constructor(message = 'גישה מותרת למנהלים בלבד') {
+  constructor(message = 'אין לך הרשאה לבצע פעולה זו') {
     super(403, 'FORBIDDEN', message);
   }
 }

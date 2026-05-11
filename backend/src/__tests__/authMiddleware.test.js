@@ -51,6 +51,18 @@ describe('authenticate middleware', () => {
     expect(next.mock.calls[0][0]).toBeInstanceOf(UnauthorizedError);
   });
 
+  it('500 — unexpected error from verifyToken is not swallowed as 401', () => {
+    verifyToken.mockImplementation(() => { throw new Error('unexpected internal error'); });
+    const req = { cookies: { token: 'some.jwt.token' } };
+    const next = jest.fn();
+
+    authenticate(req, {}, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(next.mock.calls[0][0]).not.toBeInstanceOf(UnauthorizedError);
+    expect(next.mock.calls[0][0]).toBeInstanceOf(Error);
+  });
+
   it('valid token — attaches req.user from payload and calls next() with no arguments', () => {
     verifyToken.mockReturnValue({ sub: 'user-uuid-123', role: 'employee' });
     const req = { cookies: { token: 'valid.jwt.token' } };
@@ -106,7 +118,7 @@ describe('requireRole middleware', () => {
     expect(next).toHaveBeenCalledWith();
   });
 
-  it('1.14 — 403 even when req.body.role is admin but req.user.role is employee', () => {
+  it('403 — req.body.role is ignored; only req.user.role is checked', () => {
     const next = jest.fn();
 
     requireRole('admin')({ user: { id: 'u1', role: 'employee' }, body: { role: 'admin' } }, {}, next);
@@ -115,7 +127,7 @@ describe('requireRole middleware', () => {
     expect(next.mock.calls[0][0]).toBeInstanceOf(ForbiddenError);
   });
 
-  it('1.15 — 403 when req.user.role is undefined (token issued without role claim)', () => {
+  it('403 — role undefined in token payload is treated as non-matching', () => {
     const next = jest.fn();
 
     requireRole('admin')({ user: { id: 'u1', role: undefined } }, {}, next);
@@ -124,7 +136,7 @@ describe('requireRole middleware', () => {
     expect(next.mock.calls[0][0]).toBeInstanceOf(ForbiddenError);
   });
 
-  it('1.16 — 403 when requireRole() is called with an empty roles list', () => {
+  it('403 — empty roles list blocks any authenticated user', () => {
     const next = jest.fn();
 
     requireRole()({ user: { id: 'u1', role: 'admin' } }, {}, next);
