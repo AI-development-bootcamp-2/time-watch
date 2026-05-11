@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "jira": {
+      "command": "node",
+      "args": [
+        "C:\\mcp\\mcp-atlassian\\dist\\index.js"
+      ],
+      "env": {
+        "ATLASSIAN_URL": "https://gavriela.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog?atlOrigin=eyJpIjoiODYyODJlYzA0NmE4NDRkMjhlMzY2NjQxYzdkMzZkNzUiLCJwIjoiaiJ9",
+        "ATLASSIAN_EMAIL": "amite0011@gmail.com",
+        "ATLASSIAN_TOKEN": "Token"
+      }
+    }
+  }
+}
