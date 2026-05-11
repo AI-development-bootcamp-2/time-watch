@@ -19,9 +19,8 @@ function authenticate(req, res, next) {
 // Guards routes by role — usage: requireRole('admin') or requireRole('admin', 'manager')
 function requireRole(...roles) {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return next(new ForbiddenError());
-    }
+    if (!req.user) return next(new UnauthorizedError());
+    if (!roles.includes(req.user.role)) return next(new ForbiddenError());
     next();
   };
 }

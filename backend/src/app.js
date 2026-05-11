@@ -4,8 +4,13 @@ const express = require("express");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
 const { authenticate } = require("./middleware/auth");
-const usersRouter = require("./routes/users");
+const adminRouter = require("./routes/admin");
 const authRouter = require("./routes/auth");
+const clientsRouter = require("./routes/clients");
+const monthsRouter = require("./routes/months");
+const projectsRouter = require("./routes/projects");
+const tasksRouter = require("./routes/tasks");
+const usersRouter = require("./routes/users");
 const errorHandler = require("./middleware/errorHandler");
 
 if (process.env.NODE_ENV === 'production' && !process.env.FRONTEND_URL) {
@@ -38,8 +43,13 @@ function createApp() {
   });
 
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  app.use("/api/users", usersRouter);
+  app.use("/api/admin", adminRouter);
   app.use("/api/auth", authRouter);
+  app.use("/api/clients", clientsRouter);
+  app.use("/api/month-locks", monthsRouter);
+  app.use("/api/projects", projectsRouter);
+  app.use("/api/tasks", tasksRouter);
+  app.use("/api/users", usersRouter);
 
   app.use(errorHandler);
 

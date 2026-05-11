@@ -1,7 +1,7 @@
 'use strict';
 
 const router = require('express').Router();
-const { authenticate, requireRole } = require('../middleware/auth');
+const { requireRole } = require('../middleware/auth');
 const { create } = require('../controllers/usersController');
 
 /**
@@ -68,7 +68,7 @@ const { create } = require('../controllers/usersController');
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/', authenticate, requireRole('admin'), create);
+router.post('/', requireRole('admin'), create);
 
 router.get('/',             (_req, res) => res.status(501).json({ code: 'NOT_IMPLEMENTED', message: 'לא מומש' }));
 router.put('/:id',          (_req, res) => res.status(501).json({ code: 'NOT_IMPLEMENTED', message: 'לא מומש' }));

@@ -5,8 +5,8 @@ process.env.JWT_SECRET = 'test-secret-used-only-in-jest-at-least-32-chars!!';
 jest.mock('../utils/jwt');
 
 const { verifyToken } = require('../utils/jwt');
-const { authenticate } = require('../middleware/auth');
-const { UnauthorizedError } = require('../utils/errors');
+const { authenticate, requireRole } = require('../middleware/auth');
+const { UnauthorizedError, ForbiddenError } = require('../utils/errors');
 
 describe('authenticate middleware', () => {
   beforeEach(() => {
@@ -59,6 +59,50 @@ describe('authenticate middleware', () => {
     authenticate(req, {}, next);
 
     expect(req.user).toEqual({ id: 'user-uuid-123', role: 'employee' });
+    expect(next).toHaveBeenCalledWith();
+  });
+});
+
+describe('requireRole middleware', () => {
+  it('401 — calls next(UnauthorizedError) when req.user is undefined', () => {
+    const next = jest.fn();
+
+    requireRole('admin')({ cookies: {} }, {}, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(next.mock.calls[0][0]).toBeInstanceOf(UnauthorizedError);
+  });
+
+  it('403 — calls next(ForbiddenError) when role is not in the allowed list', () => {
+    const next = jest.fn();
+
+    requireRole('admin')({ user: { id: 'u1', role: 'employee' } }, {}, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(next.mock.calls[0][0]).toBeInstanceOf(ForbiddenError);
+  });
+
+  it('allowed single role — calls next() with no arguments', () => {
+    const next = jest.fn();
+
+    requireRole('admin')({ user: { id: 'u1', role: 'admin' } }, {}, next);
+
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('multiple allowed roles — first role passes', () => {
+    const next = jest.fn();
+
+    requireRole('admin', 'manager')({ user: { id: 'u1', role: 'admin' } }, {}, next);
+
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('multiple allowed roles — second role passes', () => {
+    const next = jest.fn();
+
+    requireRole('admin', 'manager')({ user: { id: 'u1', role: 'manager' } }, {}, next);
+
     expect(next).toHaveBeenCalledWith();
   });
 });
