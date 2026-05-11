@@ -104,3 +104,37 @@
 - [x] 15.5 Login with `locked@test.com`: returns 423, distinct Hebrew locked-account error shown, stays on `/login`
 - [x] 15.6 Login with `network@test.com`: request fails with no response, generic Hebrew error shown, stays on `/login`
 - [x] 15.7 Logout: `POST /api/auth/logout` called, `auth.user` is null, browser back button does not restore the session
+
+## 16. Base HTTP Client
+
+- [x] 16.1 Create `src/services/apiClient.js`
+- [x] 16.2 Read base URL from `import.meta.env.VITE_API_BASE_URL`; default to `''` (same origin) if the variable is not set
+- [x] 16.3 Export a single `request(method, path, body)` function; prepend the base URL to every `path`
+- [x] 16.4 Set `credentials: 'include'` on every request so cookies are sent cross-origin
+- [x] 16.5 Set `Content-Type: application/json` only when `body` is provided
+- [x] 16.6 On HTTP success: check `res.status === 204` first → return `null`; then check `content-type` header contains `application/json` → return `res.json()`; otherwise return `null` (do not rely on `Content-Length` — it may be absent)
+- [x] 16.7 Never call `res.json()` unless the response has `content-type: application/json` — this prevents JSON parse errors on empty or non-JSON success responses
+- [x] 16.8 On HTTP failure (`!res.ok`): throw `{ status: res.status, message: <text from response body or default string> }`
+- [x] 16.9 In the `catch` block: first check if the caught error already has a numeric `status` property (i.e. it was thrown by the HTTP-failure branch inside the same `try`) — if so, rethrow it as-is so the original `{ status: 401, ... }` is never converted into a network error
+- [x] 16.10 Only if the caught error does NOT have a `status` property (i.e. a genuine network-level failure such as `TypeError: Failed to fetch`): throw `{ status: 0, message: 'Network error' }` — this is the only case that becomes a status-0 error
+
+## 17. Auth API Module
+
+- [ ] 17.1 Create `src/services/authApi.js`
+- [ ] 17.2 Import `request` from `./apiClient`
+- [ ] 17.3 Export `login(email, password)`: calls `request('POST', '/api/auth/login', { email, password })`
+- [ ] 17.4 Export `logout()`: calls `request('POST', '/api/auth/logout')`; always resolves (wrap in try/catch, swallow errors)
+- [ ] 17.5 Export `getMe()`: calls `request('GET', '/api/auth/me')`
+- [ ] 17.6 Each function lets the structured `{ status, message }` error from `apiClient` propagate to the caller — no error swallowing except in `logout()`
+
+## 18. Refactor Auth Flow to Use authApi
+
+- [ ] 18.1 In `AuthContext.jsx`: replace the import of `getCurrentUser` from `authService` with `getMe` from `authApi`
+- [ ] 18.2 In `AuthContext.jsx`: replace the import of `login` from `authService` with `login` from `authApi`
+- [ ] 18.3 In `AuthContext.jsx`: replace the import of `logout` from `authService` with `logout` from `authApi`
+- [ ] 18.4 Update the session-restore `useEffect` to call `authApi.getMe()` instead of `getCurrentUser()`
+- [ ] 18.5 Update the context `login()` method to call `authApi.login(credentials.email, credentials.password)` and set `user` from the response
+- [ ] 18.6 Update the context `logout()` method to call `authApi.logout()` inside the `try` block; `finally` still sets `user` to `null`
+- [ ] 18.7 In `LoginPage.jsx`: confirm no direct `fetch` or `authService` imports remain — it must call only `auth.login()` from context
+- [ ] 18.8 Before deleting `src/services/authService.js`: search all files for imports of `authService` to confirm no references remain; update any remaining imports to use `authApi` first; only then delete the file
+- [ ] 18.9 Update `LoginPage.test.jsx` to mock `src/services/authApi` instead of `src/services/authService`; keep the same 7 test scenarios passing
