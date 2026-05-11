@@ -233,3 +233,41 @@ All tests use Jest + Supertest against the real test DB (`NODE_ENV=test`).
 - `401` — wrong password (generic message, same as unknown email)
 - `401` — unknown email (same `401` and same message as wrong password)
 - `423` — account locked after 3 failed attempts; response message includes minutes remaining
+
+---
+
+## SCRUM-AUTH-3 · POST /api/auth/logout — Logout
+
+*Depends on: SCRUM-AUTH-2 (cookie handling, auth middleware)*
+
+---
+
+### Implementation
+
+**AUTH-3.1 — Auth controller: logout handler**
+- Add `logout(req, res)` to `src/controllers/authController.js`
+- Clear the JWT cookie by setting `maxAge: 0` on the cookie — the response **must** produce a `Set-Cookie: token=; Max-Age=0; ...` header
+  - Use `res.cookie('token', '', { maxAge: 0, httpOnly: true, sameSite: 'strict', secure: NODE_ENV === 'production' })` **or** `res.clearCookie(...)` — either is acceptable, but only if the test confirms the response header contains `Max-Age=0` or an `Expires` value in the past
+- Always return `200 OK` with `{ message: 'התנתקת בהצלחה' }` — regardless of whether a cookie was present
+- No `authenticate` middleware — endpoint must be idempotent for logged-out callers too
+
+**AUTH-3.2 — Route: POST /api/auth/logout**
+- Update `src/routes/auth.js`:
+  - Replace the `501` stub for `POST /logout` with `authController.logout`
+  - Leave `GET /me` stub returning `501` unchanged
+
+**AUTH-3.3 — Swagger annotation: POST /api/auth/logout**
+- Add `@swagger` JSDoc block in `src/routes/auth.js` for `POST /logout`
+- Document:
+  - No request body
+  - `200` response: `{ message: string }` + note that `Set-Cookie` clears the token cookie (`maxAge=0`)
+  - No auth required (idempotent — works with or without a valid cookie)
+
+---
+
+### Tests
+
+**AUTH-3.T1 — Integration tests: POST /api/auth/logout** (`src/__tests__/auth.routes.test.js`)
+- `200` — calling logout with a valid JWT cookie clears the cookie and returns `200`
+- `200` — calling logout without any cookie also returns `200` (idempotent)
+- After logout, verify the `Set-Cookie` response header clears the cookie: it must contain `Max-Age=0` **or** an `Expires` value in the past — this is the authoritative confirmation the cookie is cleared

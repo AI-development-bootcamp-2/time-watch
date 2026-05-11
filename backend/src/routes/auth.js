@@ -1,7 +1,7 @@
 'use strict';
 
 const router = require('express').Router();
-const { login } = require('../controllers/authController');
+const { login, logout } = require('../controllers/authController');
 
 /**
  * @swagger
@@ -66,7 +66,28 @@ const { login } = require('../controllers/authController');
  */
 router.post('/login', login);
 
-router.post('/logout', (_req, res) => res.status(501).json({ code: 'NOT_IMPLEMENTED', message: 'לא מומש' }));
-router.get('/me',     (_req, res) => res.status(501).json({ code: 'NOT_IMPLEMENTED', message: 'לא מומש' }));
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Log out and clear the session cookie
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: >
+ *           Logout successful. Sets `Set-Cookie: token=; Max-Age=0; HttpOnly; SameSite=Strict`
+ *           to instruct the browser to expire the cookie immediately.
+ *           Idempotent — returns 200 whether or not a cookie was present.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: התנתקת בהצלחה
+ */
+router.post('/logout', logout);
+router.get('/me',      (_req, res) => res.status(501).json({ code: 'NOT_IMPLEMENTED', message: 'לא מומש' }));
 
 module.exports = router;

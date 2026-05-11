@@ -144,3 +144,37 @@ describe('POST /api/auth/login', () => {
     expect(res.body.message).toMatch(/\d+/);
   });
 });
+
+describe('POST /api/auth/logout', () => {
+  it('200 — with a valid cookie clears it and returns success message', async () => {
+    await insertUser();
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email: TEST_USER.email, password: TEST_PASSWORD });
+    const cookie = loginRes.headers['set-cookie'][0];
+
+    const res = await request(app)
+      .post('/api/auth/logout')
+      .set('Cookie', cookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('התנתקת בהצלחה');
+
+    const setCookie = res.headers['set-cookie'];
+    expect(setCookie).toBeDefined();
+    const cookieStr = Array.isArray(setCookie) ? setCookie[0] : setCookie;
+    expect(cookieStr).toMatch(/Max-Age=0/i);
+  });
+
+  it('200 — without any cookie also returns 200 (idempotent)', async () => {
+    const res = await request(app).post('/api/auth/logout');
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('התנתקת בהצלחה');
+
+    const setCookie = res.headers['set-cookie'];
+    expect(setCookie).toBeDefined();
+    const cookieStr = Array.isArray(setCookie) ? setCookie[0] : setCookie;
+    expect(cookieStr).toMatch(/Max-Age=0/i);
+  });
+});

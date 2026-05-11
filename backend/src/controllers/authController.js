@@ -33,4 +33,14 @@ async function login(req, res, next) {
   }
 }
 
-module.exports = { login };
+function logout(req, res) {
+  res.cookie('token', '', {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 0,
+  });
+  res.status(200).json({ message: 'התנתקת בהצלחה' });
+}
+
+module.exports = { login, logout };
