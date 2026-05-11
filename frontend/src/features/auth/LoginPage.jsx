@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { AUTH_ERRORS } from '../../utils/errorMessages'
 import './LoginPage.css'
 
 export default function LoginPage() {
@@ -25,11 +26,11 @@ export default function LoginPage() {
       navigate('/', { replace: true })
     } catch (err) {
       if (err.status === 401) {
-        setError('האימייל או הסיסמה שגויים')
+        setError(AUTH_ERRORS.WRONG_CREDENTIALS)
       } else if (err.status === 423) {
-        setError('החשבון ננעל עקב ניסיונות התחברות מרובים')
+        setError(AUTH_ERRORS.ACCOUNT_LOCKED)
       } else {
-        setError('אירעה שגיאה. נסי שוב מאוחר יותר')
+        setError(AUTH_ERRORS.SERVER_ERROR)
       }
     } finally {
       setLoading(false)
