@@ -40,7 +40,7 @@ Migration: `work_entries`, `timer_state`, `absence_entries`.
 #### [x] Task 1.2.4 — Admin & audit tables
 Migration: `month_locks`, `audit_log`.
 
-#### Task 1.2.5 — Seed script
+#### [x] Task 1.2.5 — Seed script
 Seed one admin user (email + hashed password from env variable) so the system is usable after a fresh `docker compose up`.
 
 ---
