@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false)
 
   const form = useLoginForm({
-    onSubmit: (email, password) => auth.login({ email, password }),
+    onSubmit: (email, password) => auth.login(email, password),
     onSuccess: () => navigate('/', { replace: true }),
   })
 

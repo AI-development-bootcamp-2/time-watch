@@ -141,3 +141,36 @@
 - [x] 18.7 In `LoginPage.jsx`: confirm no direct `fetch` or `authService` imports remain — it must call only `auth.login()` from context
 - [x] 18.8 Before deleting `src/services/authService.js`: search all files for imports of `authService` to confirm no references remain; update any remaining imports to use `authApi` first; only then delete the file
 - [x] 18.9 Update `LoginPage.test.jsx` to mock `src/services/authApi` instead of `src/services/authService`; keep the same 7 test scenarios passing
+
+
+# SCRUM-109
+
+## 19. Auth Context — File Structure
+
+- [x] 19.1 `AuthContext` (createContext) defined in `src/context/AuthProvider.jsx` and exported as a named export — separate `AuthContext.js` was skipped to avoid Vite `.js`-before-`.jsx` resolution collision
+- [x] 19.2 Move `AuthProvider` into `src/context/AuthProvider.jsx`; imports `AuthContext` from the same file; all existing state and method logic preserved unchanged
+- [x] 19.3 Move `useAuth` into `src/hooks/useAuth.js`; imports `AuthContext` from `../context/AuthProvider`; throws `'useAuth must be used inside AuthProvider'` if context is null
+- [x] 19.4 `src/context/AuthContext.jsx` is now a two-line barrel — re-exports `AuthProvider` and `AuthContext` (default) from `./AuthProvider` and `useAuth` from `../hooks/useAuth`; all existing imports unchanged
+
+## 20. AuthProvider — Behaviour
+
+- [x] 20.1 `AuthProvider` holds `user` (null) and `isLoading` (starts `true`) state
+- [x] 20.2 On mount: call `authApi.getMe()`; on resolve set `user` from the response; on any error set `user = null`; in `finally` set `isLoading = false` — this must always run
+- [x] 20.3 `login(email, password)`: takes individual arguments (not an object); calls `authApi.login(email, password)`; sets `user` on success; rethrows on failure so the caller (LoginPage) handles error display and navigation
+- [x] 20.4 `logout()`: calls `authApi.logout()` inside `try`; `finally` always sets `user = null` regardless of outcome; does NOT call `navigate()` — caller handles redirect
+
+## 21. useAuth Hook
+
+- [x] 21.1 `useAuth()` calls `useContext(AuthContext)` and throws a clear error message if the value is null (used outside provider)
+- [x] 21.2 All components (`ProtectedRoute`, `AdminRoute`, `LogoutButton`, `LoginPage`) import `useAuth` and never read `AuthContext` directly
+
+## 22. Update Callers After Signature Change
+
+- [x] 22.1 In `LoginPage.jsx`: update the `onSubmit` callback passed to `useLoginForm` from `auth.login({ email, password })` to `auth.login(email, password)` (individual args)
+- [x] 22.2 Confirmed no other call sites pass an object to `auth.login` — grep for `auth.login({` returned zero matches
+
+## 23. Verification
+
+- [x] 23.1 `<AuthProvider>` wraps the app root in `main.jsx`
+- [x] 23.2 All 38 tests pass (15.1–15.7 in `LoginPage.test.jsx`, all `useLoginForm` and `validation` tests) — zero regressions
+- [ ] 23.3 Confirm the login flow works end-to-end in the browser with the Docker dev server (mock or real backend)
