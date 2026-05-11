@@ -1,7 +1,8 @@
 'use strict';
 
 const router = require('express').Router();
-const { login, logout } = require('../controllers/authController');
+const { login, logout, me } = require('../controllers/authController');
+const { authenticate } = require('../middleware/auth');
 
 /**
  * @swagger
@@ -88,6 +89,40 @@ router.post('/login', login);
  *                   example: התנתקת בהצלחה
  */
 router.post('/logout', logout);
-router.get('/me',      (_req, res) => res.status(501).json({ code: 'NOT_IMPLEMENTED', message: 'לא מומש' }));
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get the current authenticated user's profile
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   format: uuid
+ *                 name:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                   format: email
+ *                 role:
+ *                   type: string
+ *                   enum: [employee, admin]
+ *       401:
+ *         description: Missing, invalid, or expired JWT cookie
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/me', authenticate, me);
 
 module.exports = router;

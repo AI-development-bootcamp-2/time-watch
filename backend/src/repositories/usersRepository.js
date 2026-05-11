@@ -32,6 +32,14 @@ async function incrementFailedAttempts(id) {
   return row;
 }
 
+async function findById(id) {
+  return db('users')
+    .where({ id })
+    .whereNull('deleted_at')
+    .select(SAFE_COLUMNS)
+    .first();
+}
+
 async function resetLockout(id) {
   const [row] = await db('users')
     .where({ id })
@@ -44,4 +52,4 @@ async function resetLockout(id) {
   return row;
 }
 
-module.exports = { findByEmail, create, incrementFailedAttempts, resetLockout };
+module.exports = { findByEmail, findById, create, incrementFailedAttempts, resetLockout };

@@ -271,3 +271,50 @@ All tests use Jest + Supertest against the real test DB (`NODE_ENV=test`).
 - `200` — calling logout with a valid JWT cookie clears the cookie and returns `200`
 - `200` — calling logout without any cookie also returns `200` (idempotent)
 - After logout, verify the `Set-Cookie` response header clears the cookie: it must contain `Max-Age=0` **or** an `Expires` value in the past — this is the authoritative confirmation the cookie is cleared
+
+---
+
+## SCRUM-AUTH-4 · GET /api/auth/me — Current User Profile
+
+*Depends on: SCRUM-AUTH-2 (JWT cookie, authenticate middleware, usersRepository)*
+
+---
+
+### Implementation
+
+**AUTH-4.1 — Users repository: findById**
+- Add `findById(id)` to `src/repositories/usersRepository.js`
+- Returns the user row using `SAFE_COLUMNS` (no `password_hash`, no `failed_attempts`, no `locked_until`) — same safe columns returned by `create`
+- Excludes soft-deleted rows (`deleted_at IS NULL`)
+- Returns `undefined` if not found
+
+**AUTH-4.2 — Auth controller: me handler**
+- Add `me(req, res, next)` to `src/controllers/authController.js`
+- `req.user.id` is set by `authenticate` middleware (JWT already verified before this runs)
+- Call `usersRepository.findById(req.user.id)`
+- If user not found (deleted since token was issued) → `next(new UnauthorizedError())`
+- Return `200` with `{ id, name: user.full_name, email, role }` — map `full_name` → `name` in the response
+- Never include `password_hash`, `failed_attempts`, or `full_name` in the response
+
+**AUTH-4.3 — Route: GET /api/auth/me**
+- Update `src/routes/auth.js`:
+  - Replace the `GET /me` stub with `[authenticate, authController.me]`
+
+**AUTH-4.4 — Swagger annotation: GET /api/auth/me**
+- Add `@swagger` JSDoc block in `src/routes/auth.js` for `GET /me`
+- Document:
+  - No request body
+  - Requires `cookieAuth` security
+  - `200` response: `{ id, name, email, role }` — `name` is the API field (mapped from DB column `full_name`)
+  - `401` — missing, invalid, or expired JWT cookie
+
+---
+
+### Tests
+
+**AUTH-4.T1 — Integration tests: GET /api/auth/me** (`src/__tests__/auth.routes.test.js`)
+- `200` — valid JWT cookie returns `{ id, name, email, role }`:
+  - assert `res.body.name` equals the user's `full_name`
+  - assert `res.body` does **not** have `password_hash`, `failed_attempts`, or `full_name`
+- `401` — no cookie present
+- `401` — malformed / invalid JWT token

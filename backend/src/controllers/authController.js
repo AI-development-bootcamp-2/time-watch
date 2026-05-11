@@ -1,8 +1,9 @@
 'use strict';
 
 const { login: loginService } = require('../services/authService');
+const usersRepository = require('../repositories/usersRepository');
 const { validateLogin } = require('../utils/validate');
-const { ValidationError } = require('../utils/errors');
+const { ValidationError, UnauthorizedError } = require('../utils/errors');
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -43,4 +44,14 @@ function logout(req, res) {
   res.status(200).json({ message: 'התנתקת בהצלחה' });
 }
 
-module.exports = { login, logout };
+async function me(req, res, next) {
+  try {
+    const user = await usersRepository.findById(req.user.id);
+    if (!user) return next(new UnauthorizedError());
+    res.status(200).json({ id: user.id, name: user.full_name, email: user.email, role: user.role });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { login, logout, me };

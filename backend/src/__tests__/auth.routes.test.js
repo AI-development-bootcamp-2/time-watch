@@ -145,6 +145,43 @@ describe('POST /api/auth/login', () => {
   });
 });
 
+describe('GET /api/auth/me', () => {
+  it('200 — valid JWT cookie returns { id, name, email, role } without sensitive fields', async () => {
+    await insertUser();
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email: TEST_USER.email, password: TEST_PASSWORD });
+    const cookie = loginRes.headers['set-cookie'][0];
+
+    const res = await request(app)
+      .get('/api/auth/me')
+      .set('Cookie', cookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.name).toBe(TEST_USER.full_name);
+    expect(res.body.email).toBe(TEST_USER.email);
+    expect(res.body.role).toBe(TEST_USER.role);
+    expect(res.body).toHaveProperty('id');
+    expect(res.body).not.toHaveProperty('full_name');
+    expect(res.body).not.toHaveProperty('password_hash');
+    expect(res.body).not.toHaveProperty('failed_attempts');
+  });
+
+  it('401 — no cookie present', async () => {
+    const res = await request(app).get('/api/auth/me');
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe('UNAUTHENTICATED');
+  });
+
+  it('401 — malformed / invalid JWT token', async () => {
+    const res = await request(app)
+      .get('/api/auth/me')
+      .set('Cookie', 'token=this.is.not.a.valid.jwt');
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe('UNAUTHENTICATED');
+  });
+});
+
 describe('POST /api/auth/logout', () => {
   it('200 — with a valid cookie clears it and returns success message', async () => {
     await insertUser();
