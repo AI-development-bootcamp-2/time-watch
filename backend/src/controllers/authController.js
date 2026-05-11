@@ -5,9 +5,14 @@ const usersRepository = require('../repositories/usersRepository');
 const { validateLogin } = require('../utils/validate');
 const { ValidationError, UnauthorizedError } = require('../utils/errors');
 
-const COOKIE_OPTIONS = {
+const COOKIE_BASE = {
   httpOnly: true,
   sameSite: 'strict',
+  secure: process.env.NODE_ENV === 'production',
+};
+
+const COOKIE_OPTIONS = {
+  ...COOKIE_BASE,
   maxAge: 8 * 60 * 60 * 1000,
 };
 
@@ -18,14 +23,11 @@ async function login(req, res, next) {
 
     const { token, user } = await loginService(req.body);
 
-    res.cookie('token', token, {
-      ...COOKIE_OPTIONS,
-      secure: process.env.NODE_ENV === 'production',
-    });
+    res.cookie('token', token, COOKIE_OPTIONS);
 
     res.status(200).json({
       id: user.id,
-      full_name: user.full_name,
+      name: user.full_name,
       email: user.email,
       role: user.role,
     });
@@ -35,12 +37,7 @@ async function login(req, res, next) {
 }
 
 function logout(req, res) {
-  res.cookie('token', '', {
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 0,
-  });
+  res.cookie('token', '', { ...COOKIE_BASE, maxAge: 0 });
   res.status(200).json({ message: 'התנתקת בהצלחה' });
 }
 

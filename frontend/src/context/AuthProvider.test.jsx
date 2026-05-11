@@ -120,9 +120,9 @@ describe('AuthProvider — login', () => {
     )
   })
 
-  it('maps full_name from login response to name on the user object', async () => {
+  it('stores name from login response on the user object', async () => {
     authApi.getMe.mockRejectedValue({ status: 401 })
-    authApi.login.mockResolvedValue({ id: 5, full_name: 'ישראל ישראלי', email: 'israel@example.com', role: 'employee' })
+    authApi.login.mockResolvedValue({ id: 5, name: 'ישראל ישראלי', email: 'israel@example.com', role: 'employee' })
     renderProvider()
     await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'))
 

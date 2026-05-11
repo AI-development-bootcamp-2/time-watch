@@ -9,6 +9,7 @@ async function findByEmail(email) {
   return db('users')
     .whereRaw('LOWER(email) = LOWER(?)', [email])
     .whereNull('deleted_at')
+    .where({ is_active: true })
     .first();
 }
 
@@ -34,7 +35,7 @@ async function incrementFailedAttempts(id) {
 
 async function findById(id) {
   return db('users')
-    .where({ id })
+    .where({ id, is_active: true })
     .whereNull('deleted_at')
     .select(SAFE_COLUMNS)
     .first();

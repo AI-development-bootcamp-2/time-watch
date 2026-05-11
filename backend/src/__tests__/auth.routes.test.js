@@ -5,6 +5,7 @@ process.env.JWT_SECRET = 'test-secret-used-only-in-jest-at-least-32-chars!!';
 const request = require('supertest');
 const knex = require('knex');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const knexConfigs = require('../../knexfile.cjs');
 const { createApp } = require('../app');
 const { closeDatabase } = require('../db/knex');
@@ -61,11 +62,13 @@ describe('POST /api/auth/login', () => {
     const cookieStr = Array.isArray(setCookie) ? setCookie[0] : setCookie;
     expect(cookieStr).toMatch(/^token=/);
     expect(cookieStr).toMatch(/HttpOnly/i);
+    expect(cookieStr).toMatch(/SameSite=Strict/i);
 
     expect(res.body).toHaveProperty('id');
-    expect(res.body.full_name).toBe(TEST_USER.full_name);
+    expect(res.body.name).toBe(TEST_USER.full_name);
     expect(res.body.email).toBe(TEST_USER.email);
     expect(res.body.role).toBe(TEST_USER.role);
+    expect(res.body).not.toHaveProperty('full_name');
     expect(res.body).not.toHaveProperty('password_hash');
     expect(res.body).not.toHaveProperty('failed_attempts');
     expect(res.body).not.toHaveProperty('locked_until');
@@ -116,19 +119,30 @@ describe('POST /api/auth/login', () => {
   });
 
   it('401 — unknown email returns same status and message as wrong password (anti-enumeration)', async () => {
-    const wrongPasswordRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'nobody@example.com', password: TEST_PASSWORD });
-
     await insertUser();
 
-    const wrongEmailRes = await request(app)
+    const wrongPasswordRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email: TEST_USER.email, password: 'WrongPass1!' });
+
+    const unknownEmailRes = await request(app)
       .post('/api/auth/login')
       .send({ email: 'nobody@example.com', password: TEST_PASSWORD });
 
-    expect(wrongEmailRes.status).toBe(401);
-    expect(wrongEmailRes.body.code).toBe('INVALID_CREDENTIALS');
-    expect(wrongEmailRes.body.message).toBe(wrongPasswordRes.body.message);
+    expect(unknownEmailRes.status).toBe(wrongPasswordRes.status);
+    expect(unknownEmailRes.body.code).toBe(wrongPasswordRes.body.code);
+    expect(unknownEmailRes.body.message).toBe(wrongPasswordRes.body.message);
+  });
+
+  it('401 — inactive user receives same error as wrong credentials', async () => {
+    await insertUser({ is_active: false });
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: TEST_USER.email, password: TEST_PASSWORD });
+
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe('INVALID_CREDENTIALS');
   });
 
   it('423 — locked account returns ACCOUNT_LOCKED with minutesRemaining in message', async () => {
@@ -167,6 +181,23 @@ describe('GET /api/auth/me', () => {
     expect(res.body).not.toHaveProperty('failed_attempts');
   });
 
+  it('401 — user deactivated after token was issued', async () => {
+    const user = await insertUser();
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email: TEST_USER.email, password: TEST_PASSWORD });
+    const cookie = loginRes.headers['set-cookie'][0];
+
+    await db('users').where({ id: user.id }).update({ is_active: false });
+
+    const res = await request(app)
+      .get('/api/auth/me')
+      .set('Cookie', cookie);
+
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe('UNAUTHENTICATED');
+  });
+
   it('401 — no cookie present', async () => {
     const res = await request(app).get('/api/auth/me');
     expect(res.status).toBe(401);
@@ -177,6 +208,19 @@ describe('GET /api/auth/me', () => {
     const res = await request(app)
       .get('/api/auth/me')
       .set('Cookie', 'token=this.is.not.a.valid.jwt');
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe('UNAUTHENTICATED');
+  });
+
+  it('401 — expired JWT token', async () => {
+    const expired = jwt.sign(
+      { sub: 999999, role: 'employee' },
+      process.env.JWT_SECRET,
+      { expiresIn: -1 }
+    );
+    const res = await request(app)
+      .get('/api/auth/me')
+      .set('Cookie', `token=${expired}`);
     expect(res.status).toBe(401);
     expect(res.body.code).toBe('UNAUTHENTICATED');
   });

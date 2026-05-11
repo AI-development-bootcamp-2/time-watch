@@ -19,9 +19,10 @@ export async function request(method, path, body) {
       return null
     }
 
-    const message = await res.text().catch(() => '') || `HTTP ${res.status}`
-    const err = new Error(message)
+    const errorBody = await res.json().catch(() => null)
+    const err = new Error(errorBody?.message || `HTTP ${res.status}`)
     err.status = res.status
+    err.code = errorBody?.code ?? null
     throw err
   } catch (err) {
     if (typeof err.status === 'number') throw err

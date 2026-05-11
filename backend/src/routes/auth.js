@@ -38,7 +38,7 @@ const { authenticate } = require('../middleware/auth');
  *                 id:
  *                   type: string
  *                   format: uuid
- *                 full_name:
+ *                 name:
  *                   type: string
  *                 email:
  *                   type: string

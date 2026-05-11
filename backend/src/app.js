@@ -6,13 +6,16 @@ const swaggerSpec = require("./config/swagger");
 const usersRouter = require("./routes/users");
 const authRouter = require("./routes/auth");
 const errorHandler = require("./middleware/errorHandler");
-const { authenticate } = require("./middleware/auth");
-const absencesRouter = require("./routes/absences");
+
+if (process.env.NODE_ENV === 'production' && !process.env.FRONTEND_URL) {
+  throw new Error('FRONTEND_URL environment variable is required in production');
+}
 
 function createApp() {
   const app = express();
 
-  app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+  const corsOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+  app.use(cors({ origin: corsOrigin, credentials: true }));
   app.use(express.json());
   app.use(cookieParser());
 

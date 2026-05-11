@@ -2,7 +2,7 @@
 
 const knex = require('knex');
 const knexConfigs = require('../../knexfile.cjs');
-const { findByEmail, create, incrementFailedAttempts, resetLockout } = require('../repositories/usersRepository');
+const { findByEmail, findById, create, incrementFailedAttempts, resetLockout } = require('../repositories/usersRepository');
 const { closeDatabase } = require('../db/knex');
 
 let db;
@@ -66,6 +66,45 @@ describe('usersRepository.findByEmail', () => {
       .insert({ ...sample, deleted_at: new Date() })
       .returning('id');
     const found = await findByEmail(sample.email);
+    expect(found).toBeUndefined();
+  });
+
+  it('returns undefined for an inactive user (is_active = false)', async () => {
+    await db('users').insert({ ...sample, is_active: false });
+    const found = await findByEmail(sample.email);
+    expect(found).toBeUndefined();
+  });
+});
+
+describe('usersRepository.findById', () => {
+  it('returns safe columns for an existing active user', async () => {
+    const created = await create(sample);
+    const found = await findById(created.id);
+    expect(found.id).toBe(created.id);
+    expect(found.email).toBe(sample.email);
+    expect(found).not.toHaveProperty('password_hash');
+    expect(found).not.toHaveProperty('failed_attempts');
+    expect(found).not.toHaveProperty('locked_until');
+  });
+
+  it('returns undefined for an unknown id', async () => {
+    const found = await findById(999999);
+    expect(found).toBeUndefined();
+  });
+
+  it('returns undefined for a soft-deleted user', async () => {
+    const [row] = await db('users')
+      .insert({ ...sample, deleted_at: new Date() })
+      .returning('id');
+    const found = await findById(row.id);
+    expect(found).toBeUndefined();
+  });
+
+  it('returns undefined for an inactive user', async () => {
+    const [row] = await db('users')
+      .insert({ ...sample, is_active: false })
+      .returning('id');
+    const found = await findById(row.id);
     expect(found).toBeUndefined();
   });
 });
