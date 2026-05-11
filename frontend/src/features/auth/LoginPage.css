@@ -140,60 +140,6 @@
 }
 
 /* Remember me row */
-.login-row {
-  display: flex;
-  flex-direction: row-reverse;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: -2px;
-}
-
-.login-remember {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: #53575B;
-  font-size: 13px;
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-}
-
-/* Hide native checkbox */
-.login-remember input[type="checkbox"] {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-  width: 0;
-  height: 0;
-}
-
-.login-checkbox-box {
-  width: 15px;
-  height: 15px;
-  border: 1.5px solid #B5B9C2;
-  border-radius: 3px;
-  background: #fff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: background 0.15s, border-color 0.15s;
-}
-
-.login-checkbox-box.is-checked {
-  background: #0C69FF;
-  border-color: #0C69FF;
-}
-
-.login-checkbox-box.is-checked::after {
-  content: "";
-  width: 8px;
-  height: 5px;
-  border-left: 2px solid #fff;
-  border-bottom: 2px solid #fff;
-  transform: rotate(-45deg) translate(1px, -1px);
-}
 
 /* Error message */
 .login-error {

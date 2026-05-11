@@ -20,9 +20,13 @@ export async function request(method, path, body) {
     }
 
     const message = await res.text().catch(() => '') || `HTTP ${res.status}`
-    throw { status: res.status, message }
+    const err = new Error(message)
+    err.status = res.status
+    throw err
   } catch (err) {
     if (typeof err.status === 'number') throw err
-    throw { status: 0, message: 'Network error' }
+    const netErr = new Error('Network error')
+    netErr.status = 0
+    throw netErr
   }
 }
