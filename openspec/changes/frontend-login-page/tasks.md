@@ -105,6 +105,9 @@
 - [x] 15.6 Login with `network@test.com`: request fails with no response, generic Hebrew error shown, stays on `/login`
 - [x] 15.7 Logout: `POST /api/auth/logout` called, `auth.user` is null, browser back button does not restore the session
 
+
+# SCRUM-106
+
 ## 16. Base HTTP Client
 
 - [x] 16.1 Create `src/services/apiClient.js`
@@ -120,21 +123,21 @@
 
 ## 17. Auth API Module
 
-- [ ] 17.1 Create `src/services/authApi.js`
-- [ ] 17.2 Import `request` from `./apiClient`
-- [ ] 17.3 Export `login(email, password)`: calls `request('POST', '/api/auth/login', { email, password })`
-- [ ] 17.4 Export `logout()`: calls `request('POST', '/api/auth/logout')`; always resolves (wrap in try/catch, swallow errors)
-- [ ] 17.5 Export `getMe()`: calls `request('GET', '/api/auth/me')`
-- [ ] 17.6 Each function lets the structured `{ status, message }` error from `apiClient` propagate to the caller — no error swallowing except in `logout()`
+- [x] 17.1 Create `src/services/authApi.js`
+- [x] 17.2 Import `request` from `./apiClient`
+- [x] 17.3 Export `login(email, password)`: calls `request('POST', '/api/auth/login', { email, password })`
+- [x] 17.4 Export `logout()`: calls `request('POST', '/api/auth/logout')`; always resolves (wrap in try/catch, swallow errors)
+- [x] 17.5 Export `getMe()`: calls `request('GET', '/api/auth/me')`
+- [x] 17.6 Each function lets the structured `{ status, message }` error from `apiClient` propagate to the caller — no error swallowing except in `logout()`
 
 ## 18. Refactor Auth Flow to Use authApi
 
-- [ ] 18.1 In `AuthContext.jsx`: replace the import of `getCurrentUser` from `authService` with `getMe` from `authApi`
-- [ ] 18.2 In `AuthContext.jsx`: replace the import of `login` from `authService` with `login` from `authApi`
-- [ ] 18.3 In `AuthContext.jsx`: replace the import of `logout` from `authService` with `logout` from `authApi`
-- [ ] 18.4 Update the session-restore `useEffect` to call `authApi.getMe()` instead of `getCurrentUser()`
-- [ ] 18.5 Update the context `login()` method to call `authApi.login(credentials.email, credentials.password)` and set `user` from the response
-- [ ] 18.6 Update the context `logout()` method to call `authApi.logout()` inside the `try` block; `finally` still sets `user` to `null`
-- [ ] 18.7 In `LoginPage.jsx`: confirm no direct `fetch` or `authService` imports remain — it must call only `auth.login()` from context
-- [ ] 18.8 Before deleting `src/services/authService.js`: search all files for imports of `authService` to confirm no references remain; update any remaining imports to use `authApi` first; only then delete the file
-- [ ] 18.9 Update `LoginPage.test.jsx` to mock `src/services/authApi` instead of `src/services/authService`; keep the same 7 test scenarios passing
+- [x] 18.1 In `AuthContext.jsx`: replace the import of `getCurrentUser` from `authService` with `getMe` from `authApi`
+- [x] 18.2 In `AuthContext.jsx`: replace the import of `login` from `authService` with `login` from `authApi`
+- [x] 18.3 In `AuthContext.jsx`: replace the import of `logout` from `authService` with `logout` from `authApi`
+- [x] 18.4 Update the session-restore `useEffect` to call `authApi.getMe()` instead of `getCurrentUser()`
+- [x] 18.5 Update the context `login()` method to call `authApi.login(credentials.email, credentials.password)` and set `user` from the response
+- [x] 18.6 Update the context `logout()` method to call `authApi.logout()` inside the `try` block; `finally` still sets `user` to `null`
+- [x] 18.7 In `LoginPage.jsx`: confirm no direct `fetch` or `authService` imports remain — it must call only `auth.login()` from context
+- [x] 18.8 Before deleting `src/services/authService.js`: search all files for imports of `authService` to confirm no references remain; update any remaining imports to use `authApi` first; only then delete the file
+- [x] 18.9 Update `LoginPage.test.jsx` to mock `src/services/authApi` instead of `src/services/authService`; keep the same 7 test scenarios passing

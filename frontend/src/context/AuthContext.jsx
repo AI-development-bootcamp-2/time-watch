@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { login as apiLogin, logout as apiLogout, getCurrentUser } from '../services/authService'
+import { login as apiLogin, logout as apiLogout, getMe } from '../services/authApi'
 
 const AuthContext = createContext(null)
 
@@ -8,14 +8,14 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    getCurrentUser()
+    getMe()
       .then(data => setUser(data))
       .catch(() => setUser(null))
       .finally(() => setIsLoading(false))
   }, [])
 
-  async function login(credentials) {
-    const data = await apiLogin(credentials)
+  async function login({ email, password }) {
+    const data = await apiLogin(email, password)
     setUser(data)
     return data
   }

@@ -6,13 +6,13 @@ import { AuthProvider, useAuth } from '../../context/AuthContext'
 import ProtectedRoute from '../../components/ProtectedRoute'
 import LoginPage from './LoginPage'
 
-vi.mock('../../services/authService', () => ({
+vi.mock('../../services/authApi', () => ({
   login: vi.fn(),
-  getCurrentUser: vi.fn(),
+  getMe: vi.fn(),
   logout: vi.fn(),
 }))
 
-import * as authService from '../../services/authService'
+import * as authApi from '../../services/authApi'
 
 function LogoutButtonTest() {
   const auth = useAuth()
@@ -51,7 +51,7 @@ beforeEach(() => {
 
 // 15.1 valid session: spinner shows briefly then home renders — no redirect to /login
 it('15.1 valid session on hard refresh: shows home without redirecting to login', async () => {
-  authService.getCurrentUser.mockResolvedValue({ id: 1, role: 'employee' })
+  authApi.getMe.mockResolvedValue({ id: 1, role: 'employee' })
 
   renderApp(['/'])
 
@@ -59,11 +59,9 @@ it('15.1 valid session on hard refresh: shows home without redirecting to login'
   expect(screen.queryByRole('button', { name: /כניסה/i })).not.toBeInTheDocument()
 })
 
-// 15.2 expired session: getCurrentUser throws → redirects to /login
+// 15.2 expired session: getMe throws → redirects to /login
 it('15.2 expired session on hard refresh: redirects to /login', async () => {
-  const err = new Error('HTTP 401')
-  err.status = 401
-  authService.getCurrentUser.mockRejectedValue(err)
+  authApi.getMe.mockRejectedValue({ status: 401, message: 'HTTP 401' })
 
   renderApp(['/'])
 
@@ -75,8 +73,8 @@ it('15.2 expired session on hard refresh: redirects to /login', async () => {
 
 // 15.3 successful login: redirects to home
 it('15.3 successful login redirects to home', async () => {
-  authService.getCurrentUser.mockRejectedValue(new Error('401'))
-  authService.login.mockResolvedValue({ id: 1, email: 'admin@test.com', role: 'admin' })
+  authApi.getMe.mockRejectedValue({ status: 401, message: 'HTTP 401' })
+  authApi.login.mockResolvedValue({ id: 1, email: 'admin@test.com', role: 'admin' })
 
   renderApp(['/login'])
 
@@ -89,10 +87,8 @@ it('15.3 successful login redirects to home', async () => {
 
 // 15.4 wrong credentials (401): Hebrew error shown, stays on /login
 it('15.4 wrong credentials shows Hebrew 401 error', async () => {
-  authService.getCurrentUser.mockRejectedValue(new Error('401'))
-  const err = new Error('HTTP 401')
-  err.status = 401
-  authService.login.mockRejectedValue(err)
+  authApi.getMe.mockRejectedValue({ status: 401, message: 'HTTP 401' })
+  authApi.login.mockRejectedValue({ status: 401, message: 'HTTP 401' })
 
   renderApp(['/login'])
 
@@ -108,10 +104,8 @@ it('15.4 wrong credentials shows Hebrew 401 error', async () => {
 
 // 15.5 locked account (423): distinct Hebrew error shown, stays on /login
 it('15.5 locked account shows Hebrew 423 error', async () => {
-  authService.getCurrentUser.mockRejectedValue(new Error('401'))
-  const err = new Error('HTTP 423')
-  err.status = 423
-  authService.login.mockRejectedValue(err)
+  authApi.getMe.mockRejectedValue({ status: 401, message: 'HTTP 401' })
+  authApi.login.mockRejectedValue({ status: 423, message: 'HTTP 423' })
 
   renderApp(['/login'])
 
@@ -127,8 +121,8 @@ it('15.5 locked account shows Hebrew 423 error', async () => {
 
 // 15.6 network error (no response): generic Hebrew error shown, stays on /login
 it('15.6 network error shows generic Hebrew error', async () => {
-  authService.getCurrentUser.mockRejectedValue(new Error('401'))
-  authService.login.mockRejectedValue(new Error('Network Error'))
+  authApi.getMe.mockRejectedValue({ status: 401, message: 'HTTP 401' })
+  authApi.login.mockRejectedValue({ status: 0, message: 'Network error' })
 
   renderApp(['/login'])
 
@@ -144,8 +138,8 @@ it('15.6 network error shows generic Hebrew error', async () => {
 
 // 15.7 logout: user is cleared, browser lands on /login
 it('15.7 logout clears user and redirects to /login', async () => {
-  authService.getCurrentUser.mockResolvedValue({ id: 1, role: 'employee' })
-  authService.logout.mockResolvedValue(undefined)
+  authApi.getMe.mockResolvedValue({ id: 1, role: 'employee' })
+  authApi.logout.mockResolvedValue(undefined)
 
   renderApp(['/'])
 
