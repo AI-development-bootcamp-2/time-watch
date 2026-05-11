@@ -27,28 +27,32 @@ function toDateStr(date) {
   return `${y}-${m}-${d}`
 }
 
-// Returns all absence entries for the logged-in user, excluding soft-deleted rows.
+// GET / — returns all absence entries for the logged-in user, excluding soft-deleted rows.
 // Accepts optional ?month=YYYY-MM to filter entries that overlap the given month.
 router.get('/', async (req, res) => {
-  const userId = req.user.id
-  const { month } = req.query
+  try {
+    const userId = req.user.id
+    const { month } = req.query
 
-  let query = db('absence_entries')
-    .where({ user_id: userId })
-    .whereNull('deleted_at')
-    .orderBy('start_date', 'asc')
+    let query = db('absence_entries')
+      .where({ user_id: userId })
+      .whereNull('deleted_at')
+      .orderBy('start_date', 'asc')
 
-  if (month) {
-    const start = `${month}-01`
-    const end = `${month}-31`
-    query = query.where(function () {
-      this.whereBetween('start_date', [start, end])
-        .orWhereBetween('end_date', [start, end])
-    })
+    if (month) {
+      const start = `${month}-01`
+      const end = `${month}-31`
+      query = query.where(function () {
+        this.whereBetween('start_date', [start, end])
+          .orWhereBetween('end_date', [start, end])
+      })
+    }
+
+    const absences = await query
+    res.json(absences)
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' })
   }
-
-  const absences = await query
-  res.json(absences)
 })
 
 // Validates the absence body and returns { error, status } or { clippedEndStr } on success.
@@ -89,67 +93,77 @@ async function validateAbsenceBody({ type, start_date, end_date, is_partial, par
   return { clippedEndStr: toDateStr(clippedEnd) }
 }
 
-// PUT  /api/absences/:id — Updates an existing absence entry. Only the owner or an admin may update.
-// Applies the same validations as POST and checks month locks on the new range.
+// POST /api/absences — creates a new absence entry for the authenticated user.
 router.post('/', async (req, res) => {
-  const { type, start_date, end_date, is_partial = false, partial_hours = null, notes = null } = req.body
-  const userId = req.user.id
+  try {
+    const { type, start_date, end_date, notes = null } = req.body
+    const is_partial = Boolean(req.body.is_partial)
+    const partial_hours = req.body.partial_hours ?? null
+    const userId = req.user.id
 
-  const validation = await validateAbsenceBody({ type, start_date, end_date, is_partial, partial_hours })
-  if (validation.error) {
-    return res.status(validation.status).json({ error: validation.error })
+    const validation = await validateAbsenceBody({ type, start_date, end_date, is_partial, partial_hours })
+    if (validation.error) {
+      return res.status(validation.status).json({ error: validation.error })
+    }
+
+    const [absence] = await db('absence_entries')
+      .insert({
+        user_id: userId,
+        type,
+        start_date,
+        end_date: validation.clippedEndStr,
+        is_partial,
+        partial_hours: is_partial ? partial_hours : null,
+        notes,
+      })
+      .returning('*')
+
+    res.status(201).json(absence)
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' })
   }
-
-  const [absence] = await db('absence_entries')
-    .insert({
-      user_id: userId,
-      type,
-      start_date,
-      end_date: validation.clippedEndStr,
-      is_partial,
-      partial_hours: is_partial ? partial_hours : null,
-      notes,
-    })
-    .returning('*')
-
-  res.status(201).json(absence)
 })
 
-// POST /api/absences/:id/document — Uploads a supporting document (PDF/JPG/PNG, max 20 MB) for a given absence.
-// Replaces any previously uploaded file and updates document_url on the record.
+// PUT /api/absences/:id — updates an existing absence entry. Only the owner or an admin may update.
 router.put('/:id', async (req, res) => {
-  const { id } = req.params
-  const { type, start_date, end_date, is_partial = false, partial_hours = null, notes = null } = req.body
-  const userId = req.user.id
+  try {
+    const { id } = req.params
+    const { type, start_date, end_date, notes = null } = req.body
+    const is_partial = Boolean(req.body.is_partial)
+    const partial_hours = req.body.partial_hours ?? null
+    const userId = req.user.id
 
-  const existing = await db('absence_entries').where({ id }).whereNull('deleted_at').first()
-  if (!existing) {
-    return res.status(404).json({ error: 'Absence not found' })
+    const existing = await db('absence_entries').where({ id }).whereNull('deleted_at').first()
+    if (!existing) {
+      return res.status(404).json({ error: 'Absence not found' })
+    }
+
+    if (existing.user_id !== userId && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    const validation = await validateAbsenceBody({ type, start_date, end_date, is_partial, partial_hours })
+    if (validation.error) {
+      return res.status(validation.status).json({ error: validation.error })
+    }
+
+    const [updated] = await db('absence_entries')
+      .where({ id })
+      .update({
+        type,
+        start_date,
+        end_date: validation.clippedEndStr,
+        is_partial,
+        partial_hours: is_partial ? partial_hours : null,
+        notes,
+        updated_at: db.fn.now(),
+      })
+      .returning('*')
+
+    res.json(updated)
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' })
   }
-
-  if (existing.user_id !== userId && req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden' })
-  }
-
-  const validation = await validateAbsenceBody({ type, start_date, end_date, is_partial, partial_hours })
-  if (validation.error) {
-    return res.status(validation.status).json({ error: validation.error })
-  }
-
-  const [updated] = await db('absence_entries')
-    .where({ id })
-    .update({
-      type,
-      start_date,
-      end_date: validation.clippedEndStr,
-      is_partial,
-      partial_hours: is_partial ? partial_hours : null,
-      notes,
-      updated_at: db.fn.now(),
-    })
-    .returning('*')
-
-  res.json(updated)
 })
 
 
