@@ -52,8 +52,8 @@ beforeEach(() => {
 // LoginPage auth-state behaviour
 it('shows spinner on /login while auth is loading', () => {
   authApi.getMe.mockReturnValue(new Promise(() => {}))
-  const { container } = renderApp(['/login'])
-  expect(container.querySelector('.spinner-overlay')).toBeInTheDocument()
+  renderApp(['/login'])
+  expect(screen.getByRole('status')).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /כניסה/i })).not.toBeInTheDocument()
 })
 

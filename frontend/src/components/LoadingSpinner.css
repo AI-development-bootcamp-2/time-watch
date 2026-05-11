@@ -8,6 +8,12 @@
   z-index: 9999;
 }
 
+.spinner-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .spinner {
   width: 48px;
   height: 48px;

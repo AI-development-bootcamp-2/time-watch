@@ -10,7 +10,7 @@ vi.mock('../context/AuthContext', () => ({
 import { useAuth } from '../context/AuthContext'
 
 function renderWithRouter(initialEntry = '/') {
-  const { container } = render(
+  render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
         <Route path="/login" element={<div>Login Page</div>} />
@@ -20,7 +20,6 @@ function renderWithRouter(initialEntry = '/') {
       </Routes>
     </MemoryRouter>
   )
-  return { container }
 }
 
 describe('ProtectedRoute', () => {
@@ -28,8 +27,8 @@ describe('ProtectedRoute', () => {
 
   it('renders full-page spinner while isLoading is true', () => {
     useAuth.mockReturnValue({ isLoading: true, user: null })
-    const { container } = renderWithRouter('/')
-    expect(container.querySelector('.spinner-overlay')).toBeInTheDocument()
+    renderWithRouter('/')
+    expect(screen.getByRole('status')).toBeInTheDocument()
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument()
   })
 
@@ -55,8 +54,8 @@ describe('ProtectedRoute', () => {
 
   it('hard refresh: shows spinner and never flashes /login while auth is resolving', () => {
     useAuth.mockReturnValue({ isLoading: true, user: null })
-    const { container } = renderWithRouter('/')
-    expect(container.querySelector('.spinner-overlay')).toBeInTheDocument()
+    renderWithRouter('/')
+    expect(screen.getByRole('status')).toBeInTheDocument()
     expect(screen.queryByText('Login Page')).not.toBeInTheDocument()
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument()
   })

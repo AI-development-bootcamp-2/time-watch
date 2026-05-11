@@ -1,13 +1,13 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import Spinner from '../../components/Spinner'
+import LoadingSpinner from '../../components/LoadingSpinner'
 import LoginForm from './LoginForm'
 import './LoginPage.css'
 
 export default function LoginPage() {
   const { user, isLoading } = useAuth()
 
-  if (isLoading) return <Spinner />
+  if (isLoading) return <LoadingSpinner fullPage />
   if (user) return <Navigate to="/" replace />
 
   return (

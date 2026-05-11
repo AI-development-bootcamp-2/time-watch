@@ -10,7 +10,7 @@ vi.mock('../context/AuthContext', () => ({
 import { useAuth } from '../context/AuthContext'
 
 function renderWithRouter(initialEntry = '/admin') {
-  const { container } = render(
+  render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
         <Route path="/login" element={<div>Login Page</div>} />
@@ -21,7 +21,6 @@ function renderWithRouter(initialEntry = '/admin') {
       </Routes>
     </MemoryRouter>
   )
-  return { container }
 }
 
 describe('AdminRoute', () => {
@@ -29,8 +28,8 @@ describe('AdminRoute', () => {
 
   it('renders spinner while isLoading is true', () => {
     useAuth.mockReturnValue({ isLoading: true, user: null })
-    const { container } = renderWithRouter()
-    expect(container.querySelector('.spinner-overlay')).toBeInTheDocument()
+    renderWithRouter()
+    expect(screen.getByRole('status')).toBeInTheDocument()
     expect(screen.queryByText('Admin Content')).not.toBeInTheDocument()
   })
 
