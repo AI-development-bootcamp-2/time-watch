@@ -135,6 +135,12 @@ router.post('/stop', async (req, res) => {
     const endSS = String(now.getUTCSeconds()).padStart(2, '0')
     const end_time = `${endHH}:${endMM}:${endSS}`
 
+    const parseHours = (t) => {
+      const [h, m, s] = t.split(':').map(Number)
+      return h + m / 60 + (s || 0) / 3600
+    }
+    const duration_hours = Math.round((parseHours(end_time) - parseHours(start_time)) * 100) / 100
+
     const [entry] = await knex('work_entries')
       .insert({
         user_id: userId,
@@ -143,6 +149,7 @@ router.post('/stop', async (req, res) => {
         location,
         start_time,
         end_time,
+        duration_hours,
         description: description ?? null,
       })
       .returning('*')

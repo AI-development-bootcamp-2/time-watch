@@ -14,7 +14,8 @@ const tasksRouter    = require("./routes/tasks");
 const reportsRouter  = require("./routes/reports");
 const absencesRouter = require("./routes/absences");
 const monthsRouter   = require("./routes/months");
-const adminRouter    = require("./routes/admin");
+const adminRouter        = require("./routes/admin");
+const workEntriesRouter  = require("./routes/workEntries");
 
 function createApp() {
   const app = express();
@@ -35,7 +36,8 @@ function createApp() {
   app.use("/api/reports",  reportsRouter);
   app.use("/api/absences", absencesRouter);
   app.use("/api/months",   monthsRouter);
-  app.use("/api/admin",    adminRouter);
+  app.use("/api/admin",        adminRouter);
+  app.use("/api/work-entries", workEntriesRouter);
 
   return app;
 }
