@@ -38,7 +38,23 @@ function validateCreateUser({ full_name, email, password, role } = {}) {
     errors.push({ field: 'role', message: 'תפקיד לא תקין. ערכים מותרים: employee, admin' });
   }
 
-  return errors;
+  return { valid: errors.length === 0, errors };
 }
 
-module.exports = { validateCreateUser };
+function validateLogin({ email, password } = {}) {
+  const errors = [];
+
+  if (!email || typeof email !== 'string' || email.trim().length === 0) {
+    errors.push({ field: 'email', message: 'אימייל הוא שדה חובה' });
+  } else if (!EMAIL_RE.test(email.trim())) {
+    errors.push({ field: 'email', message: 'אימייל לא תקין' });
+  }
+
+  if (!password || typeof password !== 'string' || password.length === 0) {
+    errors.push({ field: 'password', message: 'סיסמה היא שדה חובה' });
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+module.exports = { validateCreateUser, validateLogin };

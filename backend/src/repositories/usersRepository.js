@@ -3,6 +3,7 @@
 const { db } = require('../db/knex');
 
 const SAFE_COLUMNS = ['id', 'full_name', 'email', 'role', 'is_active', 'created_at'];
+const MAX_FAILED_ATTEMPTS = 3;
 
 async function findByEmail(email) {
   return db('users')
@@ -18,4 +19,29 @@ async function create({ full_name, email, password_hash, role }) {
   return user;
 }
 
-module.exports = { findByEmail, create };
+async function incrementFailedAttempts(id) {
+  const [row] = await db('users')
+    .where({ id })
+    .update({
+      failed_attempts: db.raw('failed_attempts + 1'),
+      locked_until: db.raw(
+        `CASE WHEN failed_attempts + 1 >= ${MAX_FAILED_ATTEMPTS} THEN NOW() + INTERVAL '15 minutes' ELSE locked_until END`
+      ),
+    })
+    .returning(['id', 'failed_attempts', 'locked_until']);
+  return row;
+}
+
+async function resetLockout(id) {
+  const [row] = await db('users')
+    .where({ id })
+    .update({
+      failed_attempts: 0,
+      locked_until: null,
+      last_login_at: db.raw('NOW()'),
+    })
+    .returning(['id', 'failed_attempts', 'locked_until', 'last_login_at']);
+  return row;
+}
+
+module.exports = { findByEmail, create, incrementFailedAttempts, resetLockout };

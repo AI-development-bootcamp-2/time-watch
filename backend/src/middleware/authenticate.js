@@ -1,6 +1,6 @@
 'use strict';
 
-const jwt = require('jsonwebtoken');
+const { verifyToken } = require('../utils/jwt');
 const { UnauthorizedError } = require('../utils/errors');
 
 function authenticate(req, res, next) {
@@ -8,7 +8,7 @@ function authenticate(req, res, next) {
   if (!token) return next(new UnauthorizedError());
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = verifyToken(token);
     req.user = { id: payload.sub, role: payload.role };
     next();
   } catch {

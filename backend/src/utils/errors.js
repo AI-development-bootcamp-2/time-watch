@@ -33,4 +33,25 @@ class ForbiddenError extends AppError {
   }
 }
 
-module.exports = { AppError, ValidationError, ConflictError, UnauthorizedError, ForbiddenError };
+class InvalidCredentialsError extends AppError {
+  constructor() {
+    super(401, 'INVALID_CREDENTIALS', 'אימייל או סיסמה שגויים');
+  }
+}
+
+class AccountLockedError extends AppError {
+  constructor(minutesRemaining) {
+    super(423, 'ACCOUNT_LOCKED', `החשבון נעול זמנית. נסה שוב בעוד ${minutesRemaining} דקות.`);
+    this.minutesRemaining = minutesRemaining;
+  }
+}
+
+module.exports = {
+  AppError,
+  ValidationError,
+  ConflictError,
+  UnauthorizedError,
+  ForbiddenError,
+  InvalidCredentialsError,
+  AccountLockedError,
+};

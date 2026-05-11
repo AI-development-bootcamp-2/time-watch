@@ -6,8 +6,8 @@ const { ValidationError } = require('../utils/errors');
 
 async function create(req, res, next) {
   try {
-    const errors = validateCreateUser(req.body);
-    if (errors.length > 0) return next(new ValidationError(errors));
+    const { valid, errors } = validateCreateUser(req.body);
+    if (!valid) return next(new ValidationError(errors));
 
     const user = await createUser(req.body);
     res.status(201).json(user);

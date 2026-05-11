@@ -1,29 +1,29 @@
-const jwt = require('jsonwebtoken')
+'use strict';
+
+const { verifyToken } = require('../utils/jwt');
+const { UnauthorizedError, ForbiddenError } = require('../utils/errors');
 
 function authenticate(req, res, next) {
-  const token = req.cookies?.token
-
-  if (!token) {
-    return res.status(401).json({ error: 'Authentication required' })
-  }
+  const token = req.cookies?.token;
+  if (!token) return next(new UnauthorizedError());
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET)
-    req.user = payload
-    next()
+    const payload = verifyToken(token);
+    req.user = { id: payload.sub, role: payload.role };
+    next();
   } catch {
-    return res.status(401).json({ error: 'Invalid or expired token' })
+    next(new UnauthorizedError());
   }
 }
 
-// Guards admin-only routes — blocks requests from users whose role is not in the allowed list (e.g. requireRole('admin'))
+// Guards routes by role — usage: requireRole('admin') or requireRole('admin', 'manager')
 function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Forbidden' })
+      return next(new ForbiddenError());
     }
-    next()
-  }
+    next();
+  };
 }
 
-module.exports = { authenticate, requireRole }
+module.exports = { authenticate, requireRole };

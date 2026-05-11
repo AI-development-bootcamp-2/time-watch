@@ -127,3 +127,109 @@ All tests use Jest + Supertest against the real test DB (`NODE_ENV=test`).
 - `401` — no auth cookie
 - `403` — authenticated as employee (non-admin)
 - `409` — duplicate email
+
+---
+
+## SCRUM-AUTH-2 · POST /api/auth/login — Login with Account Lockout
+
+*Depends on: SCRUM-AUTH-1 (error classes, usersRepository.findByEmail, errorHandler, app wiring)*
+
+**Constants for this subtask:**
+
+| Constant | Value |
+|---|---|
+| `MAX_FAILED_ATTEMPTS` | **3** |
+| `LOCKOUT_DURATION` | 15 minutes |
+
+---
+
+### Implementation
+
+**AUTH-2.1 — Add missing error classes**
+- Add to `src/utils/errors.js`:
+  - `InvalidCredentialsError` — `statusCode: 401`, `code: 'INVALID_CREDENTIALS'`, `message: 'אימייל או סיסמה שגויים'`
+  - `AccountLockedError` — `statusCode: 423`, `code: 'ACCOUNT_LOCKED'`; carries `minutesRemaining: number`; `message` is dynamic: `'החשבון נעול זמנית. נסה שוב בעוד X דקות.'`
+
+**AUTH-2.2 — JWT utility module**
+- Create `src/utils/jwt.js`
+- `signToken(payload)` → `jsonwebtoken.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN || '8h' })`
+- `verifyToken(token)` → `jsonwebtoken.verify(token, JWT_SECRET)` — propagates `TokenExpiredError` / `JsonWebTokenError`
+- Update `authenticate` middleware to call `jwt.verifyToken` instead of the inline `jsonwebtoken.verify` call
+  - Note: `app.js` currently imports `authenticate` from `./middleware/auth` — reconcile the file path before updating
+
+**AUTH-2.3 — Login input validation**
+- Add to `src/utils/validate.js`:
+- Export `validateLogin({ email, password })` → `{ valid: boolean, errors: [{ field, message }] }`
+- Rules: `email` required + valid format; `password` required + non-empty string
+  - *(No complexity rules here — login accepts whatever the user types)*
+
+**AUTH-2.4 — Repository: lockout methods**
+- Add to `src/repositories/usersRepository.js`:
+  - `incrementFailedAttempts(id)`:
+    - Atomically increments `failed_attempts`
+    - If the new value reaches `MAX_FAILED_ATTEMPTS` (3), simultaneously set `locked_until = NOW() + INTERVAL '15 minutes'`
+    - Use a single `UPDATE ... RETURNING` so the increment and lock are one DB round-trip
+  - `resetLockout(id)`:
+    - Sets `failed_attempts = 0`, `locked_until = NULL`, `last_login_at = NOW()`
+
+**AUTH-2.5 — Auth service: login**
+- Create `src/services/authService.js`
+- Export `login({ email, password })`:
+  1. `usersRepository.findByEmail(email)` — store result; **always** call `bcrypt.compare` (using a dummy hash if user not found) to prevent timing-based email enumeration
+  2. If user not found → throw `InvalidCredentialsError` *(after bcrypt runs)*
+  3. If `user.locked_until && user.locked_until > new Date()` → compute `minutesRemaining`, throw `AccountLockedError`
+  4. `bcrypt.compare(password, user.password_hash)`:
+     - Mismatch → `usersRepository.incrementFailedAttempts(user.id)` → throw `InvalidCredentialsError`
+     - Match → `usersRepository.resetLockout(user.id)` → sign token → return `{ token, user: safeUser }`
+  - `safeUser` omits `password_hash`, `failed_attempts`, `locked_until`
+  - Sign token with `jwt.signToken({ sub: user.id, role: user.role })`
+
+**AUTH-2.6 — Auth controller: login handler**
+- Create `src/controllers/authController.js`
+- `login(req, res, next)`:
+  1. `validateLogin(req.body)` → on failure `next(new ValidationError(...))`
+  2. `authService.login({ email, password })` → catch and `next(err)`
+  3. On success: set cookie and return `200` with safe user profile
+  - Cookie settings: `httpOnly: true`, `sameSite: 'strict'`, `secure: NODE_ENV === 'production'`, `maxAge: 8 * 60 * 60 * 1000`
+  - Response body: `{ id, full_name, email, role }` — no token in body
+
+**AUTH-2.7 — Route: POST /api/auth/login**
+- Update `src/routes/auth.js`:
+  - `POST /login` → `[authController.login]` (public — no `authenticate` middleware)
+  - Leave `POST /logout` and `GET /me` as stubs returning `501`
+
+**AUTH-2.8 — Swagger annotation: POST /api/auth/login**
+- Add `@swagger` JSDoc block to `src/routes/auth.js`
+- Document:
+  - Request body: `email` (string, email format) + `password` (string)
+  - `200` response: user profile (`id`, `full_name`, `email`, `role`) + note that `Set-Cookie: token=...` is set
+  - `400` (`VALIDATION_ERROR`) — missing or malformed fields
+  - `401` (`INVALID_CREDENTIALS`) — wrong email or password (same message for both)
+  - `423` (`ACCOUNT_LOCKED`) — account locked, message includes minutes remaining
+
+---
+
+### Tests
+
+**AUTH-2.T1 — Repository unit tests** (add to `src/__tests__/usersRepository.test.js`)
+- `incrementFailedAttempts` increments `failed_attempts` counter by 1
+- 3rd failed attempt sets `locked_until` to approximately `NOW() + 15 min`
+- 2nd failed attempt does **not** set `locked_until`
+- `resetLockout` sets `failed_attempts = 0`, `locked_until = NULL`, `last_login_at` to a recent timestamp
+
+**AUTH-2.T2 — Service unit tests** (`src/__tests__/authService.test.js`)
+- Successful login returns `{ token, user }` with no sensitive fields in `user`
+- Wrong password throws `InvalidCredentialsError`
+- Unknown email throws `InvalidCredentialsError` (same error class — no enumeration)
+- Locked account throws `AccountLockedError` with a `minutesRemaining` value
+- 3rd failed attempt causes `locked_until` to be set (integration with repository)
+- Successful login resets `failed_attempts` to `0`
+
+**AUTH-2.T3 — Integration tests: POST /api/auth/login** (`src/__tests__/auth.routes.test.js`)
+- `200` — valid credentials, `Set-Cookie` header contains `token=`, body has user profile without `password_hash`
+- `400` — missing `email`
+- `400` — missing `password`
+- `400` — invalid email format
+- `401` — wrong password (generic message, same as unknown email)
+- `401` — unknown email (same `401` and same message as wrong password)
+- `423` — account locked after 3 failed attempts; response message includes minutes remaining
