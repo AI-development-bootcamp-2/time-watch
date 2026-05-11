@@ -6,6 +6,8 @@ const swaggerSpec = require("./config/swagger");
 const usersRouter = require("./routes/users");
 const authRouter = require("./routes/auth");
 const errorHandler = require("./middleware/errorHandler");
+const { authenticate } = require("./middleware/auth");
+const absencesRouter = require("./routes/absences");
 
 function createApp() {
   const app = express();
