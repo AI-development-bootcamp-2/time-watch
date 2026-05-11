@@ -33,7 +33,7 @@ describe('users table', () => {
   });
 
   it('inserts and retrieves a user', async () => {
-    const [id] = await db('users').insert({
+    const [{ id }] = await db('users').insert({
       email: 'test@example.com',
       password_hash: 'hashed',
       full_name: 'Test User',
