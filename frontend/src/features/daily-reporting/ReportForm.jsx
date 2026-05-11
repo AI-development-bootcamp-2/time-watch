@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import './ReportForm.css'
+import ProjectPicker from './ProjectPicker.jsx'
 
 const DAILY_STANDARD = 9
 const DAYS_HE = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש']
@@ -47,6 +48,8 @@ export default function ReportForm({ onClose, onSave, date = new Date() }) {
   const [projects, setProjects] = useState([
     newProject({ startTime: '09:00', endTime: '18:00' }),
   ])
+  // When non-null, render the project picker for this row id instead of the form
+  const [pickerForProjectId, setPickerForProjectId] = useState(null)
 
   const totalHours = useMemo(
     () => projects.reduce((sum, p) => sum + hoursBetween(p.startTime, p.endTime), 0),
@@ -68,6 +71,22 @@ export default function ReportForm({ onClose, onSave, date = new Date() }) {
   }
 
   const formatHours = h => (Number.isInteger(h) ? h : h.toFixed(1))
+
+  // Picker view replaces the form view while open (form state is preserved
+  // because this component remains mounted)
+  if (pickerForProjectId !== null) {
+    const current = projects.find(p => p.id === pickerForProjectId)
+    return (
+      <ProjectPicker
+        selected={current?.project}
+        onSelect={value => {
+          updateProject(pickerForProjectId, 'project', value)
+          setPickerForProjectId(null)
+        }}
+        onClose={() => setPickerForProjectId(null)}
+      />
+    )
+  }
 
   return (
     <div className="report-form" dir="rtl">
@@ -128,16 +147,17 @@ export default function ReportForm({ onClose, onSave, date = new Date() }) {
 
       {projects.map(p => (
         <div key={p.id} className="rf-project">
-          <div className="rf-field">
-            <label className="rf-label">פרויקט</label>
-            <select
-              className="rf-input rf-select"
-              value={p.project}
-              onChange={e => updateProject(p.id, 'project', e.target.value)}
-            >
-              <option value=""></option>
-            </select>
-          </div>
+          <button
+            type="button"
+            className="rf-field-button"
+            onClick={() => setPickerForProjectId(p.id)}
+          >
+            <span className="rf-label">פרויקט</span>
+            <span className={p.project ? 'rf-field-value' : 'rf-field-value placeholder'}>
+              {p.project || ''}
+              <span className="rf-field-chevron"> ⌄</span>
+            </span>
+          </button>
           <div className="rf-field">
             <label className="rf-label">משימה</label>
             <select
