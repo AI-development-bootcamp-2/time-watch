@@ -49,6 +49,21 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
+// LoginPage auth-state behaviour
+it('shows spinner on /login while auth is loading', () => {
+  authApi.getMe.mockReturnValue(new Promise(() => {}))
+  const { container } = renderApp(['/login'])
+  expect(container.querySelector('.spinner-overlay')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /כניסה/i })).not.toBeInTheDocument()
+})
+
+it('redirects authenticated user from /login to home', async () => {
+  authApi.getMe.mockResolvedValue({ id: 1, role: 'employee' })
+  renderApp(['/login'])
+  await waitFor(() => expect(screen.getByText(/Home/)).toBeInTheDocument())
+  expect(screen.queryByRole('button', { name: /כניסה/i })).not.toBeInTheDocument()
+})
+
 // 15.1 valid session: spinner shows briefly then home renders — no redirect to /login
 it('15.1 valid session on hard refresh: shows home without redirecting to login', async () => {
   authApi.getMe.mockResolvedValue({ id: 1, role: 'employee' })
