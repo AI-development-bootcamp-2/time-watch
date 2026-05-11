@@ -22,9 +22,9 @@ async function getMonthlyEntries(userId, month) {
   const lastStr = lastDay.toISOString().slice(0, 10)   // "YYYY-MM-DD"
 
   const rows = await knex('work_entries')
-    .join('tasks', 'work_entries.task_id', 'tasks.id')
-    .join('projects', 'tasks.project_id', 'projects.id')
-    .join('clients', 'projects.client_id', 'clients.id')
+    .leftJoin('tasks',    'work_entries.task_id',    'tasks.id')
+    .leftJoin('projects', 'tasks.project_id',        'projects.id')
+    .leftJoin('clients',  'projects.client_id',      'clients.id')
     .where('work_entries.user_id', userId)
     .andWhere('work_entries.date', '>=', firstStr)
     .andWhere('work_entries.date', '<=', lastStr)

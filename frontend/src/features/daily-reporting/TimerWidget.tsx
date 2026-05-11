@@ -17,6 +17,19 @@ export default function TimerWidget() {
   const [elapsed, setElapsed] = useState<number>(0);
   const [showModal, setShowModal] = useState(false);
 
+  // Check server status on mount — syncs with any timer started externally (e.g. header button)
+  useEffect(() => {
+    fetch('/api/timer/status')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.timer?.start_time) {
+          setStartTime(data.timer.start_time)
+          setStatus('running')
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   // Elapsed counter — ticks every second while running
   useEffect(() => {
     if (status !== 'running') return;
