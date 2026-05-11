@@ -46,3 +46,46 @@
 - [x] 3.13 Confirm test coverage is at or above the 60% minimum threshold
 
 # SCRUM-103
+## 1. [Backend] requireRole middleware — RBAC
+
+### Middleware implementation
+
+- [x] 1.1 Verify `requireRole(...roles)` is implemented as a factory function that returns an Express middleware (not a middleware itself)
+- [x] 1.2 Verify the role is read exclusively from `req.user.role` (JWT payload) — never from `req.body`, `req.query`, or any other request property
+- [x] 1.3 Verify: `req.user` undefined → `next(new UnauthorizedError())` — 401 (signals middleware was not applied before requireRole)
+- [x] 1.4 Verify: `req.user.role` not in the allowed roles list → `next(new ForbiddenError())` — 403
+- [x] 1.5 Verify: `req.user.role` in the allowed roles list → `next()` with no arguments
+
+### Route integration
+
+- [x] 1.6 `POST /api/users` is guarded by `requireRole('admin')`
+- [x] 1.7 All routes under `/api/clients`, `/api/projects`, `/api/tasks`, `/api/month-locks`, and `/api/admin` are guarded by `requireRole('admin')`
+- [x] 1.8 `absences` routes are NOT guarded by a role check (employee access)
+
+### Unit tests
+
+- [x] 1.9  `req.user` undefined → next called with `UnauthorizedError` (401)
+- [x] 1.10 `requireRole('admin')` with role `'employee'` → next called with `ForbiddenError` (403)
+- [x] 1.11 `requireRole('admin')` with role `'admin'` → next() called with no arguments
+- [x] 1.12 `requireRole('admin', 'manager')` with role `'admin'` → next() called
+- [x] 1.13 `requireRole('admin', 'manager')` with role `'manager'` → next() called
+
+### Edge cases
+
+- [x] 1.14 `req.body.role` is `'admin'` but `req.user.role` is `'employee'` → 403 (proves body is never read)
+- [x] 1.15 `req.user.role` is `undefined` (token issued without a role claim) → 403 (treated as non-matching, not as missing-user)
+- [x] 1.16 `requireRole()` called with an empty roles list → any authenticated user returns 403
+
+### Integration tests
+
+- [x] 1.17 `POST /api/users` — no cookie → 401
+- [x] 1.18 `POST /api/users` — employee JWT → 403
+- [x] 1.19 `POST /api/users` — admin JWT with valid body → 201
+- [x] 1.20 Unauthenticated request to `/api/clients` → 401
+- [x] 1.21 Employee JWT to `/api/clients` → 403
+- [x] 1.22 Admin JWT to `/api/clients` → passes the guard (not 401/403)
+
+### Verification
+
+- [x] 1.23 Run `npm test` from `backend/` — all tests pass, no regressions
+- [x] 1.24 Confirm test coverage is at or above the 60% minimum threshold

@@ -105,4 +105,31 @@ describe('requireRole middleware', () => {
 
     expect(next).toHaveBeenCalledWith();
   });
+
+  it('1.14 — 403 even when req.body.role is admin but req.user.role is employee', () => {
+    const next = jest.fn();
+
+    requireRole('admin')({ user: { id: 'u1', role: 'employee' }, body: { role: 'admin' } }, {}, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(next.mock.calls[0][0]).toBeInstanceOf(ForbiddenError);
+  });
+
+  it('1.15 — 403 when req.user.role is undefined (token issued without role claim)', () => {
+    const next = jest.fn();
+
+    requireRole('admin')({ user: { id: 'u1', role: undefined } }, {}, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(next.mock.calls[0][0]).toBeInstanceOf(ForbiddenError);
+  });
+
+  it('1.16 — 403 when requireRole() is called with an empty roles list', () => {
+    const next = jest.fn();
+
+    requireRole()({ user: { id: 'u1', role: 'admin' } }, {}, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(next.mock.calls[0][0]).toBeInstanceOf(ForbiddenError);
+  });
 });
