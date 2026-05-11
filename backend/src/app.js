@@ -1,6 +1,8 @@
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const express = require("express");
+const { authenticate } = require("./middleware/auth");
+const absencesRouter = require("./routes/absences");
 
 function createApp() {
   const app = express();
@@ -12,6 +14,8 @@ function createApp() {
   app.get("/api/health", (_req, res) => {
     res.status(200).json({ status: "ok" });
   });
+
+  app.use("/api/absences", authenticate, absencesRouter);
 
   return app;
 }
