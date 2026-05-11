@@ -1,45 +1,27 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { AUTH_ERRORS } from '../../utils/errorMessages'
+import { useLoginForm } from '../../hooks/useLoginForm'
 import './LoginPage.css'
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const auth = useAuth()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(false)
+
+  const form = useLoginForm({
+    onSubmit: (email, password) => auth.login({ email, password }),
+    onSuccess: () => navigate('/', { replace: true }),
+  })
 
   useEffect(() => {
     if (auth.user) navigate('/', { replace: true })
   }, [auth.user])
 
-  async function handleSubmit(e) {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-    const { email, password } = Object.fromEntries(new FormData(e.target))
-    try {
-      await auth.login({ email, password })
-      navigate('/', { replace: true })
-    } catch (err) {
-      if (err.status === 401) {
-        setError(AUTH_ERRORS.WRONG_CREDENTIALS)
-      } else if (err.status === 423) {
-        setError(AUTH_ERRORS.ACCOUNT_LOCKED)
-      } else {
-        setError(AUTH_ERRORS.SERVER_ERROR)
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return (
     <div className="login-page">
-<form className="login-card" onSubmit={handleSubmit}>
+<form className="login-card" onSubmit={form.handleSubmit}>
 
         <img
           src="/abra-logo.png"
@@ -71,9 +53,12 @@ export default function LoginPage() {
                 name="email"
                 placeholder="name@abra.co.il"
                 autoComplete="email"
-                required
+                value={form.email}
+                onChange={form.handleChange}
+                ref={form.emailRef}
               />
             </div>
+            {form.errors.email && <p className="login-error" aria-live="polite">{form.errors.email}</p>}
           </div>
 
           {/* Password */}
@@ -93,7 +78,9 @@ export default function LoginPage() {
                 name="password"
                 placeholder="••••••••"
                 autoComplete="current-password"
-                required
+                value={form.password}
+                onChange={form.handleChange}
+                ref={form.passwordRef}
               />
               <button
                 type="button"
@@ -115,6 +102,7 @@ export default function LoginPage() {
                 )}
               </button>
             </div>
+            {form.errors.password && <p className="login-error" aria-live="polite">{form.errors.password}</p>}
           </div>
 
           {/* Remember me */}
@@ -130,10 +118,10 @@ export default function LoginPage() {
             </label>
           </div>
 
-          {error && <p className="login-error" aria-live="polite">{error}</p>}
+          {form.errors.form && <p className="login-error" aria-live="polite">{form.errors.form}</p>}
 
-          <button type="submit" className="login-submit" disabled={loading}>
-            {loading ? '...' : 'כניסה'}
+          <button type="submit" className="login-submit" disabled={form.isSubmitting}>
+            {form.isSubmitting ? '...' : 'כניסה'}
           </button>
 
         </div>
