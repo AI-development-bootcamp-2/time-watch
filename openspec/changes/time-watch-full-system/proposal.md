@@ -45,7 +45,11 @@ _(none — this is a greenfield project)_
 
 - **New repository**: full monorepo with `frontend/`, `backend/`, `docker-compose.yml`
 - **Database**: PostgreSQL schema covering users, clients, projects, tasks, user_tasks, work_entries, absence_entries, timer_state, month_locks, audit_log
+<<<<<<< HEAD
 - **Dependencies**: React + Vite, Node.js/Express, pg (or Prisma/Knex), JWT, multer (file upload), `@hebcal/core`, react-big-calendar, date-fns, Docker, GitHub Actions
+=======
+- **Dependencies**: React + Vite, Node.js/Express, pg (Knex), JWT, multer (file upload), `@hebcal/core`, react-big-calendar, date-fns, Docker, GitHub Actions
+>>>>>>> origin/dev
 - **External services**: file storage for uploaded documents (local volume in dev; cloud bucket in prod TBD)
 - **Testing**: Jest or Vitest; ≥80% unit coverage; all tests pass in CI before merge
 - **Git workflow**: branch protection on main, mandatory PRs, minimum 1 reviewer

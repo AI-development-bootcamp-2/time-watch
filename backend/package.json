@@ -7,6 +7,10 @@
     "dev": "nodemon src/index.js",
     "migrate": "knex --knexfile knexfile.cjs migrate:latest",
     "migrate:rollback": "knex --knexfile knexfile.cjs migrate:rollback",
+<<<<<<< HEAD
+=======
+    "seed": "knex --knexfile knexfile.cjs seed:run",
+>>>>>>> origin/dev
     "test": "jest --coverage"
   },
   "dependencies": {
