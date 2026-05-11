@@ -174,3 +174,46 @@
 - [x] 23.1 `<AuthProvider>` wraps the app root in `main.jsx`
 - [x] 23.2 All 38 tests pass (15.1–15.7 in `LoginPage.test.jsx`, all `useLoginForm` and `validation` tests) — zero regressions
 - [ ] 23.3 Confirm the login flow works end-to-end in the browser with the Docker dev server (mock or real backend)
+
+# SCRUM-116
+Before implementing, split this testing infrastructure task into small checklist tasks in tasks.md.
+
+Feature requirements:
+
+Testing setup:
+- Install:
+  - @testing-library/react
+  - @testing-library/user-event
+  - @testing-library/jest-dom
+
+Testing utilities:
+- Create renderWithAuth(ui, { user, isLoading }) helper
+  - wraps components with mocked AuthContext.Provider
+- Create renderWithRouter(ui) helper
+  - wraps components with MemoryRouter
+
+Mocking:
+- Mock src/api/authApi.js globally
+- No real HTTP requests during tests
+
+Coverage goals:
+- authApi: 90%
+- useLoginForm: 90%
+- AuthProvider: 85%
+- LoginForm: 85%
+- ProtectedRoute: 100%
+- AdminRoute: 100%
+- validation.js: 100%
+
+Testing rules:
+- All component tests must use renderWithAuth
+- Prefer user interactions over implementation-detail testing
+- Test behavior through the DOM as a real user would
+- Avoid testing internal state or hook internals directly
+
+Implementation instructions:
+1. Create/update tasks.md with a small checklist
+2. Implement only the first checklist item
+3. Stop and wait for approval before continuing
+4. Keep all existing tests passing
+5. Do not refactor unrelated app logic

@@ -87,7 +87,7 @@ describe('Submit button', () => {
     await userEvent.type(screen.getByLabelText('אימייל'), 'user@example.com')
     await userEvent.type(screen.getByLabelText('סיסמה'), 'secret')
     await userEvent.click(screen.getByRole('button', { name: /כניסה/i }))
-    expect(screen.getByRole('button')).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'מתחבר...' })).toBeDisabled()
     await act(async () => { resolve() })
   })
 
@@ -98,7 +98,7 @@ describe('Submit button', () => {
     await userEvent.type(screen.getByLabelText('אימייל'), 'user@example.com')
     await userEvent.type(screen.getByLabelText('סיסמה'), 'secret')
     await userEvent.click(screen.getByRole('button', { name: /כניסה/i }))
-    expect(screen.getByRole('button')).toHaveTextContent('מתחבר...')
+    expect(screen.getByRole('button', { name: 'מתחבר...' })).toHaveTextContent('מתחבר...')
     await act(async () => { resolve() })
   })
 })
@@ -142,6 +142,62 @@ describe('Inline error rendering', () => {
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(AUTH_ERRORS.SERVER_ERROR)
     )
+  })
+})
+
+describe('Password show/hide toggle', () => {
+  it('password input type is "password" by default', () => {
+    renderForm()
+    expect(screen.getByLabelText('סיסמה')).toHaveAttribute('type', 'password')
+  })
+
+  it('toggle button has aria-label', () => {
+    renderForm()
+    expect(screen.getByRole('button', { name: 'הצג סיסמה' })).toBeInTheDocument()
+  })
+
+  it('clicking toggle reveals password (type becomes text)', async () => {
+    renderForm()
+    await userEvent.click(screen.getByRole('button', { name: 'הצג סיסמה' }))
+    expect(screen.getByLabelText('סיסמה')).toHaveAttribute('type', 'text')
+  })
+
+  it('clicking toggle again hides password (type reverts to password)', async () => {
+    renderForm()
+    await userEvent.click(screen.getByRole('button', { name: 'הצג סיסמה' }))
+    await userEvent.click(screen.getByRole('button', { name: 'הסתר סיסמה' }))
+    expect(screen.getByLabelText('סיסמה')).toHaveAttribute('type', 'password')
+  })
+
+  it('aria-label updates to "הסתר סיסמה" when password is visible', async () => {
+    renderForm()
+    await userEvent.click(screen.getByRole('button', { name: 'הצג סיסמה' }))
+    expect(screen.getByRole('button', { name: 'הסתר סיסמה' })).toBeInTheDocument()
+  })
+})
+
+describe('Remember me checkbox', () => {
+  it('checkbox is unchecked by default', () => {
+    renderForm()
+    expect(screen.getByLabelText('זכור אותי')).not.toBeChecked()
+  })
+
+  it('checkbox has an associated label', () => {
+    renderForm()
+    expect(screen.getByLabelText('זכור אותי')).toHaveAttribute('type', 'checkbox')
+  })
+
+  it('clicking the label checks the checkbox', async () => {
+    renderForm()
+    await userEvent.click(screen.getByLabelText('זכור אותי'))
+    expect(screen.getByLabelText('זכור אותי')).toBeChecked()
+  })
+
+  it('clicking the label again unchecks the checkbox', async () => {
+    renderForm()
+    await userEvent.click(screen.getByLabelText('זכור אותי'))
+    await userEvent.click(screen.getByLabelText('זכור אותי'))
+    expect(screen.getByLabelText('זכור אותי')).not.toBeChecked()
   })
 })
 
