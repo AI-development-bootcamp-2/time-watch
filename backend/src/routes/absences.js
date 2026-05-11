@@ -1,7 +1,22 @@
+const multer = require('multer')
 const router = require('express').Router()
 const { db } = require('../db/knex')
 
-const VALID_TYPES = ['vacation', 'sick', 'military_reserve', 'other']
+const ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
+const MAX_FILE_SIZE = 20 * 1024 * 1024
+
+const uploadDocument = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_FILE_SIZE },
+  fileFilter: (_req, file, cb) => {
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      return cb(Object.assign(new Error('Invalid file type'), { code: 'INVALID_MIME_TYPE' }))
+    }
+    cb(null, true)
+  },
+})
+
+const VALID_TYPES = ['vacation', 'half_vacation_day', 'sick', 'military_reserve', 'other']
 const FUTURE_ALLOWED_TYPES = ['sick', 'military_reserve']
 
 function parseDate(str) {
@@ -35,17 +50,18 @@ router.get('/', async (req, res) => {
     const { month } = req.query
 
     let query = db('absence_entries')
+      .select('id', 'user_id', 'type', 'start_date', 'end_date', 'is_partial',
+              'partial_hours', 'notes', 'document_filename', 'document_mimetype',
+              'document_uploaded_at', 'created_at', 'updated_at', 'deleted_at')
       .where({ user_id: userId })
       .whereNull('deleted_at')
       .orderBy('start_date', 'asc')
 
     if (month) {
-      const start = `${month}-01`
-      const end = `${month}-31`
-      query = query.where(function () {
-        this.whereBetween('start_date', [start, end])
-          .orWhereBetween('end_date', [start, end])
-      })
+      const [y, m] = month.split('-').map(Number)
+      const firstDay = `${month}-01`
+      const lastDay = toDateStr(new Date(y, m, 0))
+      query = query.where('start_date', '<=', lastDay).where('end_date', '>=', firstDay)
     }
 
     const absences = await query
@@ -76,7 +92,8 @@ async function validateAbsenceBody({ type, start_date, end_date, is_partial, par
   if (!FUTURE_ALLOWED_TYPES.includes(type) && start > today) {
     return { status: 400, error: 'Only sick leave and military reserve may be reported for future dates' }
   }
-  if (is_partial) {
+  // half_vacation_day is always partial with fixed 4.5 h — skip manual partial_hours validation
+  if (type !== 'half_vacation_day' && is_partial) {
     const hours = Number(partial_hours)
     if (!partial_hours || hours <= 0 || hours >= 9) {
       return { status: 400, error: 'partial_hours must be greater than 0 and less than 9 when is_partial is true' }
@@ -93,12 +110,13 @@ async function validateAbsenceBody({ type, start_date, end_date, is_partial, par
   return { clippedEndStr: toDateStr(clippedEnd) }
 }
 
-// POST /api/absences — creates a new absence entry for the authenticated user.
+// POST / — creates a new absence entry for the authenticated user.
 router.post('/', async (req, res) => {
   try {
     const { type, start_date, end_date, notes = null } = req.body
-    const is_partial = Boolean(req.body.is_partial)
-    const partial_hours = req.body.partial_hours ?? null
+    const isHalfDay = type === 'half_vacation_day'
+    const is_partial = isHalfDay ? true : Boolean(req.body.is_partial)
+    const partial_hours = isHalfDay ? 4.5 : (req.body.partial_hours ?? null)
     const userId = req.user.id
 
     const validation = await validateAbsenceBody({ type, start_date, end_date, is_partial, partial_hours })
@@ -116,7 +134,9 @@ router.post('/', async (req, res) => {
         partial_hours: is_partial ? partial_hours : null,
         notes,
       })
-      .returning('*')
+      .returning(['id', 'user_id', 'type', 'start_date', 'end_date', 'is_partial',
+                  'partial_hours', 'notes', 'document_filename', 'document_mimetype',
+                  'document_uploaded_at', 'created_at', 'updated_at', 'deleted_at'])
 
     res.status(201).json(absence)
   } catch (err) {
@@ -124,19 +144,22 @@ router.post('/', async (req, res) => {
   }
 })
 
-// PUT /api/absences/:id — updates an existing absence entry. Only the owner or an admin may update.
+// PUT /:id — updates an existing absence entry. Only the owner or an admin may update.
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { type, start_date, end_date, notes = null } = req.body
-    const is_partial = Boolean(req.body.is_partial)
-    const partial_hours = req.body.partial_hours ?? null
+    const { type, start_date, end_date } = req.body
+    const isHalfDay = type === 'half_vacation_day'
+    const is_partial = isHalfDay ? true : Boolean(req.body.is_partial)
+    const partial_hours = isHalfDay ? 4.5 : (req.body.partial_hours ?? null)
     const userId = req.user.id
 
     const existing = await db('absence_entries').where({ id }).whereNull('deleted_at').first()
     if (!existing) {
       return res.status(404).json({ error: 'Absence not found' })
     }
+
+    const notes = req.body.notes !== undefined ? req.body.notes : existing.notes
 
     if (existing.user_id !== userId && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Forbidden' })
@@ -158,7 +181,9 @@ router.put('/:id', async (req, res) => {
         notes,
         updated_at: db.fn.now(),
       })
-      .returning('*')
+      .returning(['id', 'user_id', 'type', 'start_date', 'end_date', 'is_partial',
+                  'partial_hours', 'notes', 'document_filename', 'document_mimetype',
+                  'document_uploaded_at', 'created_at', 'updated_at', 'deleted_at'])
 
     res.json(updated)
   } catch (err) {
@@ -166,5 +191,134 @@ router.put('/:id', async (req, res) => {
   }
 })
 
+// POST /:id/document — upload a supporting document; stored as BLOB in the DB.
+// Multer is invoked manually so we can return structured JSON errors.
+router.post('/:id/document', (req, res) => {
+  uploadDocument.single('document')(req, res, async (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ error: 'File exceeds the maximum size of 20 MB' })
+      }
+      if (err.code === 'INVALID_MIME_TYPE') {
+        return res.status(400).json({ error: 'Only PDF, JPEG, and PNG files are accepted' })
+      }
+      return res.status(500).json({ error: 'File upload failed' })
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file provided' })
+    }
+
+    try {
+      const { id } = req.params
+      let updated
+      await db.transaction(async (trx) => {
+        const absence = await trx('absence_entries').where({ id }).whereNull('deleted_at').forUpdate().first()
+        if (!absence) throw Object.assign(new Error('Absence not found'), { httpStatus: 404 })
+        if (absence.user_id !== req.user.id && req.user.role !== 'admin') {
+          throw Object.assign(new Error('Forbidden'), { httpStatus: 403 })
+        }
+        ;[updated] = await trx('absence_entries')
+          .where({ id })
+          .update({
+            document_data: req.file.buffer,
+            document_filename: req.file.originalname,
+            document_mimetype: req.file.mimetype,
+            document_uploaded_at: db.fn.now(),
+            updated_at: db.fn.now(),
+          })
+          .returning(['id', 'user_id', 'type', 'start_date', 'end_date', 'is_partial',
+                      'partial_hours', 'notes', 'document_filename', 'document_mimetype',
+                      'document_uploaded_at', 'created_at', 'updated_at', 'deleted_at'])
+      })
+      res.json(updated)
+    } catch (dbErr) {
+      if (dbErr.httpStatus) return res.status(dbErr.httpStatus).json({ error: dbErr.message })
+      res.status(500).json({ error: 'Internal server error' })
+    }
+  })
+})
+
+// GET /:id/document — streams the stored BLOB back to the client.
+router.get('/:id/document', async (req, res) => {
+  try {
+    const { id } = req.params
+    const absence = await db('absence_entries')
+      .select('user_id', 'document_data', 'document_filename', 'document_mimetype')
+      .where({ id })
+      .whereNull('deleted_at')
+      .first()
+
+    if (!absence || !absence.document_data) {
+      return res.status(404).json({ error: 'Document not found' })
+    }
+
+    if (absence.user_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    res.set('Content-Type', absence.document_mimetype || 'application/octet-stream')
+    res.set('Content-Disposition', `inline; filename="${absence.document_filename || 'document'}"`)
+    res.send(absence.document_data)
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// DELETE /:id — soft-deletes the absence entry. Only owner or admin; month-lock respected.
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const existing = await db('absence_entries').where({ id }).whereNull('deleted_at').first()
+    if (!existing) {
+      return res.status(404).json({ error: 'Absence not found' })
+    }
+    if (existing.user_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+    const d = new Date(existing.start_date)
+    const lock = await db('month_locks').where({ year: d.getFullYear(), month: d.getMonth() + 1 }).first()
+    if (lock) {
+      return res.status(423).json({ error: 'This month is locked and cannot be modified' })
+    }
+    await db('absence_entries').where({ id }).update({ deleted_at: db.fn.now(), updated_at: db.fn.now() })
+    res.status(204).send()
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// DELETE /:id/document — removes the stored document from the DB record.
+router.delete('/:id/document', async (req, res) => {
+  try {
+    const { id } = req.params
+    const absence = await db('absence_entries').where({ id }).whereNull('deleted_at').first()
+
+    if (!absence || !absence.document_data) {
+      return res.status(404).json({ error: 'Absence or document not found' })
+    }
+
+    if (absence.user_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    const [updated] = await db('absence_entries')
+      .where({ id })
+      .update({
+        document_data: null,
+        document_filename: null,
+        document_mimetype: null,
+        document_uploaded_at: null,
+        updated_at: db.fn.now(),
+      })
+      .returning(['id', 'user_id', 'type', 'start_date', 'end_date', 'is_partial',
+                  'partial_hours', 'notes', 'document_filename', 'document_mimetype',
+                  'document_uploaded_at', 'created_at', 'updated_at', 'deleted_at'])
+
+    res.json(updated)
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
 
 module.exports = router
