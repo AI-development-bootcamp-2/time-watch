@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"c:\\\\Users\\\\gavri\\\\Desktop\\\\Gavriela\\\\AI Bootcamp abra\\\\The Final Project\\\\time-watch\" checkout -- backend/knexfile.cjs backend/migrations/ db/migrations/ db/schema.sql)"
+    ]
+  }
+}

@@ -1,2 +1,0 @@
--- Full DDL — tables, indexes, constraints
--- Populated via migrations in db/migrations/
