@@ -226,6 +226,28 @@ describe('GET /api/auth/me', () => {
   });
 });
 
+describe('Global auth middleware — public path exemptions', () => {
+  it('POST /api/auth/login is reachable without a cookie (reaches the controller)', async () => {
+    // Invalid email format triggers 400 VALIDATION_ERROR — proves the request
+    // was not blocked by the auth middleware with 401 UNAUTHENTICATED.
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'not-an-email', password: '' });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('GET /api/health is reachable without a cookie', async () => {
+    const res = await request(app).get('/api/health');
+    expect(res.status).toBe(200);
+  });
+
+  it('GET /api-docs is reachable without a cookie', async () => {
+    const res = await request(app).get('/api-docs');
+    expect(res.status).not.toBe(401);
+  });
+});
+
 describe('POST /api/auth/logout', () => {
   it('200 — with a valid cookie clears it and returns success message', async () => {
     await insertUser();
