@@ -13,6 +13,9 @@ node_modules/
 frontend/dist/
 backend/dist/
 
+# Local DB files
+db/
+
 # Coverage
 coverage/
 
