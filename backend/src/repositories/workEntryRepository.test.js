@@ -5,21 +5,24 @@
 //
 // getMonthlyEntries builds this chain:
 //   knex('work_entries')
-//     .join(...)
-//     .join(...)
-//     .join(...)
+//     .join(...)  x3
 //     .where(...)
-//     .andWhere(...)
-//     .andWhere(...)
+//     .andWhere(...)  x2
 //     .whereNull(...)
 //     .select(...)
-//     .orderBy(...)
+//     .orderBy(...)  x2
+//
+// getMonthlyAbsences builds this chain:
+//   knex('absences')
+//     .where(...)
+//     .andWhere(...)  x2
+//     .whereNull(...)
 //     .orderBy(...)
 //
-// Every method returns the same builder object so chaining works regardless
-// of call order.  The final .orderBy() call resolves the promise (the
-// awaited value), so mockOrderBy is the one we control per test.
+// Two separate builder families are used so the chains don't share state.
 // ---------------------------------------------------------------------------
+
+// ---- work_entries builder (getMonthlyEntries) ----
 
 const mockOrderBy = jest.fn()
 const mockSelect = jest.fn(() => ({ orderBy: mockOrderBy }))
@@ -48,11 +51,30 @@ mockJoin.mockImplementation(() => ({
   where: mockWhere,
 }))
 
-const mockKnex = jest.fn(() => ({ join: mockJoin }))
+// ---- absences builder (getMonthlyAbsences) ----
+
+const mockAbsOrderBy = jest.fn()
+const mockAbsWhereNull = jest.fn(() => ({ orderBy: mockAbsOrderBy }))
+const mockAbsAndWhere = jest.fn()
+const mockAbsWhere = jest.fn(() => ({ andWhere: mockAbsAndWhere }))
+
+mockAbsAndWhere.mockImplementation(() => ({
+  andWhere: mockAbsAndWhere,
+  whereNull: mockAbsWhereNull,
+}))
+
+// ---- table-aware knex mock ----
+
+const mockKnex = jest.fn((table) => {
+  if (table === 'absences') {
+    return { where: mockAbsWhere }
+  }
+  return { join: mockJoin }
+})
 
 jest.mock('../db/knex', () => mockKnex)
 
-const { getMonthlyEntries } = require('./workEntryRepository')
+const { getMonthlyEntries, getMonthlyAbsences } = require('./workEntryRepository')
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -62,6 +84,8 @@ beforeEach(() => {
   jest.clearAllMocks()
 
   // Re-apply default chain implementations after clearAllMocks wipes them.
+
+  // work_entries chain
   mockJoin.mockImplementation(() => ({ join: mockJoin, where: mockWhere }))
   mockAndWhere.mockImplementation(() => ({
     andWhere: mockAndWhere,
@@ -71,6 +95,22 @@ beforeEach(() => {
   mockSelect.mockImplementation(() => ({ orderBy: mockOrderBy }))
   mockOrderBy.mockImplementation(() => ({ orderBy: mockOrderBy2 }))
   mockOrderBy2.mockResolvedValue([]) // default: empty result
+
+  // absences chain
+  mockAbsAndWhere.mockImplementation(() => ({
+    andWhere: mockAbsAndWhere,
+    whereNull: mockAbsWhereNull,
+  }))
+  mockAbsWhereNull.mockImplementation(() => ({ orderBy: mockAbsOrderBy }))
+  mockAbsOrderBy.mockResolvedValue([]) // default: empty result
+
+  // Re-apply table-aware knex dispatch
+  mockKnex.mockImplementation((table) => {
+    if (table === 'absences') {
+      return { where: mockAbsWhere }
+    }
+    return { join: mockJoin }
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -182,5 +222,82 @@ describe('getMonthlyEntries', () => {
     expect(selectArgs).toContain('projects.name as project_name')
     expect(selectArgs).toContain('clients.name as client_name')
     expect(selectArgs).toContain('work_entries.*')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// getMonthlyAbsences
+// ---------------------------------------------------------------------------
+
+describe('getMonthlyAbsences', () => {
+  test('queries the absences table', async () => {
+    await getMonthlyAbsences(5, '2025-05')
+
+    expect(mockKnex).toHaveBeenCalledWith('absences')
+  })
+
+  test('filters by userId', async () => {
+    await getMonthlyAbsences(5, '2025-05')
+
+    expect(mockAbsWhere).toHaveBeenCalledWith('user_id', 5)
+  })
+
+  test('filters by correct month date range boundaries', async () => {
+    await getMonthlyAbsences(5, '2025-05')
+
+    expect(mockAbsAndWhere).toHaveBeenCalledWith('start_date', '>=', '2025-05-01')
+    expect(mockAbsAndWhere).toHaveBeenCalledWith('start_date', '<=', '2025-05-31')
+  })
+
+  test('filters by the correct month boundaries for a 28-day month (Feb non-leap year)', async () => {
+    await getMonthlyAbsences(1, '2025-02')
+
+    expect(mockAbsAndWhere).toHaveBeenCalledWith('start_date', '>=', '2025-02-01')
+    expect(mockAbsAndWhere).toHaveBeenCalledWith('start_date', '<=', '2025-02-28')
+  })
+
+  test('filters by the correct month boundaries for a 29-day month (Feb leap year)', async () => {
+    await getMonthlyAbsences(1, '2024-02')
+
+    expect(mockAbsAndWhere).toHaveBeenCalledWith('start_date', '>=', '2024-02-01')
+    expect(mockAbsAndWhere).toHaveBeenCalledWith('start_date', '<=', '2024-02-29')
+  })
+
+  test('excludes soft-deleted rows by filtering whereNull(deleted_at)', async () => {
+    await getMonthlyAbsences(5, '2025-05')
+
+    expect(mockAbsWhereNull).toHaveBeenCalledWith('deleted_at')
+  })
+
+  test('returns the rows resolved by the chain', async () => {
+    const absence = {
+      id: 10,
+      user_id: 5,
+      type: 'חופשה',
+      start_date: '2025-05-10',
+      end_date: '2025-05-12',
+      is_partial_day: false,
+      deleted_at: null,
+    }
+
+    mockAbsOrderBy.mockResolvedValueOnce([absence])
+
+    const result = await getMonthlyAbsences(5, '2025-05')
+
+    expect(result).toEqual([absence])
+  })
+
+  test('returns an empty array when there are no absences for the month', async () => {
+    mockAbsOrderBy.mockResolvedValueOnce([])
+
+    const result = await getMonthlyAbsences(5, '2025-06')
+
+    expect(result).toEqual([])
+  })
+
+  test('orders results by start_date ascending', async () => {
+    await getMonthlyAbsences(5, '2025-05')
+
+    expect(mockAbsOrderBy).toHaveBeenCalledWith('start_date', 'asc')
   })
 })

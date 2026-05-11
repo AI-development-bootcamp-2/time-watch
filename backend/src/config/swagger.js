@@ -6,7 +6,7 @@ const options = {
     info: {
       title: 'Time Watch API',
       version: '1.0.0',
-      description: 'מערכת דיווחי שעות — REST API',
+      description: 'system of work— REST API',
     },
     servers: [{ url: 'http://localhost:3000' }],
     components: {

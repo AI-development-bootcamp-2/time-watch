@@ -41,4 +41,29 @@ async function getMonthlyEntries(userId, month) {
   return rows
 }
 
-module.exports = { getMonthlyEntries }
+/**
+ * Fetch all absences for a given user within a calendar month.
+ *
+ * @param {number} userId
+ * @param {string} month - Calendar month in "YYYY-MM" format (e.g. "2025-05")
+ * @returns {Promise<object[]>} Array of absence rows ordered by start_date ascending.
+ */
+async function getMonthlyAbsences(userId, month) {
+  const [year, mon] = month.split('-').map(Number)
+  const firstDay = new Date(Date.UTC(year, mon - 1, 1))
+  const lastDay = new Date(Date.UTC(year, mon, 0)) // day 0 of next month = last day of this month
+
+  const firstStr = firstDay.toISOString().slice(0, 10) // "YYYY-MM-01"
+  const lastStr = lastDay.toISOString().slice(0, 10)   // "YYYY-MM-DD"
+
+  const rows = await knex('absences')
+    .where('user_id', userId)
+    .andWhere('start_date', '>=', firstStr)
+    .andWhere('start_date', '<=', lastStr)
+    .whereNull('deleted_at')
+    .orderBy('start_date', 'asc')
+
+  return rows
+}
+
+module.exports = { getMonthlyEntries, getMonthlyAbsences }
