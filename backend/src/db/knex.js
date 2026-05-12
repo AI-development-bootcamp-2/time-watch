@@ -6,16 +6,7 @@ const config = knexConfigs[nodeEnv] || knexConfigs.development;
 
 const db = knex(config);
 
-async function runMigrations(database = db) {
-  return database.migrate.latest();
-}
+db.runMigrations = async (database = db) => database.migrate.latest();
+db.closeDatabase  = async (database = db) => database.destroy();
 
-async function closeDatabase(database = db) {
-  return database.destroy();
-}
-
-module.exports = {
-  db,
-  runMigrations,
-  closeDatabase
-};
+module.exports = db;
