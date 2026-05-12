@@ -69,10 +69,11 @@ describe('usersRepository.findByEmail', () => {
     expect(found).toBeUndefined();
   });
 
-  it('returns undefined for an inactive user (is_active = false)', async () => {
+  it('returns the user row even when is_active = false (is_active guard moved to service)', async () => {
     await db('users').insert({ ...sample, is_active: false });
     const found = await findByEmail(sample.email);
-    expect(found).toBeUndefined();
+    expect(found).toBeDefined();
+    expect(found.is_active).toBe(false);
   });
 });
 

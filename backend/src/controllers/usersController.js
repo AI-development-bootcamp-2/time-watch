@@ -2,7 +2,7 @@
 
 const { createUser, listUsers, updateUser, deactivateUser } = require('../services/usersService');
 const { validateCreateUser, validateUpdateUser } = require('../utils/validate');
-const { ValidationError } = require('../utils/errors');
+const { ValidationError, NotFoundError } = require('../utils/errors');
 
 async function create(req, res, next) {
   try {
@@ -16,34 +16,40 @@ async function create(req, res, next) {
   }
 }
 
-// GET /api/users — list all users (admin only)
+// Returns all non-deleted users; admin only
 async function list(req, res, next) {
   try {
     const users = await listUsers();
-    res.json(users);
+    res.status(200).json(users);
   } catch (err) {
     next(err);
   }
 }
 
-// PUT /api/users/:id — update a user (admin only)
+// Updates full_name/email/role (and optionally password) for a user; admin only
 async function update(req, res, next) {
   try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return next(new NotFoundError('המשתמש לא נמצא'));
+
     const { valid, errors } = validateUpdateUser(req.body);
     if (!valid) return next(new ValidationError(errors));
 
-    const user = await updateUser(Number(req.params.id), req.body);
-    res.json(user);
+    const user = await updateUser(id, req.body);
+    res.status(200).json(user);
   } catch (err) {
     next(err);
   }
 }
 
-// PATCH /api/users/:id/deactivate — soft-deactivate a user (admin only)
+// Soft-deactivates a user; admin only
 async function deactivate(req, res, next) {
   try {
-    const user = await deactivateUser(Number(req.params.id));
-    res.json(user);
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return next(new NotFoundError('המשתמש לא נמצא'));
+
+    const user = await deactivateUser(id);
+    res.status(200).json(user);
   } catch (err) {
     next(err);
   }
