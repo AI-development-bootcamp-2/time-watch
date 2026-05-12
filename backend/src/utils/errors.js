@@ -21,6 +21,12 @@ class ConflictError extends AppError {
   }
 }
 
+class NotFoundError extends AppError {
+  constructor(message = 'לא נמצא') {
+    super(404, 'NOT_FOUND', message);
+  }
+}
+
 class UnauthorizedError extends AppError {
   constructor(message = 'נדרשת התחברות') {
     super(401, 'UNAUTHENTICATED', message);
@@ -50,6 +56,7 @@ module.exports = {
   AppError,
   ValidationError,
   ConflictError,
+  NotFoundError,
   UnauthorizedError,
   ForbiddenError,
   InvalidCredentialsError,

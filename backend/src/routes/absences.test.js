@@ -6,7 +6,7 @@
 
 const request = require('supertest')
 const jwt = require('jsonwebtoken')
-const { db } = require('../db/knex')
+const db = require('../db/knex')
 const { createApp } = require('../app')
 
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret'

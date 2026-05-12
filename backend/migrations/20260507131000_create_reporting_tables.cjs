@@ -55,11 +55,11 @@ exports.up = async function up(knex) {
     await ensureColumn(knex, "timer_state", "deleted_at", (table) => table.timestamp("deleted_at", { useTz: true }).nullable());
   }
 
-  if (!(await knex.schema.hasTable("absences"))) {
-    await knex.schema.createTable("absences", (table) => {
+  if (!(await knex.schema.hasTable("absence_entries"))) {
+    await knex.schema.createTable("absence_entries", (table) => {
       table.increments("id").primary();
       table.integer("user_id").unsigned().notNullable().references("id").inTable("users").onDelete("RESTRICT");
-      table.enu("type", ["חופשה", "מחלה", "מילואים", "אחר"]).notNullable();
+      table.enu("type", ["vacation", "half_vacation_day", "sick", "military_reserve", "other"]).notNullable();
       table.date("start_date").notNullable();
       table.date("end_date").notNullable();
       table.boolean("is_partial").notNullable().defaultTo(false);
@@ -72,22 +72,22 @@ exports.up = async function up(knex) {
       table.index(["type"]);
     });
   } else {
-    await ensureColumn(knex, "absences", "partial_hours", (table) => table.decimal("partial_hours", 4, 2).nullable());
-    await ensureColumn(knex, "absences", "document_uploaded_at", (table) => table.timestamp("document_uploaded_at", { useTz: true }).nullable());
-    await ensureColumn(knex, "absences", "notes", (table) => table.text("notes").nullable());
-    await ensureColumn(knex, "absences", "updated_at", (table) => table.timestamp("updated_at", { useTz: true }).notNullable().defaultTo(knex.fn.now()));
-    await ensureColumn(knex, "absences", "deleted_at", (table) => table.timestamp("deleted_at", { useTz: true }).nullable());
+    await ensureColumn(knex, "absence_entries", "partial_hours", (table) => table.decimal("partial_hours", 4, 2).nullable());
+    await ensureColumn(knex, "absence_entries", "document_uploaded_at", (table) => table.timestamp("document_uploaded_at", { useTz: true }).nullable());
+    await ensureColumn(knex, "absence_entries", "notes", (table) => table.text("notes").nullable());
+    await ensureColumn(knex, "absence_entries", "updated_at", (table) => table.timestamp("updated_at", { useTz: true }).notNullable().defaultTo(knex.fn.now()));
+    await ensureColumn(knex, "absence_entries", "deleted_at", (table) => table.timestamp("deleted_at", { useTz: true }).nullable());
   }
 
   await knex.schema.raw("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'work_entries_time_order_check') THEN ALTER TABLE work_entries ADD CONSTRAINT work_entries_time_order_check CHECK (end_time > start_time); END IF; END $$");
   await knex.schema.raw("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'work_entries_duration_positive_check') THEN ALTER TABLE work_entries ADD CONSTRAINT work_entries_duration_positive_check CHECK (duration_hours >= 0 AND duration_hours <= 24); END IF; END $$");
   await knex.schema.raw("CREATE UNIQUE INDEX IF NOT EXISTS timer_state_one_active_per_user ON timer_state (user_id) WHERE deleted_at IS NULL");
-  await knex.schema.raw("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'absences_date_order_check') THEN ALTER TABLE absences ADD CONSTRAINT absences_date_order_check CHECK (end_date >= start_date); END IF; END $$");
-  await knex.schema.raw("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'absences_partial_hours_check') THEN ALTER TABLE absences ADD CONSTRAINT absences_partial_hours_check CHECK ((is_partial = false AND partial_hours IS NULL) OR (is_partial = true AND partial_hours > 0 AND partial_hours < 9)); END IF; END $$");
+  await knex.schema.raw("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'absence_entries_date_order_check') THEN ALTER TABLE absence_entries ADD CONSTRAINT absence_entries_date_order_check CHECK (end_date >= start_date); END IF; END $$");
+  await knex.schema.raw("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'absence_entries_partial_hours_check') THEN ALTER TABLE absence_entries ADD CONSTRAINT absence_entries_partial_hours_check CHECK ((is_partial = false AND partial_hours IS NULL) OR (is_partial = true AND partial_hours > 0 AND partial_hours < 9)); END IF; END $$");
 };
 
 exports.down = async function down(knex) {
-  await knex.schema.dropTableIfExists("absences");
+  await knex.schema.dropTableIfExists("absence_entries");
   await knex.schema.dropTableIfExists("timer_state");
   await knex.schema.dropTableIfExists("work_entries");
 };

@@ -54,7 +54,7 @@ const NAV_ITEMS: { to: string; label: string; end?: boolean; icon: ReactNode }[]
 
 export default function Layout() {
   const navigate = useNavigate()
-  const { user } = useAuth() as { user: { role: string } | null }
+  const { user, logout } = useAuth() as { user: { role: string } | null; logout: () => Promise<void> }
   const [timerStarting, setTimerStarting] = useState(false)
 
   async function handleStartTimer() {
@@ -144,7 +144,7 @@ export default function Layout() {
 
         {/* LEFT (RTL flex-end): יציאה */}
         <button
-          onClick={() => navigate('/login')}
+          onClick={async () => { await logout(); navigate('/login') }}
           className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-800 min-h-[40px] px-1 transition-colors"
         >
           יציאה

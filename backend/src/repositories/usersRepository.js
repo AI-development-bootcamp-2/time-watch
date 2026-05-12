@@ -1,6 +1,6 @@
 'use strict';
 
-const { db } = require('../db/knex');
+const db = require('../db/knex');
 
 const SAFE_COLUMNS = ['id', 'full_name', 'email', 'role', 'is_active', 'created_at'];
 const MAX_FAILED_ATTEMPTS = 3;
@@ -53,4 +53,32 @@ async function resetLockout(id) {
   return row;
 }
 
-module.exports = { findByEmail, findById, create, incrementFailedAttempts, resetLockout };
+// Returns all non-deleted users ordered alphabetically
+async function findAll() {
+  return db('users')
+    .whereNull('deleted_at')
+    .select(SAFE_COLUMNS)
+    .orderBy('full_name', 'asc');
+}
+
+// Updates arbitrary fields on a non-deleted user; returns updated row or undefined
+async function update(id, fields) {
+  const [user] = await db('users')
+    .where({ id })
+    .whereNull('deleted_at')
+    .update({ ...fields, updated_at: db.raw('NOW()') })
+    .returning(SAFE_COLUMNS);
+  return user;
+}
+
+// Counts active admins (used by last-admin guard before deactivation)
+async function countActiveAdmins() {
+  const result = await db('users')
+    .where({ role: 'admin', is_active: true })
+    .whereNull('deleted_at')
+    .count('id as count')
+    .first();
+  return parseInt(result.count, 10);
+}
+
+module.exports = { findByEmail, findById, findAll, create, update, countActiveAdmins, incrementFailedAttempts, resetLockout };
