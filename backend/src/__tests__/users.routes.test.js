@@ -287,6 +287,52 @@ describe('PUT /api/users/:id', () => {
     expect(res.status).toBe(403);
     expect(res.body.code).toBe('FORBIDDEN');
   });
+
+  it('400 — non-numeric id → 404', async () => {
+    const res = await request(app)
+      .put('/api/users/not-a-number')
+      .set('Cookie', adminCookie())
+      .send({ full_name: 'שרה כהן', email: 'sarah@example.com', role: 'employee' });
+
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe('NOT_FOUND');
+  });
+
+  it('400 — missing full_name', async () => {
+    const res = await request(app)
+      .put(`/api/users/${userId}`)
+      .set('Cookie', adminCookie())
+      .send({ email: 'sarah@example.com', role: 'employee' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field: 'full_name' })])
+    );
+  });
+
+  it('400 — invalid email format', async () => {
+    const res = await request(app)
+      .put(`/api/users/${userId}`)
+      .set('Cookie', adminCookie())
+      .send({ full_name: 'שרה כהן', email: 'not-an-email', role: 'employee' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field: 'email' })])
+    );
+  });
+
+  it('400 — invalid role', async () => {
+    const res = await request(app)
+      .put(`/api/users/${userId}`)
+      .set('Cookie', adminCookie())
+      .send({ full_name: 'שרה כהן', email: 'sarah@example.com', role: 'superuser' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field: 'role' })])
+    );
+  });
 });
 
 describe('PATCH /api/users/:id/deactivate', () => {

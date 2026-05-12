@@ -97,6 +97,6 @@
 
 ## 9. [Backend] Verification
 
-- [ ] 9.1 Run `npm test` from `backend/` — all tests pass, no regressions
-- [ ] 9.2 Confirm new-code coverage is ≥ 80% (check Jest output per-file)
-- [ ] 9.3 Verify Swagger docs at `/api-docs` reflect all four user endpoints and `POST /api/auth/change-password` with request body, response schemas, and all error status examples
+- [x] 9.1 Run `npm test` from `backend/` — all tests pass, no regressions
+- [x] 9.2 Confirm new-code coverage is ≥ 80% (check Jest output per-file)
+- [x] 9.3 Verify Swagger docs at `/api-docs` reflect all four user endpoints and `POST /api/auth/change-password` with request body, response schemas, and all error status examples
