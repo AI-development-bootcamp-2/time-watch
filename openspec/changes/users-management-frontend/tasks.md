@@ -152,18 +152,18 @@ Context: Follow the modal shell pattern from `frontend/src/features/daily-report
 
 Context: The current stub is `frontend/src/features/admin/UsersPage.tsx`. Rename it to `UsersPage.jsx`, update the import in `frontend/src/App.tsx` accordingly, then replace the stub content entirely. Follow the desktop RTL admin layout pattern — use Tailwind for spacing/layout; plain elements (no extra CSS file unless styling can't be expressed in Tailwind).
 
-- [ ] On mount: call `getUsers()` from `usersApi.js`; set `users`, `loading`, and `loadError` state
-- [ ] Render a loading spinner while fetching; render an inline error on `loadError`
-- [ ] Render the filter bar: three buttons/tabs "הכל" | "פעיל" | "לא פעיל"; active filter highlighted (blue-600 pill, matching `AdminLayout` active tab style); filter applied client-side
-- [ ] Render the "הוסף משתמש" button (top-left in RTL = visually top-right) that opens `UserModal` in create mode
-- [ ] Render a `<table dir="rtl">` with columns:
+- [x] On mount: call `getUsers()` from `usersApi.js`; set `users`, `loading`, and `loadError` state
+- [x] Render a loading spinner while fetching; render an inline error on `loadError`
+- [x] Render the filter bar: three buttons/tabs "הכל" | "פעיל" | "לא פעיל"; active filter highlighted (blue-600 pill, matching `AdminLayout` active tab style); filter applied client-side
+- [x] Render the "הוסף משתמש" button (top-left in RTL = visually top-right) that opens `UserModal` in create mode
+- [x] Render a `<table dir="rtl">` with columns:
   - שם מלא
   - אימייל
   - תפקיד (display in Hebrew: "עובד" / "אדמין")
   - סטטוס (badge: active = green pill "פעיל", inactive = grey pill "לא פעיל")
-- [ ] Each row is clickable: clicking opens `UserModal` in edit mode with that user's data
-- [ ] `UserModal` receives an `onSaved` callback that closes the modal and re-fetches the users list (call `getUsers()` again)
-- [ ] Write tests:
+- [x] Each row is clickable: clicking opens `UserModal` in edit mode with that user's data
+- [x] `UserModal` receives an `onSaved` callback that closes the modal and re-fetches the users list (call `getUsers()` again)
+- [x] Write tests:
   - Renders table rows after successful fetch
   - "פעיל" filter hides inactive rows
   - "לא פעיל" filter hides active rows
