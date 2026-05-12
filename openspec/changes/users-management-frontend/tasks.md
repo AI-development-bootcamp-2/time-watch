@@ -91,15 +91,15 @@ Context: The `NAV_ITEMS` array includes an `/admin` entry shown to all users. Th
 
 Context: Mirrors the validation pattern in `backend/src/utils/validate.js` and the form-level validation used in `frontend/src/features/auth/LoginForm.jsx`. Returns `{ valid, errors }` where `errors` is `{ [field]: string }`.
 
-- [ ] Create `validateUserForm.js` with a named export `validateUserForm(fields, isCreate)`
+- [x] Create `validateUserForm.js` with a named export `validateUserForm(fields, isCreate)`
   - `fields`: `{ full_name, email, role, password }`
   - `isCreate`: `boolean` — password is required only on create
-- [ ] Validate `full_name`: required → `'שדה חובה'`
-- [ ] Validate `email`: required → `'שדה חובה'`; format (RFC-style regex) → `'אימייל לא תקין'`
-- [ ] Validate `password` when `isCreate === true` or when `password` is non-empty:
+- [x] Validate `full_name`: required → `'שדה חובה'`
+- [x] Validate `email`: required → `'שדה חובה'`; format (RFC-style regex) → `'אימייל לא תקין'`
+- [x] Validate `password` when `isCreate === true` or when `password` is non-empty:
   - Required on create → `'שדה חובה'`
   - Complexity (≥8 chars, uppercase, lowercase, digit, special char) → `'הסיסמה חייבת לכלול: <list>'`
-- [ ] Write unit tests covering all validation branches (valid/invalid for each field, create vs edit mode)
+- [x] Write unit tests covering all validation branches (valid/invalid for each field, create vs edit mode)
 
 ---
 
