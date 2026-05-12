@@ -71,13 +71,13 @@ Key constraints from the course spec:
 
 ---
 
-### D5: File uploads stored on local Docker volume (dev) 
+### D5: File uploads stored as BLOBs in PostgreSQL
 
-**Decision:** Use `multer` for multipart upload handling. In dev, files land in a mounted Docker volume. The backend serves them via a static route. Production deployment can swap to S3/R2/GCS by changing the storage adapter.
+**Decision:** Use `multer` with `memoryStorage()` for multipart upload handling. The file buffer is stored directly in the `absence_entries` table as a `bytea` column (`document_data`), alongside `document_filename` and `document_mimetype`. A dedicated `GET /api/absences/:id/document` endpoint streams the BLOB back to the client. No files are written to disk.
 
-**Rationale:** Keep dev simple. One file per absence, replaceable, max 20MB (PDF or image).
+**Rationale:** Eliminates the need for a mounted Docker volume, a static file route, and orphan-file cleanup logic. All document lifecycle (upload, replace, delete) is a single DB transaction. Works identically in dev and production without any storage adapter swap.
 
-**Alternatives considered:** Store blobs in PostgreSQL — rejected (bloat, poor performance for files this size).
+**Alternatives considered:** Local Docker volume — initially chosen, then replaced; required `fs.unlink` cleanup on every replace/delete/404 path and made tests dependent on real disk I/O. Cloud bucket (S3/R2) — overkill for a course project with small files (≤20 MB) and low concurrency.
 
 ---
 
@@ -206,7 +206,6 @@ time-watch/
 │   └── migrations/               # Incremental migration files
 │       └── 001_initial_schema.sql
 │
-└── uploads/                      # Local dev volume for document uploads
 ```
 
 ### Key Conventions
@@ -215,7 +214,7 @@ time-watch/
 - **Feature folders**: each feature owns its pages, components, and state slice — no cross-feature imports except through `services/` or `types/`.
 - **Backend layers**: routes → controllers → services → repositories. Controllers never touch the DB directly.
 - **Soft deletes**: all domain tables have an `is_active` (or `deleted_at`) column; hard deletes are never used.
-- **Uploads**: stored under `uploads/` in development (Docker volume); production uses a cloud bucket (TBD).
+- **Documents**: stored as `bytea` BLOBs in the `absence_entries` table; served via `GET /api/absences/:id/document`. No disk I/O required.
 - **Tests**: co-located with source files (`*.test.js`) or in a `__tests__/` folder per feature.
 
 ## Migration Plan

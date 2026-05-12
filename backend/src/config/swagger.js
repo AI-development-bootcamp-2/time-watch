@@ -1,57 +1,56 @@
-const swaggerJsdoc = require('swagger-jsdoc')
+'use strict';
 
-const options = {
+const swaggerJsdoc = require('swagger-jsdoc');
+
+const spec = swaggerJsdoc({
   definition: {
     openapi: '3.0.0',
-    info: {
-      title: 'Time Watch API',
-      version: '1.0.0',
-      description: 'system of work— REST API',
-    },
+    info: { title: 'Time Watch API', version: '1.0.0' },
     servers: [{ url: 'http://localhost:3000' }],
     components: {
       securitySchemes: {
-        cookieAuth: {
-          type: 'apiKey',
-          in: 'cookie',
-          name: 'token',
-        },
+        cookieAuth: { type: 'apiKey', in: 'cookie', name: 'token' },
       },
       schemas: {
-        TimerState: {
+        User: {
           type: 'object',
           properties: {
-            id:         { type: 'integer' },
-            user_id:    { type: 'integer' },
-            start_time: { type: 'string', format: 'date-time' },
-            date:       { type: 'string', format: 'date' },
+            id:         { type: 'string', format: 'uuid' },
+            full_name:  { type: 'string' },
+            email:      { type: 'string', format: 'email' },
+            role:       { type: 'string', enum: ['employee', 'admin'] },
+            is_active:  { type: 'boolean' },
             created_at: { type: 'string', format: 'date-time' },
           },
         },
-        WorkEntry: {
+        ErrorResponse: {
           type: 'object',
           properties: {
-            id:          { type: 'integer' },
-            user_id:     { type: 'integer' },
-            task_id:     { type: 'integer' },
-            date:        { type: 'string', format: 'date' },
-            location:    { type: 'string', enum: ['משרד', 'לקוח', 'בית'] },
-            start_time:  { type: 'string', example: '09:00' },
-            end_time:    { type: 'string', example: '18:00' },
-            description: { type: 'string' },
-            created_at:  { type: 'string', format: 'date-time' },
+            code:    { type: 'string' },
+            message: { type: 'string' },
           },
         },
-        Error: {
+        ValidationErrorResponse: {
           type: 'object',
           properties: {
+            code:    { type: 'string', example: 'VALIDATION_ERROR' },
             message: { type: 'string' },
+            details: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  field:   { type: 'string' },
+                  message: { type: 'string' },
+                },
+              },
+            },
           },
         },
       },
     },
   },
   apis: ['./src/routes/*.js'],
-}
+});
 
-module.exports = swaggerJsdoc(options)
+module.exports = spec;

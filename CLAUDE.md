@@ -91,3 +91,7 @@ Implement in this sequence (per spec roadmap):
 - `main`/`master` is branch-protected — no direct pushes
 - All changes via Pull Requests with at least 1 code review before merge
 - All CI tests must pass before merge
+
+## General
+
+- add short comments on top of evey function you create to describe what it's doing, keep it short-not more than one line

@@ -7,28 +7,6 @@ node_modules/
 # Environment
 .env
 .env.local
-.env.example
 
-# Build output
+# Frontend build output
 frontend/dist/
-backend/dist/
-
-# Local DB files
-db/
-
-# Coverage
-coverage/
-
-# Logs
-*.log
-npm-debug.log*
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Local DB files
-db/
-
-# Personal planning (local only)
-openspec/nadav/
