@@ -1,15 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import ReportForm from './ReportForm.jsx'
 import { apiFetch } from '../../api/client.js'
+import { useAuth } from '../../hooks/useAuth'
+import { toIsoDate } from '../../utils/date.js'
 import './ReportForm.css'
-
-function toIsoDate(date) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
 
 function buildWorkBody(payload) {
   const { date, entryTime, exitTime, projects } = payload
@@ -30,17 +24,17 @@ function buildWorkBody(payload) {
 
 function buildAbsenceBody(payload) {
   return {
-    type: payload.type,
-    startDate: payload.startDate,
-    endDate: payload.endDate,
-    partialDay: payload.partialDay,
-    notes: payload.notes,
-    documentName: payload.documentName,
+    type:          payload.type,
+    start_date:    payload.startDate,
+    end_date:      payload.endDate,
+    is_partial:    payload.partialDay ?? false,
+    partial_hours: payload.partialHours ?? null,
+    notes:         payload.notes ?? null,
   }
 }
 
 export default function DailyReportPage() {
-  const navigate = useNavigate()
+  const { logout } = useAuth()
   const [status, setStatus] = useState({ kind: 'idle' })
 
   // Auto-dismiss success banner after a few seconds
@@ -67,8 +61,7 @@ export default function DailyReportPage() {
       setStatus({ kind: 'success', message: 'הדיווח נשמר בהצלחה' })
     } catch (err) {
       if (err.status === 401) {
-        // clearToken already fired in apiFetch; PrivateRoute will redirect on re-render
-        navigate('/login', { replace: true })
+        await logout() // clears AuthContext user → ProtectedRoute redirects to /login
         return
       }
       setStatus({ kind: 'error', message: err.message || 'שמירה נכשלה' })
@@ -76,9 +69,7 @@ export default function DailyReportPage() {
   }
 
   const handleClose = () => {
-    // No upstream page yet; '/' redirects right back here, so this is a no-op
-    // until a dashboard exists. Wire to navigate('/dashboard') once available.
-    navigate('/')
+    // No-op until a dashboard route exists — wire to navigate('/dashboard') then.
   }
 
   return (
