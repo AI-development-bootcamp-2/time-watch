@@ -50,11 +50,6 @@ describe('create mode', () => {
     expect(screen.getByLabelText('סיסמה')).toHaveValue('')
   })
 
-  it('defaults status to active in create mode', () => {
-    renderModal({ user: null, onClose: vi.fn(), onSaved: vi.fn() })
-    expect(screen.getByRole('checkbox')).toBeChecked()
-  })
-
   it('deactivate button is absent in create mode', () => {
     renderModal({ user: null, onClose: vi.fn(), onSaved: vi.fn() })
     expect(screen.queryByText('השבת משתמש')).not.toBeInTheDocument()

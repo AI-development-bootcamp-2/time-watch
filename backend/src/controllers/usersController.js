@@ -1,6 +1,6 @@
 'use strict';
 
-const { createUser, listUsers, updateUser, deactivateUser } = require('../services/usersService');
+const { createUser, listUsers, updateUser, deactivateUser, activateUser } = require('../services/usersService');
 const { validateCreateUser, validateUpdateUser } = require('../utils/validate');
 const { ValidationError, NotFoundError } = require('../utils/errors');
 
@@ -55,4 +55,16 @@ async function deactivate(req, res, next) {
   }
 }
 
-module.exports = { create, list, update, deactivate };
+// Reactivates a soft-deactivated user; admin only
+async function activate(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return next(new NotFoundError('המשתמש לא נמצא'));
+    const user = await activateUser(id);
+    res.status(200).json(user);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { create, list, update, deactivate, activate };

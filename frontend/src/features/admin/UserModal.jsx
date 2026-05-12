@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import InlineError from '../../components/InlineError'
 import { validateUserForm } from './validateUserForm'
-import { createUser, updateUser, deactivateUser } from '../../services/usersApi'
+import { createUser, updateUser, deactivateUser, activateUser } from '../../services/usersApi'
 
 // Modal for creating a new user (user=null) or editing an existing one (user=object)
 export default function UserModal({ user, onClose, onSaved }) {
@@ -11,7 +11,6 @@ export default function UserModal({ user, onClose, onSaved }) {
   const [email, setEmail]         = useState(user?.email ?? '')
   const [role, setRole]           = useState(user?.role ?? 'employee')
   const [password, setPassword]   = useState('')
-  const [isActive, setIsActive]   = useState(user?.is_active ?? true)
 
   const [fieldErrors, setFieldErrors] = useState({})
   const [apiError, setApiError]       = useState('')
@@ -39,9 +38,9 @@ export default function UserModal({ user, onClose, onSaved }) {
     setApiError('')
     try {
       if (isCreate) {
-        await createUser({ full_name: fullName, email, role, password, is_active: isActive })
+        await createUser({ full_name: fullName, email, role, password })
       } else {
-        const payload = { full_name: fullName, email, role, is_active: isActive }
+        const payload = { full_name: fullName, email, role }
         if (password !== '') payload.password = password
         await updateUser(user.id, payload)
       }
@@ -63,8 +62,17 @@ export default function UserModal({ user, onClose, onSaved }) {
       await deactivateUser(user.id)
       onSaved()
     } catch (err) {
-      const msg = err?.message || err?.data?.message
-      setApiError(msg || 'אירעה שגיאה. נסה שוב.')
+      setApiError(err?.message || 'אירעה שגיאה. נסה שוב.')
+    }
+  }
+
+  async function handleActivate() {
+    setApiError('')
+    try {
+      await activateUser(user.id)
+      onSaved()
+    } catch (err) {
+      setApiError(err?.message || 'אירעה שגיאה. נסה שוב.')
     }
   }
 
@@ -161,19 +169,16 @@ export default function UserModal({ user, onClose, onSaved }) {
               <InlineError id="password-error" message={fieldErrors.password} />
             </div>
 
-            {/* סטטוס */}
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-gray-700">סטטוס</span>
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
-                  className="w-4 h-4 accent-blue-600"
-                />
-                <span className="text-sm text-gray-700">{isActive ? 'פעיל' : 'לא פעיל'}</span>
-              </label>
-            </div>
+            {/* סטטוס — read-only badge in edit mode */}
+            {!isCreate && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-gray-700">סטטוס:</span>
+                {user.is_active
+                  ? <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 px-2.5 py-0.5 text-xs font-medium">פעיל</span>
+                  : <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-500 px-2.5 py-0.5 text-xs font-medium">לא פעיל</span>
+                }
+              </div>
+            )}
           </div>
 
           {/* Footer */}
@@ -196,16 +201,29 @@ export default function UserModal({ user, onClose, onSaved }) {
               </button>
             </div>
 
-            {/* Deactivate button — edit mode only, active users only */}
-            {!isCreate && user.is_active && (
-              <button
-                type="button"
-                onClick={handleDeactivate}
-                disabled={saving}
-                className="w-full py-3 border border-red-300 text-red-600 font-bold rounded-xl min-h-[44px] disabled:opacity-50 hover:bg-red-50"
-              >
-                השבת משתמש
-              </button>
+            {/* Activate / Deactivate — edit mode only, based on current status */}
+            {!isCreate && (
+              user.is_active
+                ? (
+                  <button
+                    type="button"
+                    onClick={handleDeactivate}
+                    disabled={saving}
+                    className="w-full py-3 border border-red-300 text-red-600 font-bold rounded-xl min-h-[44px] disabled:opacity-50 hover:bg-red-50"
+                  >
+                    השבת משתמש
+                  </button>
+                )
+                : (
+                  <button
+                    type="button"
+                    onClick={handleActivate}
+                    disabled={saving}
+                    className="w-full py-3 border border-green-300 text-green-700 font-bold rounded-xl min-h-[44px] disabled:opacity-50 hover:bg-green-50"
+                  >
+                    הפעל משתמש
+                  </button>
+                )
             )}
           </div>
         </form>

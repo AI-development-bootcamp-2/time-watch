@@ -19,3 +19,8 @@ export function updateUser(id, data) {
 export function deactivateUser(id) {
   return request('PATCH', `/api/users/${id}/deactivate`)
 }
+
+// Reactivate a previously deactivated user
+export function activateUser(id) {
+  return request('PATCH', `/api/users/${id}/activate`)
+}

@@ -2,11 +2,10 @@
 
 const bcrypt = require('bcrypt');
 const usersRepository = require('../repositories/usersRepository');
-const { db } = require('../db/knex');
+const db = require('../db/knex');
 const { ConflictError, NotFoundError, BadRequestError } = require('../utils/errors');
 const { validatePasswordComplexity } = require('../utils/validate');
 const { BCRYPT_COST } = require('../config/constants');
-const { AppError, ConflictError, NotFoundError } = require('../utils/errors');
 
 // Creates a new user with hashed password and must_change_password flag set to true
 async function createUser({ full_name, email, password, role }) {
@@ -27,7 +26,6 @@ async function listUsers() {
 
 // Updates full_name/email/role and optionally re-hashes a new password; throws NotFoundError/ConflictError/PasswordComplexityError
 async function updateUser(id, { full_name, email, role, password }) {
-  // Validate and hash password before opening the transaction (fail fast, minimise lock duration)
   const patch = { full_name, email: email.trim().toLowerCase(), role };
   if (password !== undefined) {
     validatePasswordComplexity(password);
@@ -35,21 +33,20 @@ async function updateUser(id, { full_name, email, role, password }) {
   }
 
   return db.transaction(async (trx) => {
-    // ISSUE-05: existence check and update are atomic — no TOCTOU gap
     const existing = await usersRepository.lockUserForUpdate(id, trx);
     if (!existing) throw new NotFoundError('המשתמש לא נמצא');
 
-    // ISSUE-02: prevent demoting the last active admin
+    // Prevent demoting the last active admin
     if (existing.role === 'admin' && role !== 'admin') {
       const activeAdmins = await usersRepository.lockActiveAdmins(trx);
       if (activeAdmins.length <= 1) {
-        throw new BadRequestError('Cannot change role of the last active admin');
+        throw new BadRequestError('לא ניתן לשנות תפקיד המנהל האחרון הפעיל');
       }
     }
 
     try {
       const row = await usersRepository.update(id, patch, trx);
-      if (!row) throw new NotFoundError('המשתמש לא נמצא'); // defence-in-depth (should be unreachable inside trx)
+      if (!row) throw new NotFoundError('המשתמש לא נמצא');
       return row;
     } catch (err) {
       if (err.code === '23505') throw new ConflictError();
@@ -58,20 +55,20 @@ async function updateUser(id, { full_name, email, role, password }) {
   });
 }
 
-// Soft-deactivates a user inside a transaction; blocks deactivating the last active admin (idempotent for already-inactive)
+// Soft-deactivates a user inside a transaction; blocks deactivating the last active admin
 async function deactivateUser(id) {
   return db.transaction(async (trx) => {
     const user = await usersRepository.lockUserForUpdate(id, trx);
     if (!user) throw new NotFoundError('המשתמש לא נמצא');
 
     if (!user.is_active) {
-      return usersRepository.setActiveTx(id, false, trx); // ISSUE-10: same path as normal deactivation → consistent response shape
+      return usersRepository.setActiveTx(id, false, trx);
     }
 
     if (user.role === 'admin') {
       const lockedAdmins = await usersRepository.lockActiveAdmins(trx);
       if (lockedAdmins.length <= 1) {
-        throw new BadRequestError('Cannot deactivate the last active admin');
+        throw new BadRequestError('לא ניתן להשבית את המנהל האחרון הפעיל');
       }
     }
 
@@ -79,42 +76,13 @@ async function deactivateUser(id) {
   });
 }
 
-module.exports = { createUser, listUsers, updateUser, deactivateUser };
-// Returns all non-deleted users
-async function listUsers() {
-  return usersRepository.findAll();
+// Reactivates a previously deactivated user
+async function activateUser(id) {
+  return db.transaction(async (trx) => {
+    const user = await usersRepository.lockUserForUpdate(id, trx);
+    if (!user) throw new NotFoundError('המשתמש לא נמצא');
+    return usersRepository.setActiveTx(id, true, trx);
+  });
 }
 
-// Updates a user; hashes password only when a non-empty value is supplied
-async function updateUser(id, { full_name, email, password, role, is_active }) {
-  const fields = {};
-  if (full_name  !== undefined) fields.full_name  = full_name.trim();
-  if (email      !== undefined) fields.email      = email.trim().toLowerCase();
-  if (role       !== undefined) fields.role       = role;
-  if (is_active  !== undefined) fields.is_active  = is_active;
-  if (password)                 fields.password_hash = await bcrypt.hash(password, BCRYPT_COST);
-
-  try {
-    const user = await usersRepository.update(id, fields);
-    if (!user) throw new NotFoundError('משתמש לא נמצא');
-    return user;
-  } catch (err) {
-    if (err.code === '23505') throw new ConflictError();
-    throw err;
-  }
-}
-
-// Sets is_active=false; blocks deactivation of the last active admin
-async function deactivateUser(id) {
-  const user = await usersRepository.findById(id);
-  if (!user) throw new NotFoundError('משתמש לא נמצא');
-
-  if (user.role === 'admin') {
-    const count = await usersRepository.countActiveAdmins();
-    if (count <= 1) throw new AppError(400, 'LAST_ADMIN', 'לא ניתן להשבית את המנהל האחרון');
-  }
-
-  return usersRepository.update(id, { is_active: false });
-}
-
-module.exports = { createUser, listUsers, updateUser, deactivateUser };
+module.exports = { createUser, listUsers, updateUser, deactivateUser, activateUser };

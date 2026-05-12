@@ -3,6 +3,7 @@ import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
 import LoginPage from './features/auth/LoginPage'
+import ChangePasswordPage from './features/auth/ChangePasswordPage'
 import AdminLayout from './features/admin/AdminLayout'
 import DailyReportPage from './features/daily-reporting/DailyReportPage'
 import MonthlyCalendar from './features/monthly-view/MonthlyCalendar'
@@ -23,6 +24,9 @@ export default function App() {
 
         {/* Authenticated routes — ProtectedRoute redirects to /login when no session */}
         <Route element={<ProtectedRoute />}>
+          {/* Force password change on first login — rendered without Layout (no nav) */}
+          <Route path="/change-password" element={<ChangePasswordPage />} />
+
           <Route element={<Layout />}>
             <Route path="/daily"    element={<DailyReportPage />} />
             <Route path="/monthly"  element={<MonthlyCalendar />} />
