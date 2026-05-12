@@ -175,6 +175,8 @@ The `users` table SHALL have a `must_change_password BOOLEAN NOT NULL DEFAULT fa
 
 The system SHALL provide `POST /api/auth/change-password` for any authenticated user. It verifies the current password, enforces complexity on the new password, replaces the hash, and clears the `must_change_password` flag in a single update.
 
+> **Repository note:** the service SHALL use `findByIdFull(userId)` — not `findById` — because it requires the stored `password_hash` for bcrypt comparison and must work for any non-deleted user regardless of `is_active` state. `findById` is reserved for the `GET /api/auth/me` endpoint and returns only safe public columns for active users.
+
 **Request body:**
 ```json
 {

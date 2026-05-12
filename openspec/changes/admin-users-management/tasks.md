@@ -2,19 +2,20 @@
 
 ## 1. [Backend] DB schema — must_change_password column
 
-- [ ] 1.1 Write migration: `ALTER TABLE users ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT false`
-- [ ] 1.2 Verify existing rows default to `must_change_password = false` after migration (guaranteed by `DEFAULT false`)
-- [ ] 1.3 Confirm `findAll()` (§2.1) and `findById()` (§2.2) include `must_change_password` in their SELECT column list; update if either is missing
+- [x] 1.1 Write migration: `ALTER TABLE users ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT false`
+- [x] 1.2 Verify existing rows default to `must_change_password = false` after migration (guaranteed by `DEFAULT false`)
+- [x] 1.3 Confirm `findAll()` (§2.1) and `findById()` (§2.2a) include `must_change_password` in their SELECT column list; `findByIdFull()` (§2.2b) returns all columns so inherits it automatically
 
 ## 2. [Backend] Repository foundation — usersRepository.js
 
-- [ ] 2.1 Add `findAll()` — SELECT id, full_name, email, role, is_active, must_change_password, created_at FROM users WHERE deleted_at IS NULL ORDER BY full_name ASC
-- [ ] 2.2 Add `findById(id)` — SELECT all columns (including password_hash, needed by service-level auth checks) FROM users WHERE id = :id AND deleted_at IS NULL; return row or null
-- [ ] 2.3 Add `update(id, patch)` — UPDATE users SET ... WHERE id = :id AND deleted_at IS NULL; return updated row
-- [ ] 2.4 Add `lockUserForUpdate(id, trx)` — inside the provided Knex transaction issue `SELECT id, role, is_active FROM users WHERE id = :id AND deleted_at IS NULL FOR UPDATE`; return the row or null if not found
-- [ ] 2.5 Add `lockActiveAdmins(trx)` — inside the provided Knex transaction issue `SELECT id FROM users WHERE role = 'admin' AND is_active = true AND deleted_at IS NULL FOR UPDATE`; return the array of locked rows (PostgreSQL does not support `FOR UPDATE` on aggregate queries — locking is achieved by selecting individual rows; counting happens in the service from the returned array length)
-- [ ] 2.6 Add `setActiveTx(id, isActive, trx)` — `UPDATE users SET is_active = :isActive WHERE id = :id AND deleted_at IS NULL` inside the provided transaction; return the updated row
-- [ ] 2.7 Add `updatePassword(userId, passwordHash)` — `UPDATE users SET password_hash = :passwordHash, must_change_password = false WHERE id = :userId AND deleted_at IS NULL`
+- [x] 2.1 Add `findAll()` — SELECT id, full_name, email, role, is_active, must_change_password, created_at FROM users WHERE deleted_at IS NULL ORDER BY full_name ASC
+- [x] 2.2a Keep `findById(id)` as safe/active-only — SELECT SAFE_COLUMNS (now includes `must_change_password`) WHERE id = :id AND is_active = true AND deleted_at IS NULL; preserves existing `GET /api/auth/me` behavior
+- [x] 2.2b Add `findByIdFull(id)` — SELECT all columns (including `password_hash`) WHERE id = :id AND deleted_at IS NULL; returns active **and** inactive users; used by `changePassword` service (§8.1) which needs the stored hash to verify the current password
+- [x] 2.3 Add `update(id, patch)` — UPDATE users SET ... WHERE id = :id AND deleted_at IS NULL; return updated row
+- [x] 2.4 Add `lockUserForUpdate(id, trx)` — inside the provided Knex transaction issue `SELECT id, role, is_active FROM users WHERE id = :id AND deleted_at IS NULL FOR UPDATE`; return the row or null if not found
+- [x] 2.5 Add `lockActiveAdmins(trx)` — inside the provided Knex transaction issue `SELECT id FROM users WHERE role = 'admin' AND is_active = true AND deleted_at IS NULL FOR UPDATE`; return the array of locked rows (PostgreSQL does not support `FOR UPDATE` on aggregate queries — locking is achieved by selecting individual rows; counting happens in the service from the returned array length)
+- [x] 2.6 Add `setActiveTx(id, isActive, trx)` — `UPDATE users SET is_active = :isActive WHERE id = :id AND deleted_at IS NULL` inside the provided transaction; return the updated row
+- [x] 2.7 Add `updatePassword(userId, passwordHash)` — `UPDATE users SET password_hash = :passwordHash, must_change_password = false WHERE id = :userId AND deleted_at IS NULL`
 
 ## 3. [Backend] GET /api/users — list all users
 
@@ -81,7 +82,7 @@
 ## 8. [Backend] POST /api/auth/change-password — forced password change
 
 - [ ] 8.1 Add `changePassword(userId, { current_password, new_password })` to `authService.js`:
-  - Fetch user by id via `findById` (§2.2)
+  - Fetch user by id via `findByIdFull` (§2.2b) — needs `password_hash` and must work for any non-deleted user
   - Compare `current_password` against stored `password_hash` with `bcrypt.compare()`; throw `UnauthorizedError` on mismatch
   - Validate `new_password` complexity (≥8 chars, ≥1 upper, ≥1 lower, ≥1 digit, ≥1 special); throw `ValidationError` if weak
   - Hash `new_password` with bcrypt cost 12
@@ -90,7 +91,7 @@
 - [ ] 8.3 Register `POST /api/auth/change-password` in `routes/auth.js` — no additional role guard; the global `authenticate` middleware already requires a valid session
 - [ ] 8.4 Integration test: wrong `current_password` → 401
 - [ ] 8.5 Integration test: `new_password` fails complexity → 422 with rule description
-- [ ] 8.6 Integration test: valid request → 200; subsequent `findById` shows `must_change_password = false` and a different `password_hash`
+- [ ] 8.6 Integration test: valid request → 200; subsequent `findByIdFull` shows `must_change_password = false` and a different `password_hash`
 - [ ] 8.7 Integration test: after successful change, login response body includes `must_change_password: false`
 - [ ] 8.8 Integration test: unauthenticated request (no cookie) → 401 (global `authenticate` blocks it)
 

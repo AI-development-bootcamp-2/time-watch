@@ -2,9 +2,10 @@
 
 const { db } = require('../db/knex');
 
-const SAFE_COLUMNS = ['id', 'full_name', 'email', 'role', 'is_active', 'created_at'];
+const SAFE_COLUMNS = ['id', 'full_name', 'email', 'role', 'is_active', 'must_change_password', 'created_at'];
 const MAX_FAILED_ATTEMPTS = 3;
 
+// Returns the full user row (with password_hash) for active non-deleted users; used by login
 async function findByEmail(email) {
   return db('users')
     .whereRaw('LOWER(email) = LOWER(?)', [email])
@@ -13,13 +14,15 @@ async function findByEmail(email) {
     .first();
 }
 
-async function create({ full_name, email, password_hash, role }) {
+// Inserts a new user and returns safe columns
+async function create({ full_name, email, password_hash, role, must_change_password = false }) {
   const [user] = await db('users')
-    .insert({ full_name, email, password_hash, role })
+    .insert({ full_name, email, password_hash, role, must_change_password })
     .returning(SAFE_COLUMNS);
   return user;
 }
 
+// Increments failed login attempts and sets lockout after threshold
 async function incrementFailedAttempts(id) {
   const [row] = await db('users')
     .where({ id })
@@ -33,6 +36,7 @@ async function incrementFailedAttempts(id) {
   return row;
 }
 
+// Returns safe columns for an active non-deleted user; used by auth/me endpoint
 async function findById(id) {
   return db('users')
     .where({ id, is_active: true })
@@ -41,6 +45,15 @@ async function findById(id) {
     .first();
 }
 
+// Returns all columns for any non-deleted user; used by services needing password_hash
+async function findByIdFull(id) {
+  return db('users')
+    .where({ id })
+    .whereNull('deleted_at')
+    .first();
+}
+
+// Resets lockout state and records last login timestamp
 async function resetLockout(id) {
   const [row] = await db('users')
     .where({ id })
@@ -53,4 +66,74 @@ async function resetLockout(id) {
   return row;
 }
 
-module.exports = { findByEmail, findById, create, incrementFailedAttempts, resetLockout };
+// Returns all non-deleted users ordered by full name ascending
+async function findAll() {
+  return db('users')
+    .whereNull('deleted_at')
+    .select(SAFE_COLUMNS)
+    .orderBy('full_name', 'asc');
+}
+
+// Updates allowed fields on a non-deleted user; returns updated safe columns
+async function update(id, patch) {
+  const [row] = await db('users')
+    .where({ id })
+    .whereNull('deleted_at')
+    .update({ ...patch, updated_at: db.raw('NOW()') })
+    .returning(SAFE_COLUMNS);
+  return row;
+}
+
+// Acquires a FOR UPDATE row lock on a single user within a transaction
+async function lockUserForUpdate(id, trx) {
+  return trx('users')
+    .where({ id })
+    .whereNull('deleted_at')
+    .select(['id', 'role', 'is_active'])
+    .forUpdate()
+    .first();
+}
+
+// Acquires FOR UPDATE locks on all active admin rows within a transaction
+async function lockActiveAdmins(trx) {
+  return trx('users')
+    .where({ role: 'admin', is_active: true })
+    .whereNull('deleted_at')
+    .select('id')
+    .forUpdate();
+}
+
+// Sets is_active on a user within an existing transaction; returns updated safe columns
+async function setActiveTx(id, isActive, trx) {
+  const [row] = await trx('users')
+    .where({ id })
+    .whereNull('deleted_at')
+    .update({ is_active: isActive, updated_at: db.raw('NOW()') })
+    .returning(SAFE_COLUMNS);
+  return row;
+}
+
+// Updates password hash and clears must_change_password flag
+async function updatePassword(userId, passwordHash) {
+  const [row] = await db('users')
+    .where({ id: userId })
+    .whereNull('deleted_at')
+    .update({ password_hash: passwordHash, must_change_password: false, updated_at: db.raw('NOW()') })
+    .returning(SAFE_COLUMNS);
+  return row;
+}
+
+module.exports = {
+  findByEmail,
+  findById,
+  findByIdFull,
+  findAll,
+  create,
+  update,
+  incrementFailedAttempts,
+  resetLockout,
+  lockUserForUpdate,
+  lockActiveAdmins,
+  setActiveTx,
+  updatePassword,
+};
