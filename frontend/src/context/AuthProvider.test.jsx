@@ -18,6 +18,8 @@ function TestConsumer() {
     <>
       <span data-testid="loading">{String(isLoading)}</span>
       <span data-testid="user">{user ? String(user.id) : 'null'}</span>
+      <span data-testid="user-name">{user?.name ?? 'none'}</span>
+      <span data-testid="user-full_name">{user?.full_name ?? 'none'}</span>
       <button onClick={async () => { try { await logout() } catch {} }}>Logout</button>
       <button onClick={async () => { try { await login('a@b.com', 'pw') } catch {} }}>Login</button>
     </>
@@ -116,5 +118,18 @@ describe('AuthProvider — login', () => {
     await waitFor(() =>
       expect(screen.getByTestId('user')).toHaveTextContent('5')
     )
+  })
+
+  it('stores name from login response on the user object', async () => {
+    authApi.getMe.mockRejectedValue({ status: 401 })
+    authApi.login.mockResolvedValue({ id: 5, name: 'ישראל ישראלי', email: 'israel@example.com', role: 'employee' })
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }))
+
+    await waitFor(() => expect(screen.getByTestId('user')).toHaveTextContent('5'))
+    expect(screen.getByTestId('user-name')).toHaveTextContent('ישראל ישראלי')
+    expect(screen.getByTestId('user-full_name')).toHaveTextContent('none')
   })
 })
