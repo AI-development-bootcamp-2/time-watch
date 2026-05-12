@@ -1,6 +1,6 @@
 'use strict';
 
-const { db } = require('../db/knex');
+const db = require('../db/knex');
 
 const SAFE_COLUMNS = ['id', 'full_name', 'email', 'role', 'is_active', 'created_at'];
 const MAX_FAILED_ATTEMPTS = 3;

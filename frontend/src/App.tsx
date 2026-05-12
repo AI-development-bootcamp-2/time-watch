@@ -9,14 +9,14 @@ import ClientsPage from './features/admin/ClientsPage'
 import ProjectsPage from './features/admin/ProjectsPage'
 import TasksPage from './features/admin/TasksPage'
 import AdminReportsPage from './features/admin/AdminReportsPage'
+import LoginPage from './features/auth/LoginPage'
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Login bypassed — redirect straight to daily report */}
-        <Route path="/login" element={<Navigate to="/daily" replace />} />
-        <Route path="/" element={<Navigate to="/daily" replace />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
 
         <Route element={<Layout />}>
           <Route path="/daily"    element={<DailyReportPage />} />

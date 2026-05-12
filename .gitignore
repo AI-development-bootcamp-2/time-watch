@@ -10,7 +10,7 @@ node_modules/
 
 # Frontend build output
 frontend/dist/
-
+openspec/nadav
 # Test coverage reports
 coverage/
 **/coverage/
