@@ -1,6 +1,6 @@
 'use strict';
 
-const { createUser } = require('../services/usersService');
+const { createUser, listUsers } = require('../services/usersService');
 const { validateCreateUser } = require('../utils/validate');
 const { ValidationError } = require('../utils/errors');
 
@@ -16,4 +16,14 @@ async function create(req, res, next) {
   }
 }
 
-module.exports = { create };
+// Returns all non-deleted users; admin only
+async function list(req, res, next) {
+  try {
+    const users = await listUsers();
+    res.status(200).json(users);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { create, list };

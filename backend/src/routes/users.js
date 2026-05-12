@@ -2,7 +2,7 @@
 
 const router = require('express').Router();
 const { requireRole } = require('../middleware/auth');
-const { create } = require('../controllers/usersController');
+const { create, list } = require('../controllers/usersController');
 
 /**
  * @swagger
@@ -68,9 +68,40 @@ const { create } = require('../controllers/usersController');
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
+/**
+ * @swagger
+ * /api/users:
+ *   get:
+ *     summary: List all users (admin only)
+ *     tags: [Users]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Array of all non-deleted users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Caller is not an admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/', requireRole('admin'), list);
+
 router.post('/', requireRole('admin'), create);
 
-router.get('/',             (_req, res) => res.status(501).json({ code: 'NOT_IMPLEMENTED', message: 'לא מומש' }));
 router.put('/:id',          (_req, res) => res.status(501).json({ code: 'NOT_IMPLEMENTED', message: 'לא מומש' }));
 router.patch('/:id/deactivate', (_req, res) => res.status(501).json({ code: 'NOT_IMPLEMENTED', message: 'לא מומש' }));
 

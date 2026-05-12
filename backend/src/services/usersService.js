@@ -16,4 +16,9 @@ async function createUser({ full_name, email, password, role }) {
   }
 }
 
-module.exports = { createUser };
+// Returns all non-deleted users ordered by name
+async function listUsers() {
+  return usersRepository.findAll();
+}
+
+module.exports = { createUser, listUsers };

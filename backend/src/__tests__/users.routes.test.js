@@ -37,6 +37,65 @@ afterAll(async () => {
   await closeDatabase(); // close the module-level singleton used by the app
 });
 
+// Seed row used by GET tests — no plaintext password needed
+const seedUser = {
+  full_name: 'שרה כהן',
+  email: 'sarah@example.com',
+  password_hash: '$2b$12$LCGkLdR4exGGhQUDi4Mk8uhaTr4R1K1HYzMMpXE.jqNcbf9AhvzI6',
+  role: 'employee',
+  must_change_password: false,
+};
+
+describe('GET /api/users', () => {
+  it('3.4 — 401 when no auth cookie is provided', async () => {
+    const res = await request(app).get('/api/users');
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe('UNAUTHENTICATED');
+  });
+
+  it('3.5 — 403 when authenticated as employee', async () => {
+    const res = await request(app)
+      .get('/api/users')
+      .set('Cookie', employeeCookie());
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('FORBIDDEN');
+  });
+
+  it('3.6 — 200 with user array containing expected fields', async () => {
+    await db('users').insert(seedUser);
+
+    const res = await request(app)
+      .get('/api/users')
+      .set('Cookie', adminCookie());
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body).toHaveLength(1);
+
+    const user = res.body[0];
+    expect(user).toHaveProperty('id');
+    expect(user).toHaveProperty('full_name', seedUser.full_name);
+    expect(user).toHaveProperty('email', seedUser.email);
+    expect(user).toHaveProperty('role', seedUser.role);
+    expect(user).toHaveProperty('is_active', true);
+    expect(user).toHaveProperty('must_change_password', false);
+  });
+
+  it('3.7 — response does not include sensitive fields', async () => {
+    await db('users').insert(seedUser);
+
+    const res = await request(app)
+      .get('/api/users')
+      .set('Cookie', adminCookie());
+
+    expect(res.status).toBe(200);
+    const user = res.body[0];
+    expect(user).not.toHaveProperty('password_hash');
+    expect(user).not.toHaveProperty('failed_attempts');
+    expect(user).not.toHaveProperty('locked_until');
+  });
+});
+
 describe('POST /api/users', () => {
   it('201 — creates user and excludes password_hash from response', async () => {
     const res = await request(app)
@@ -108,7 +167,7 @@ describe('POST /api/users', () => {
     expect(res.body.details).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'role' })]));
   });
 
-  // Password complexity
+  // Password complexity (existing tests unchanged below)
   it('400 — password too short', async () => {
     const res = await request(app)
       .post('/api/users')

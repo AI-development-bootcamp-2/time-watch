@@ -19,13 +19,13 @@
 
 ## 3. [Backend] GET /api/users — list all users
 
-- [ ] 3.1 Add `listUsers()` to `usersService.js` — delegates to `findAll()`; no additional business logic
-- [ ] 3.2 Add `list` handler to `usersController.js` — calls service, returns 200 with array
-- [ ] 3.3 Register `GET /` on `routes/users.js` under `requireRole('admin')`, mapped to `usersController.list`
-- [ ] 3.4 Integration test: no cookie → 401
-- [ ] 3.5 Integration test: employee JWT → 403
-- [ ] 3.6 Integration test: admin JWT → 200 with array containing id, full_name, email, role, is_active
-- [ ] 3.7 Integration test: response does NOT include password_hash, failed_attempts, or locked_until
+- [x] 3.1 Add `listUsers()` to `usersService.js` — delegates to `findAll()`; no additional business logic
+- [x] 3.2 Add `list` handler to `usersController.js` — calls service, returns 200 with array
+- [x] 3.3 Register `GET /` on `routes/users.js` under `requireRole('admin')`, mapped to `usersController.list`
+- [x] 3.4 Integration test: no cookie → 401
+- [x] 3.5 Integration test: employee JWT → 403
+- [x] 3.6 Integration test: admin JWT → 200 with array containing id, full_name, email, role, is_active
+- [x] 3.7 Integration test: response does NOT include password_hash, failed_attempts, or locked_until
 
 ## 4. [Backend] POST /api/users — create user (replace stub)
 
