@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
+import AdminRoute from './components/AdminRoute'
 import AdminLayout from './features/admin/AdminLayout'
 import DailyReportPage from './features/daily-reporting/DailyReportPage'
 import MonthlyCalendar from './features/monthly-view/MonthlyCalendar'
@@ -23,13 +24,15 @@ export default function App() {
           <Route path="/monthly"  element={<MonthlyCalendar />} />
           <Route path="/absences" element={<AbsencePage />} />
 
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Navigate to="users" replace />} />
-            <Route path="users"    element={<UsersPage />} />
-            <Route path="clients"  element={<ClientsPage />} />
-            <Route path="projects" element={<ProjectsPage />} />
-            <Route path="tasks"    element={<TasksPage />} />
-            <Route path="reports"  element={<AdminReportsPage />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<Navigate to="users" replace />} />
+              <Route path="users"    element={<UsersPage />} />
+              <Route path="clients"  element={<ClientsPage />} />
+              <Route path="projects" element={<ProjectsPage />} />
+              <Route path="tasks"    element={<TasksPage />} />
+              <Route path="reports"  element={<AdminReportsPage />} />
+            </Route>
           </Route>
         </Route>
 

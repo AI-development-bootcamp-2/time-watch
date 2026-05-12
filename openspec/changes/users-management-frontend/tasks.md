@@ -44,8 +44,8 @@ Write all component and API-service tests against mocked responses. Integration-
 
 Context: `AdminRoute` at `frontend/src/components/AdminRoute.jsx` already exists and checks `user.role !== 'admin'`, redirecting to `/`. It is NOT currently applied to the `/admin` route tree.
 
-- [ ] Import `AdminRoute` in `App.tsx`
-- [ ] Wrap the existing `<Route path="/admin" element={<AdminLayout />}>` with `AdminRoute` as an intermediate element, so the tree becomes:
+- [x] Import `AdminRoute` in `App.tsx`
+- [x] Wrap the existing `<Route path="/admin" element={<AdminLayout />}>` with `AdminRoute` as an intermediate element, so the tree becomes:
   ```jsx
   <Route element={<AdminRoute />}>
     <Route path="/admin" element={<AdminLayout />}>
@@ -58,8 +58,8 @@ Context: `AdminRoute` at `frontend/src/components/AdminRoute.jsx` already exists
     </Route>
   </Route>
   ```
-- [ ] Verify that the login redirect in `AdminRoute` goes to `/login` (not `/`)
-- [ ] Write a smoke test confirming a non-admin `user` object triggers redirect to `/`
+- [x] Verify that the login redirect in `AdminRoute` goes to `/login` (not `/`)
+- [x] Write a smoke test confirming a non-admin `user` object triggers redirect to `/`
 
 ---
 
@@ -69,19 +69,19 @@ Context: `AdminRoute` at `frontend/src/components/AdminRoute.jsx` already exists
 
 Context: The `NAV_ITEMS` array includes an `/admin` entry shown to all users. The `useAuth` hook provides `{ user }` with the current user's role.
 
-- [ ] Import `useAuth` from `'../context/AuthContext'`
-- [ ] After the existing `const navigate = useNavigate()` line, add:
+- [x] Import `useAuth` from `'../context/AuthContext'`
+- [x] After the existing `const navigate = useNavigate()` line, add:
   ```jsx
   const { user } = useAuth()
   ```
-- [ ] Filter `NAV_ITEMS` before the `nav` render so the admin entry only appears when `user?.role === 'admin'`:
+- [x] Filter `NAV_ITEMS` before the `nav` render so the admin entry only appears when `user?.role === 'admin'`:
   ```jsx
   const visibleNavItems = NAV_ITEMS.filter(
     item => item.to !== '/admin' || user?.role === 'admin'
   )
   ```
-- [ ] Replace the `NAV_ITEMS.map(...)` in the `<nav>` with `visibleNavItems.map(...)`
-- [ ] Write a test: render `Layout` with a non-admin user — confirm the "ניהול" link is absent from the DOM
+- [x] Replace the `NAV_ITEMS.map(...)` in the `<nav>` with `visibleNavItems.map(...)`
+- [x] Write a test: render `Layout` with a non-admin user — confirm the "ניהול" link is absent from the DOM
 
 ---
 
