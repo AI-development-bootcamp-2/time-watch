@@ -38,13 +38,13 @@ services:
     build: ./frontend
     environment:
       BACKEND_URL: http://backend:3000
+      VITE_API_URL: http://localhost:3000
+      CHOKIDAR_USEPOLLING: "true"
     volumes:
       - ./frontend:/app
       - /app/node_modules
     ports:
       - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:3000
     depends_on:
       - backend
 
