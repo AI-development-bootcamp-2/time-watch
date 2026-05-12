@@ -2,7 +2,7 @@
 
 const router = require('express').Router();
 const { requireRole } = require('../middleware/auth');
-const { create, list } = require('../controllers/usersController');
+const { create, list, update, deactivate } = require('../controllers/usersController');
 
 /**
  * @swagger
@@ -102,7 +102,7 @@ router.get('/', requireRole('admin'), list);
 
 router.post('/', requireRole('admin'), create);
 
-router.put('/:id',          (_req, res) => res.status(501).json({ code: 'NOT_IMPLEMENTED', message: 'לא מומש' }));
-router.patch('/:id/deactivate', (_req, res) => res.status(501).json({ code: 'NOT_IMPLEMENTED', message: 'לא מומש' }));
+router.put('/:id', requireRole('admin'), update);
+router.patch('/:id/deactivate', requireRole('admin'), deactivate);
 
 module.exports = router;

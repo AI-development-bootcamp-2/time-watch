@@ -131,7 +131,7 @@ describe('POST /api/users', () => {
       .set('Cookie', adminCookie())
       .send(validBody);
     expect(res.status).toBe(409);
-    expect(res.body.code).toBe('CONFLICT');
+    expect(res.body.code).toBe('EMAIL_CONFLICT');
   });
 
   // Validation: required fields
@@ -167,49 +167,198 @@ describe('POST /api/users', () => {
     expect(res.body.details).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'role' })]));
   });
 
-  // Password complexity (existing tests unchanged below)
-  it('400 — password too short', async () => {
+  // Password complexity — validated in service, returns 422
+  it('422 — password too short', async () => {
     const res = await request(app)
       .post('/api/users')
       .set('Cookie', adminCookie())
       .send({ ...validBody, password: 'Ab1!' });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
     expect(res.body.details).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'password' })]));
   });
 
-  it('400 — password missing uppercase', async () => {
+  it('422 — password missing uppercase', async () => {
     const res = await request(app)
       .post('/api/users')
       .set('Cookie', adminCookie())
       .send({ ...validBody, password: 'temp1234!' });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
     expect(res.body.details).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'password' })]));
   });
 
-  it('400 — password missing lowercase', async () => {
+  it('422 — password missing lowercase', async () => {
     const res = await request(app)
       .post('/api/users')
       .set('Cookie', adminCookie())
       .send({ ...validBody, password: 'TEMP1234!' });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
     expect(res.body.details).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'password' })]));
   });
 
-  it('400 — password missing digit', async () => {
+  it('422 — password missing digit', async () => {
     const res = await request(app)
       .post('/api/users')
       .set('Cookie', adminCookie())
       .send({ ...validBody, password: 'TempTemp!' });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
     expect(res.body.details).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'password' })]));
   });
 
-  it('400 — password missing special character', async () => {
+  it('422 — password missing special character', async () => {
     const res = await request(app)
       .post('/api/users')
       .set('Cookie', adminCookie())
       .send({ ...validBody, password: 'Temp12345' });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
     expect(res.body.details).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'password' })]));
+  });
+
+  it('4.8 — 201 response includes must_change_password: true', async () => {
+    const res = await request(app)
+      .post('/api/users')
+      .set('Cookie', adminCookie())
+      .send(validBody);
+    expect(res.status).toBe(201);
+    expect(res.body).toHaveProperty('must_change_password', true);
+  });
+});
+
+describe('PUT /api/users/:id', () => {
+  let userId;
+
+  beforeEach(async () => {
+    const [row] = await db('users').insert(seedUser).returning('id');
+    userId = row.id;
+  });
+
+  it('5.4 — admin JWT + valid body → 200 with updated fields', async () => {
+    const res = await request(app)
+      .put(`/api/users/${userId}`)
+      .set('Cookie', adminCookie())
+      .send({ full_name: 'שרה לוי', email: 'sarah.levy@example.com', role: 'admin' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('full_name', 'שרה לוי');
+    expect(res.body).toHaveProperty('email', 'sarah.levy@example.com');
+    expect(res.body).toHaveProperty('role', 'admin');
+    expect(res.body).not.toHaveProperty('password_hash');
+  });
+
+  it('5.5 — non-existent id → 404', async () => {
+    const res = await request(app)
+      .put('/api/users/999999')
+      .set('Cookie', adminCookie())
+      .send({ full_name: 'לא קיים', email: 'nobody@example.com', role: 'employee' });
+
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe('NOT_FOUND');
+  });
+
+  it('5.6 — email taken by another user → 409', async () => {
+    await db('users').insert({ ...seedUser, email: 'other@example.com', full_name: 'אחר' });
+
+    const res = await request(app)
+      .put(`/api/users/${userId}`)
+      .set('Cookie', adminCookie())
+      .send({ full_name: 'שרה כהן', email: 'other@example.com', role: 'employee' });
+
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('EMAIL_CONFLICT');
+  });
+
+  it('5.7 — new password fails complexity → 422', async () => {
+    const res = await request(app)
+      .put(`/api/users/${userId}`)
+      .set('Cookie', adminCookie())
+      .send({ full_name: 'שרה כהן', email: 'sarah@example.com', role: 'employee', password: 'weakpass' });
+
+    expect(res.status).toBe(422);
+    expect(res.body.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field: 'password' })])
+    );
+  });
+
+  it('5.8 — employee JWT → 403', async () => {
+    const res = await request(app)
+      .put(`/api/users/${userId}`)
+      .set('Cookie', employeeCookie())
+      .send({ full_name: 'שרה כהן', email: 'sarah@example.com', role: 'employee' });
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('FORBIDDEN');
+  });
+});
+
+describe('PATCH /api/users/:id/deactivate', () => {
+  let employeeId;
+  let adminId;
+
+  beforeEach(async () => {
+    const [emp] = await db('users').insert(seedUser).returning('id');
+    const [adm] = await db('users')
+      .insert({ ...seedUser, email: 'admin1@example.com', role: 'admin', full_name: 'אדמין ראשי' })
+      .returning('id');
+    employeeId = emp.id;
+    adminId = adm.id;
+  });
+
+  it('6.4 — deactivate regular employee → 200, is_active false', async () => {
+    const res = await request(app)
+      .patch(`/api/users/${employeeId}/deactivate`)
+      .set('Cookie', adminCookie());
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('is_active', false);
+    expect(res.body).toHaveProperty('id', employeeId);
+  });
+
+  it('6.5 — deactivate one of two active admins → 200', async () => {
+    await db('users').insert({ ...seedUser, email: 'admin2@example.com', role: 'admin', full_name: 'אדמין שני' });
+
+    const res = await request(app)
+      .patch(`/api/users/${adminId}/deactivate`)
+      .set('Cookie', adminCookie());
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('is_active', false);
+  });
+
+  it('6.6 — deactivate the only remaining active admin → 400', async () => {
+    const res = await request(app)
+      .patch(`/api/users/${adminId}/deactivate`)
+      .set('Cookie', adminCookie());
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('BAD_REQUEST');
+    expect(res.body.message).toBe('Cannot deactivate the last active admin');
+  });
+
+  it('6.9 — already-inactive user → 200 idempotent', async () => {
+    await db('users').where({ id: employeeId }).update({ is_active: false });
+
+    const res = await request(app)
+      .patch(`/api/users/${employeeId}/deactivate`)
+      .set('Cookie', adminCookie());
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('is_active', false);
+  });
+
+  it('6.10 — employee JWT → 403', async () => {
+    const res = await request(app)
+      .patch(`/api/users/${employeeId}/deactivate`)
+      .set('Cookie', employeeCookie());
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('FORBIDDEN');
+  });
+
+  it('6.11 — non-existent user id → 404', async () => {
+    const res = await request(app)
+      .patch('/api/users/999999/deactivate')
+      .set('Cookie', adminCookie());
+
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe('NOT_FOUND');
   });
 });
