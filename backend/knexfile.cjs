@@ -1,53 +1,22 @@
-require("dotenv").config();
+require('dotenv').config();
 
-const sslMode = (process.env.DB_SSL || process.env.PGSSLMODE || "").toLowerCase();
-const sslEnabled = sslMode === "true" || sslMode === "1" || sslMode === "require";
-const sslConfig = sslEnabled ? { ssl: { rejectUnauthorized: false } } : {};
+const connection = process.env.DATABASE_URL || {
+  host: process.env.PGHOST || 'localhost',
+  port: Number(process.env.PGPORT) || 5433,
+  database: process.env.PGDATABASE || process.env.POSTGRES_DB || 'timewatch',
+  user: process.env.PGUSER || process.env.POSTGRES_USER || 'timewatch',
+  password: process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD || 'timewatch',
+};
 
-const connection = process.env.DATABASE_URL
-  ? {
-      connectionString: process.env.DATABASE_URL,
-      ...sslConfig
-    }
-  : {
-      host: process.env.DB_HOST || "localhost",
-      port: Number(process.env.DB_PORT || 5432),
-      database: process.env.DB_NAME || "time_watch",
-      user: process.env.DB_USER || "time_watch",
-      password: process.env.DB_PASSWORD || "time_watch",
-      ...sslConfig
-    };
-
-const baseConfig = {
-  client: "pg",
+const config = {
+  client: 'pg',
   connection,
-  migrations: {
-    directory: "./migrations",
-    extension: "cjs",
-    loadExtensions: [".cjs"],
-    tableName: "knex_migrations"
-  },
-  seeds: {
-    directory: "./seeds",
-    extension: "cjs"
-  },
-  pool: {
-    min: 0,
-    max: Number(process.env.DB_POOL_MAX || 10)
-  }
+  migrations: { directory: './migrations' },
+  seeds: { directory: './seeds' },
 };
 
 module.exports = {
-  development: baseConfig,
-  test: {
-    ...baseConfig,
-    connection: process.env.TEST_DATABASE_URL || connection
-  },
-  production: {
-    ...baseConfig,
-    pool: {
-      min: Number(process.env.DB_POOL_MIN || 2),
-      max: Number(process.env.DB_POOL_MAX || 10)
-    }
-  }
+  development: config,
+  test: config,
+  production: config,
 };

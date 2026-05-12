@@ -67,109 +67,127 @@ Write `README.md`: prerequisites, `docker compose up` steps, seed instructions, 
 
 ---
 
-## Epic 2 — User Login Logic
+## Epic 2 — Employee Interface (Client Interface)
 
-### Story 2.1 — Backend Authentication
-_As a system, I want secure login with account lockout so that user accounts are protected against brute-force attacks._
-
-#### Task 2.1.1 — User creation endpoint (admin-only)
-`POST /api/users` — hash password with bcrypt, enforce complexity rules (≥8 chars, upper, lower, digit, special character), return 403 for non-admin callers.
-
-#### Task 2.1.2 — Login endpoint
-`POST /api/auth/login` — validate email + password, increment `failed_attempts` on wrong password, block login after 3 failed attempts, issue JWT in httpOnly SameSite=Strict cookie on success.
-
-#### Task 2.1.3 — Logout endpoint
-`POST /api/auth/logout` — clear the JWT cookie.
-
-#### Task 2.1.4 — Current user endpoint
-`GET /api/auth/me` — return the authenticated user's profile (id, name, email, role). Used by the frontend on page load to restore session.
-
----
-
-### Story 2.2 — Auth Middleware & Route Guards
-_As a developer, I want role-based middleware so that every route is protected without repeating logic in each controller._
-
-#### Task 2.2.1 — JWT authenticate middleware
-Read cookie, verify JWT, attach `req.user`. Return 401 if missing or expired. Apply to all routes except `POST /api/auth/login`.
-
-#### Task 2.2.2 — Role-guard middleware
-`requireRole(...roles)` middleware — return 403 if `req.user.role` is not in the allowed list. Apply to all admin and project-manager routes.
-
----
-
-### Story 2.3 — Login UI
-_As an employee, I want a login page in Hebrew so I can authenticate and reach my reporting screen._
-
-#### Task 2.3.1 — Login page
-React page at `/login`: email + password fields (RTL), submit button, inline error messages (wrong credentials / account locked). Redirect to home on success.
-
-#### Task 2.3.2 — Auth context & protected routes
-`AuthContext` — call `GET /api/auth/me` on app load, store user state. `ProtectedRoute` wrapper — redirect to `/login` if unauthenticated. Role-based route guard for admin-only pages.
-
----
-
-## Epic 3 — Employee Interface (Client Interface)
-
-### Story 3.1 — Manual Daily Reporting
+### Story 2.1 — Manual Daily Reporting
 _As an employee, I want to manually log my work hours for a day so that my time is accurately recorded against the right project and task._
 
-#### Task 3.1.1 — Work entry backend
-`POST /api/work-entries` — validate all fields server-side: no future dates, end > start, hard-block if day total would exceed 24h. `GET /api/work-entries?date=YYYY-MM-DD&userId=me`.
+#### Backend
 
-#### Task 3.1.2 — Daily report form (frontend)
+##### Sub-task 2.1.1 — Work entry endpoints
+`POST /api/work-entries` — validate all fields server-side: no future dates, end > start, hard-block if day total would exceed 24h.
+`GET /api/work-entries?date=YYYY-MM-DD&userId=me` — return entries for the day.
+`PUT /api/work-entries/:id` — update entry, append to `audit_log`, block if month is locked.
+
+#### Frontend
+
+##### Sub-task 2.1.2 — Daily report form
 Mobile-first home screen: date picker (default today, future dates disabled), location selector (משרד/לקוח/בית), start/end time fields. All fields required with inline validation messages.
 
-#### Task 3.1.3 — Cascading client → project → task dropdowns
+##### Sub-task 2.1.3 — Cascading client → project → task dropdowns
 Dropdowns filtered by the user's task assignments. Auto-select if only one option. Alphabetical order with option to sort by reporting frequency. Re-filter on each parent selection change.
 
-#### Task 3.1.4 — Daily progress indicator
+##### Sub-task 2.1.4 — Daily progress indicator
 Show total reported hours for the day vs. the 9h standard. Display soft alert (non-blocking) when total is under or over 9h. List existing entries for the day below the form.
 
-#### Task 3.1.5 — Edit a work entry
-Clicking an existing entry opens it pre-filled in the form. `PUT /api/work-entries/:id` — update and append to `audit_log`. Block save if month is locked (read-only mode).
+##### Sub-task 2.1.5 — Edit a work entry (UI)
+Clicking an existing entry opens it pre-filled in the form. Block save if month is locked (read-only mode). Calls `PUT /api/work-entries/:id` (Task 2.1.1).
 
 ---
 
-### Story 3.2 — Timer
+### Story 2.2 — Timer
 _As an employee, I want to start a timer when I begin work and stop it when I finish so I don't have to remember my exact hours._
 
-#### Task 3.2.1 — Timer backend (start / stop / status)
+#### Backend
+
+##### Sub-task 2.2.1 — Timer endpoints (start / stop / status)
 `POST /api/timer/start` — create `timer_state` row; block if one already exists.
 `POST /api/timer/stop` — compute duration, create `work_entry`, delete `timer_state`.
 `GET /api/timer/status` — return active timer or null.
 
-#### Task 3.2.2 — Timer UI
-"התחל עבודה" button on home screen. Running state displayed prominently with elapsed time (polled from server). "סיום עבודה" opens a modal to fill in location, client, project, task, description before saving.
-
-#### Task 3.2.3 — Midnight split cron
+##### Sub-task 2.2.2 — Midnight split cron
 `node-cron` job at 00:00 daily: for each active `timer_state` from a previous day, close it with end = 23:59 and start a new `timer_state` at 00:00 for the new day.
+
+#### Frontend
+
+##### Sub-task 2.2.3 — Timer UI
+"התחל עבודה" button on home screen. Running state displayed prominently with elapsed time (polled from server). "סיום עבודה" opens a modal to fill in location, client, project, task, description before saving.
 
 ---
 
-### Story 3.3 — Absence Reporting
+### Story 2.3 — Absence Reporting
 _As an employee, I want to report absences (vacation, sick, reserve duty, other) with supporting documents so my absence days are tracked properly._
 
-#### Task 3.3.1 — Absence backend
+#### Backend
+
+##### Sub-task 2.3.1 — Absence endpoints
 `POST /api/absences` — validate type, date range (exclude Fri–Sat), future-date rule (only מחלה/מילואים allowed in future), month-boundary auto-split.
 `PUT /api/absences/:id`.
 `POST /api/absences/:id/document` — multer upload, PDF/image only, max 20MB, replaces existing file.
 
-#### Task 3.3.2 — Absence form (frontend)
+#### Frontend
+
+##### Sub-task 2.3.2 — Absence form
 Type dropdown, date / date-range picker (Fri–Sat cells disabled), partial-absence toggle. File upload field (shown for מחלה/מילואים). If full-day absence conflicts with existing work entry, show warning modal with replace / cancel options.
 
 ---
 
-### Story 3.4 — Monthly View
+### Story 2.4 — Monthly View
 _As an employee, I want to see my entire month at a glance so I can spot missing days and review my reporting history._
 
-#### Task 3.4.1 — Monthly data endpoint
+#### Backend
+
+##### Sub-task 2.4.1 — Monthly data endpoint
 `GET /api/work-entries?month=YYYY-MM&userId=me` — return entries + per-day totals + absence data. Backend computes day status: full / missing / exceptional.
 
-#### Task 3.4.2 — Calendar grid (frontend)
+#### Frontend
+
+##### Sub-task 2.4.2 — Calendar grid
 `react-big-calendar` + `@hebcal/core` for Jewish holiday awareness. Each day cell coloured by status. Fri–Sat and holidays greyed and unclickable. Month navigation (prev / next).
 
-#### Task 3.4.3 — Entry list & inline editing
-Scrollable list below the calendar: date, from–to, client, project, task, description. Clicking an entry opens it in the edit form (Task 3.1.5). Locked-month entries are read-only.
+##### Sub-task 2.4.3 — Entry list & inline editing
+Scrollable list below the calendar: date, from–to, client, project, task, description. Clicking an entry opens it in the edit form (Task 2.1.5). Locked-month entries are read-only.
+
+---
+
+## Epic 3 — User Login Logic
+
+### Story 3.1 — Backend Authentication
+_As a system, I want secure login with account lockout so that user accounts are protected against brute-force attacks._
+
+#### Task 3.1.1 — User creation endpoint (admin-only)
+`POST /api/users` — hash password with bcrypt, enforce complexity rules (≥8 chars, upper, lower, digit, special character), return 403 for non-admin callers.
+
+#### Task 3.1.2 — Login endpoint
+`POST /api/auth/login` — validate email + password, increment `failed_attempts` on wrong password, block login after 3 failed attempts, issue JWT in httpOnly SameSite=Strict cookie on success.
+
+#### Task 3.1.3 — Logout endpoint
+`POST /api/auth/logout` — clear the JWT cookie.
+
+#### Task 3.1.4 — Current user endpoint
+`GET /api/auth/me` — return the authenticated user's profile (id, name, email, role). Used by the frontend on page load to restore session.
+
+---
+
+### Story 3.2 — Auth Middleware & Route Guards
+_As a developer, I want role-based middleware so that every route is protected without repeating logic in each controller._
+
+#### Task 3.2.1 — JWT authenticate middleware
+Read cookie, verify JWT, attach `req.user`. Return 401 if missing or expired. Apply to all routes except `POST /api/auth/login`.
+
+#### Task 3.2.2 — Role-guard middleware
+`requireRole(...roles)` middleware — return 403 if `req.user.role` is not in the allowed list. Apply to all admin and project-manager routes.
+
+---
+
+### Story 3.3 — Login UI
+_As an employee, I want a login page in Hebrew so I can authenticate and reach my reporting screen._
+
+#### Task 3.3.1 — Login page
+React page at `/login`: email + password fields (RTL), submit button, inline error messages (wrong credentials / account locked). Redirect to home on success.
+
+#### Task 3.3.2 — Auth context & protected routes
+`AuthContext` — call `GET /api/auth/me` on app load, store user state. `ProtectedRoute` wrapper — redirect to `/login` if unauthenticated. Role-based route guard for admin-only pages.
 
 ---
 

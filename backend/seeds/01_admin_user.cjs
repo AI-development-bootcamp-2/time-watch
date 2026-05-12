@@ -1,26 +1,15 @@
-const bcrypt = require("bcrypt");
+const bcrypt = require('bcrypt');
 
-exports.seed = async function (knex) {
-  // Deletes ALL existing entries to ensure idempotency for the admin user
-  // We use the email to identify the admin user.
-  const email = process.env.ADMIN_EMAIL || "admin@example.com";
-  
-  await knex("users").where({ email }).del();
+exports.seed = async (knex) => {
+  const existing = await knex('users').where({ email: 'admin@timewatch.local' }).first();
+  if (existing) return;
 
-  let passwordHash = process.env.ADMIN_PASSWORD_HASH;
-  if (!passwordHash) {
-    passwordHash = await bcrypt.hash("Admin123!", 10);
-  }
-
-  await knex("users").insert([
-    {
-      full_name: "System Admin",
-      email: email,
-      password_hash: passwordHash,
-      role: "admin",
-      is_active: true,
-      created_at: knex.fn.now(),
-      updated_at: knex.fn.now()
-    }
-  ]);
+  const password_hash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'Admin1234!', 10);
+  await knex('users').insert({
+    email: 'admin@timewatch.local',
+    password_hash,
+    full_name: 'מנהל מערכת',
+    role: 'admin',
+    is_active: true,
+  });
 };
