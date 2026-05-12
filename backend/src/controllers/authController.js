@@ -46,7 +46,7 @@ async function me(req, res, next) {
   try {
     const user = await usersRepository.findById(req.user.id);
     if (!user) return next(new UnauthorizedError());
-    res.status(200).json({ id: user.id, name: user.full_name, email: user.email, role: user.role });
+    res.status(200).json({ id: user.id, name: user.full_name, email: user.email, role: user.role, must_change_password: user.must_change_password ?? false });
   } catch (err) {
     next(err);
   }
