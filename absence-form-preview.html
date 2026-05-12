@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>דיווח היעדרות</title>
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Assistant', -apple-system, sans-serif;
+      background: #E5E5EA;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 24px;
+    }
+
+    /* ── Phone shell ── */
+    .phone {
+      width: 390px;
+      min-height: 844px;
+      background: #F2F2F7;
+      border-radius: 0;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.08);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      direction: rtl;
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 28px 0;
+      height: 44px;
+      flex-shrink: 0;
+    }
+    .status-time {
+      font-size: 15px;
+      font-weight: 600;
+      color: #000;
+      letter-spacing: -0.3px;
+    }
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-icons svg { width: 16px; height: 12px; }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px 8px;
+      gap: 20px;
+      flex-shrink: 0;
+    }
+
+    .close-btn {
+      width: 32px;
+      height: 32px;
+      background: #fff;
+      border-radius: 100px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-family: 'Assistant';
+      font-weight: 600;
+      font-size: 22px;
+      line-height: 22px;
+      letter-spacing: -0.41px;
+      color: #212525;
+      text-align: right;
+    }
+
+    .header-spacer { width: 32px; flex-shrink: 0; }
+
+    /* ── Segmented control (iOS style) ── */
+    .segmented-wrap {
+      padding: 0 24px 4px;
+      flex-shrink: 0;
+    }
+    .segmented-control {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      padding: 4px;
+      background: rgba(118, 118, 128, 0.12);
+      border-radius: 8px;
+      width: 100%;
+    }
+    .seg-option {
+      flex: 1;
+      height: 28px;
+      border-radius: 7px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-family: 'Assistant';
+      font-size: 16px;
+      letter-spacing: -0.08px;
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    .seg-option.active {
+      background: #fff;
+      border: 0.5px solid rgba(0,0,0,0.04);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04);
+      font-weight: 600;
+    }
+
+    /* ── Scrollable content ── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 24px 100px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* ── Section ── */
+    .section {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .section-header-row {
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-end;
+      align-items: flex-start;
+      padding: 5px 16px 5px 0;
+      width: 100%;
+    }
+    .section-label {
+      font-family: 'Assistant';
+      font-weight: 500;
+      font-size: 18px;
+      line-height: 18px;
+      letter-spacing: -0.08px;
+      color: rgba(24,24,24,0.64);
+      text-align: right;
+    }
+
+    .section-sublabel {
+      width: 100%;
+      padding: 0 16px 0 0;
+      font-family: 'Assistant';
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 18px;
+      letter-spacing: -0.08px;
+      color: #53575B;
+      text-align: right;
+    }
+
+    /* ── Grouped table ── */
+    .grouped-table {
+      width: 100%;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .table-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      padding: 8px 12px;
+      gap: 10px;
+      position: relative;
+      min-height: 48px;
+    }
+    .stepper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      flex-shrink: 0;
+      opacity: 0.35;
+    }
+    .stepper svg { display: block; }
+    .table-row:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      height: 1px;
+      left: 0;
+      right: 12px;
+      bottom: 0;
+      background: #E1E7F3;
+    }
+
+    /* Blue tag pill */
+    .tag-pill {
+      display: inline-flex;
+      flex-direction: row;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 6px 10px 9px;
+      background: #F0F4FA;
+      border-radius: 100px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .tag-text {
+      font-family: 'Assistant';
+      font-weight: 500;
+      font-size: 18px;
+      line-height: 100%;
+      color: #0C69FF;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .row-title {
+      flex: 1;
+      font-family: 'Assistant';
+      font-weight: 400;
+      font-size: 18px;
+      line-height: 22px;
+      color: #181818;
+      text-align: right;
+    }
+
+    /* ── Upload area (dashed, empty state) ── */
+    .upload-area {
+      width: 100%;
+      background: rgba(12, 105, 255, 0.03);
+      border: 2px dashed #0C69FF;
+      border-radius: 9px;
+      padding: 28px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .upload-area:hover { background: rgba(12, 105, 255, 0.07); }
+
+    .upload-icon-wrap {
+      width: 60px;
+      height: 60px;
+    }
+
+    .upload-link {
+      font-family: 'Assistant';
+      font-weight: 600;
+      font-size: 16px;
+      color: #0C69FF;
+      text-align: center;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .upload-sub {
+      font-family: 'Assistant';
+      font-weight: 400;
+      font-size: 13px;
+      color: rgba(24,24,24,0.64);
+      text-align: center;
+    }
+
+    /* ── Uploaded file row ── */
+    .file-row {
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 12px 16px;
+      gap: 16px;
+      width: 100%;
+      background: #fff;
+      border-radius: 10px;
+    }
+
+    .file-details {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-name {
+      font-family: 'Assistant';
+      font-weight: 600;
+      font-size: 14px;
+      line-height: 18px;
+      letter-spacing: -0.08px;
+      color: #212525;
+      text-align: right;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .uploaded-badge {
+      display: inline-flex;
+      flex-direction: row;
+      align-items: center;
+      padding: 0 4px 4px 8px;
+      gap: 4px;
+      background: #E3F9CA;
+      border-radius: 100px;
+    }
+    .badge-label {
+      font-family: 'Assistant';
+      font-weight: 500;
+      font-size: 12px;
+      color: #106103;
+      text-align: right;
+    }
+
+    /* PDF icon */
+    .pdf-icon { width: 42px; height: 48px; flex-shrink: 0; }
+
+    /* Trash button */
+    .trash-btn {
+      width: 20px;
+      height: 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      flex-shrink: 0;
+      color: #FF1D21;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Bottom action bar ── */
+    .bottom-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px 24px 24px;
+      background: rgba(255,255,255,0.8);
+      border-top: 1px solid #ECECEC;
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      display: flex;
+      flex-direction: row;
+      gap: 16px;
+    }
+
+    .btn-save {
+      flex: 1;
+      height: 44px;
+      background: #0C69FF;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Assistant';
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: -0.41px;
+      color: #fff;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-save:hover { opacity: 0.88; }
+
+    .btn-cancel {
+      flex: 1;
+      height: 44px;
+      background: transparent;
+      border: 1px solid rgba(12,105,255,0.24);
+      border-radius: 12px;
+      font-family: 'Assistant';
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: -0.41px;
+      color: #0C69FF;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-cancel:hover { background: rgba(12,105,255,0.05); }
+
+    /* ── Type picker overlay ── */
+    .type-picker-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: flex-end;
+      z-index: 50;
+      display: none;
+    }
+    .type-picker-overlay.open { display: flex; }
+    .type-picker-sheet {
+      width: 100%;
+      background: #F2F2F7;
+      border-radius: 20px 20px 0 0;
+      padding: 12px 16px 40px;
+    }
+    .type-picker-title {
+      text-align: center;
+      font-weight: 600;
+      font-size: 13px;
+      color: rgba(60,60,67,0.6);
+      padding: 0 0 8px;
+    }
+    .picker-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: #fff;
+      border-bottom: 1px solid #F2F2F7;
+      cursor: pointer;
+      font-size: 17px;
+      color: #000;
+    }
+    .picker-option:first-of-type { border-radius: 10px 10px 0 0; }
+    .picker-option:last-of-type { border-radius: 0 0 10px 10px; border-bottom: none; }
+    .picker-option.selected { color: #0C69FF; }
+    .picker-option:hover { background: #F9F9F9; }
+    .picker-cancel {
+      margin-top: 8px;
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 17px;
+      font-weight: 600;
+      color: #0C69FF;
+      cursor: pointer;
+      text-align: center;
+      font-family: 'Assistant';
+    }
+  </style>
+</head>
+<body>
+
+<div class="phone">
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span class="status-time">9:41</span>
+    <div class="status-icons">
+      <!-- Signal -->
+      <svg viewBox="0 0 17 12" fill="none"><rect x="0" y="3" width="3" height="9" rx="1" fill="black"/><rect x="4.5" y="2" width="3" height="10" rx="1" fill="black"/><rect x="9" y="1" width="3" height="11" rx="1" fill="black"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="black"/></svg>
+      <!-- Wifi -->
+      <svg viewBox="0 0 16 12" fill="none" width="16" height="12"><path d="M8 9.5C8.83 9.5 9.5 10.17 9.5 11S8.83 12.5 8 12.5 6.5 11.83 6.5 11 7.17 9.5 8 9.5Z" fill="black"/><path d="M3.5 6.5C4.97 5.03 6.88 4.17 8 4.17c1.12 0 3.03.86 4.5 2.33" stroke="black" stroke-width="1.2" stroke-linecap="round"/><path d="M1 4C3.19 1.81 5.47.92 8 .92c2.53 0 4.81.89 7 3.08" stroke="black" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <!-- Battery -->
+      <svg viewBox="0 0 25 12" fill="none" width="25" height="12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="black" stroke-opacity="0.35"/><rect x="2" y="2" width="18" height="8" rx="2" fill="black"/><path d="M23 4v4a2 2 0 000-4z" fill="black" fill-opacity="0.4"/></svg>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-spacer"></div>
+    <span class="header-title">היעדרות</span>
+    <button class="close-btn" aria-label="סגור">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <line x1="1.5" y1="1.5" x2="10.5" y2="10.5" stroke="rgba(60,60,67,0.6)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="10.5" y1="1.5" x2="1.5" y2="10.5" stroke="rgba(60,60,67,0.6)" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Segmented control -->
+  <div class="segmented-wrap">
+    <div class="segmented-control">
+      <button class="seg-option active" onclick="switchMode('single', this)">תאריך יחיד</button>
+      <button class="seg-option" onclick="switchMode('range', this)">טווח תאריכים</button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Absence details section -->
+    <div class="section">
+      <div class="grouped-table">
+
+        <!-- Absence type row -->
+        <div class="table-row" onclick="openTypePicker()">
+          <div class="stepper">
+            <svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 6L6 1L11 6" stroke="#3C3C43" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 1L6 6L11 1" stroke="#3C3C43" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="tag-pill">
+            <span class="tag-text" id="type-tag">חופשה</span>
+          </div>
+          <span class="row-title">סוג היעדרות</span>
+        </div>
+
+        <!-- Duration row -->
+        <div class="table-row" onclick="openDurationPicker()" style="cursor:pointer;">
+          <div class="stepper">
+            <svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 6L6 1L11 6" stroke="#3C3C43" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 1L6 6L11 1" stroke="#3C3C43" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="tag-pill">
+            <span class="tag-text" id="duration-tag">יום אחד</span>
+          </div>
+          <span class="row-title">משך</span>
+        </div>
+
+        <!-- Date row (single) -->
+        <div class="table-row" id="single-date-row" onclick="document.getElementById('input-single').showPicker?.() || document.getElementById('input-single').click()" style="cursor:pointer;">
+          <div class="stepper">
+            <svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 6L6 1L11 6" stroke="#3C3C43" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 1L6 6L11 1" stroke="#3C3C43" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="tag-pill">
+            <span class="tag-text" id="single-date-label">בחר תאריך</span>
+            <input id="input-single" type="date" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;" onchange="onSingleDateChange(this.value)">
+          </div>
+          <span class="row-title">תאריך</span>
+        </div>
+
+        <!-- Date range rows (hidden by default) -->
+        <div class="table-row" id="start-date-row" style="display:none;cursor:pointer;" onclick="document.getElementById('input-start').showPicker?.() || document.getElementById('input-start').click()">
+          <div class="stepper">
+            <svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 6L6 1L11 6" stroke="#3C3C43" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 1L6 6L11 1" stroke="#3C3C43" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="tag-pill">
+            <span class="tag-text" id="start-date-label">בחר תאריך</span>
+            <input id="input-start" type="date" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;" onchange="onRangeDateChange()">
+          </div>
+          <span class="row-title">מתאריך</span>
+        </div>
+        <div class="table-row" id="end-date-row" style="display:none;cursor:pointer;" onclick="document.getElementById('input-end').showPicker?.() || document.getElementById('input-end').click()">
+          <div class="stepper">
+            <svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 6L6 1L11 6" stroke="#3C3C43" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 1L6 6L11 1" stroke="#3C3C43" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="tag-pill">
+            <span class="tag-text" id="end-date-label">בחר תאריך</span>
+            <input id="input-end" type="date" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;" onchange="onRangeDateChange()">
+          </div>
+          <span class="row-title">עד תאריך</span>
+        </div>
+
+        <!-- Work days row -->
+        <div class="table-row">
+          <div class="stepper">
+            <svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 6L6 1L11 6" stroke="#3C3C43" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 1L6 6L11 1" stroke="#3C3C43" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="tag-pill">
+            <span class="tag-text" id="days-tag">1</span>
+          </div>
+          <span class="row-title">ימי עבודה</span>
+        </div>
+
+      </div>
+      <div class="section-sublabel">
+        שישי ושבת אינם נכללים בספירת ימי העבודה
+      </div>
+    </div>
+
+    <!-- Document upload section -->
+    <div class="section">
+      <div class="section-header-row">
+        <span class="section-label">מסמך תומך</span>
+      </div>
+      <div class="section-sublabel" style="margin-top: -4px;">
+        נדרש עבור מחלה ומילואים — ניתן להגיש גם לאחר שמירת הדיווח
+      </div>
+
+      <!-- Upload area (empty state) -->
+      <div class="upload-area" id="upload-area" onclick="simulateUpload()">
+        <!-- Blue folder-upload icon matching the Figma -->
+        <div class="upload-icon-wrap">
+          <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- folder body -->
+            <rect x="7" y="22" width="46" height="32" rx="5" fill="#2354E6"/>
+            <rect x="18" y="22" width="35" height="22" rx="3" fill="#CED9F9"/>
+            <!-- folder tab -->
+            <path d="M7 18C7 15.79 8.79 14 11 14H22l3 4H7v0z" fill="#1640C1"/>
+            <!-- circle bg -->
+            <circle cx="30" cy="38" r="12" fill="#E7ECFC"/>
+            <!-- upload arrow -->
+            <path d="M30 34v8M27 37l3-3 3 3" stroke="#3B67E9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="upload-link">לחץ להעלאת קובץ</span>
+        <span class="upload-sub">PDF, JPG, PNG עד 10MB</span>
+      </div>
+
+      <!-- Uploaded state (hidden until file selected) -->
+      <div class="file-row" id="file-row" style="display:none;">
+        <!-- File info -->
+        <div class="file-details">
+          <span class="file-name" id="file-name-text">medical_document.pdf</span>
+          <div class="uploaded-badge">
+            <span class="badge-label">הועלה בהצלחה</span>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2.5 6.5L5 9L9.5 3.5" stroke="#106103" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- PDF icon -->
+        <svg class="pdf-icon" viewBox="0 0 42 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="0" width="36" height="48" rx="3" fill="#E2E5E7"/>
+          <path d="M6 0H28L42 14V48H6V0Z" fill="#E2E5E7"/>
+          <path d="M28 0L42 14H30C28.9 14 28 13.1 28 12V0Z" fill="#B0B7BD"/>
+          <rect x="0" y="22" width="36" height="14" rx="2.5" fill="#BF2117"/>
+          <text x="18" y="33" font-family="'Assistant',sans-serif" font-weight="700" font-size="10" fill="white" text-anchor="middle">PDF</text>
+          <rect x="6" y="36" width="30" height="12" rx="1" fill="#CAD1D8"/>
+        </svg>
+
+        <!-- Trash button -->
+        <button class="trash-btn" onclick="removeFile()" aria-label="מחק קובץ">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M2.5 5H17.5" stroke="#FF1D21" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M7.5 5V3.75C7.5 3.06 8.06 2.5 8.75 2.5H11.25C11.94 2.5 12.5 3.06 12.5 3.75V5" stroke="#FF1D21" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4.375 5L5.208 16.042C5.247 16.579 5.694 17 6.232 17H13.768C14.306 17 14.753 16.579 14.792 16.042L15.625 5" stroke="#FF1D21" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="8.333" y1="8.5" x2="8.333" y2="14" stroke="#FF1D21" stroke-width="1.25" stroke-linecap="round"/>
+            <line x1="11.667" y1="8.5" x2="11.667" y2="14" stroke="#FF1D21" stroke-width="1.25" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Bottom action bar -->
+  <div class="bottom-bar">
+    <button class="btn-save">שמור</button>
+    <button class="btn-cancel">ביטול</button>
+  </div>
+
+  <!-- Duration picker sheet -->
+  <div class="type-picker-overlay" id="duration-picker" onclick="closeDurationPicker(event)">
+    <div class="type-picker-sheet">
+      <div class="type-picker-title">משך היעדרות</div>
+      <div class="grouped-table">
+        <div class="picker-option selected" id="dur-single" onclick="selectDuration('single', this)">
+          יום אחד
+          <svg width="18" height="14" viewBox="0 0 18 14" fill="none"><path d="M1.5 7L7 12.5L16.5 1.5" stroke="#0C69FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="picker-option" id="dur-range" onclick="selectDuration('range', this)">מספר ימים</div>
+      </div>
+      <button class="picker-cancel" onclick="closeDurationPicker()">ביטול</button>
+    </div>
+  </div>
+
+  <!-- Type picker sheet -->
+  <div class="type-picker-overlay" id="type-picker" onclick="closeTypePicker(event)">
+    <div class="type-picker-sheet">
+      <div class="type-picker-title">סוג היעדרות</div>
+      <div class="grouped-table">
+        <div class="picker-option selected" onclick="selectType('חופשה', this)">
+          חופשה
+          <svg width="18" height="14" viewBox="0 0 18 14" fill="none"><path d="M1.5 7L7 12.5L16.5 1.5" stroke="#0C69FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="picker-option" onclick="selectType('half_vacation_day', 'חצי יום חופש', this)">חצי יום חופש</div>
+        <div class="picker-option" onclick="selectType('מחלה', this)">מחלה</div>
+        <div class="picker-option" onclick="selectType('מילואים', this)">מילואים</div>
+      </div>
+      <button class="picker-cancel" onclick="closeTypePicker()">ביטול</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  /* Format ISO date string as DD/MM/YY */
+  function formatDateLabel(iso) {
+    if (!iso) return 'בחר תאריך';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y.slice(2)}`;
+  }
+
+  /* Count work days between two ISO date strings, excluding Fri (5) and Sat (6) */
+  function countWorkDays(startIso, endIso) {
+    if (!startIso || !endIso) return 0;
+    const start = new Date(startIso), end = new Date(endIso);
+    if (end < start) return 0;
+    let count = 0;
+    const cur = new Date(start);
+    while (cur <= end) {
+      const day = cur.getDay();
+      if (day !== 5 && day !== 6) count++;
+      cur.setDate(cur.getDate() + 1);
+    }
+    return count;
+  }
+
+  function onSingleDateChange(val) {
+    document.getElementById('single-date-label').textContent = formatDateLabel(val);
+    document.getElementById('days-tag').textContent = val ? '1' : '0';
+  }
+
+  function onRangeDateChange() {
+    const startVal = document.getElementById('input-start').value;
+    const endVal   = document.getElementById('input-end').value;
+    document.getElementById('start-date-label').textContent = formatDateLabel(startVal);
+    document.getElementById('end-date-label').textContent   = formatDateLabel(endVal);
+    document.getElementById('days-tag').textContent = countWorkDays(startVal, endVal) || '—';
+  }
+
+  /* Switch between single-date and range-date rows */
+  function applyDurationMode(mode) {
+    const single = document.getElementById('single-date-row');
+    const start  = document.getElementById('start-date-row');
+    const end    = document.getElementById('end-date-row');
+    if (mode === 'single') {
+      single.style.display = '';
+      start.style.display  = 'none';
+      end.style.display    = 'none';
+      onSingleDateChange(document.getElementById('input-single').value);
+    } else {
+      single.style.display = 'none';
+      start.style.display  = '';
+      end.style.display    = '';
+      onRangeDateChange();
+    }
+  }
+
+  function openDurationPicker() {
+    document.getElementById('duration-picker').classList.add('open');
+  }
+
+  function closeDurationPicker(e) {
+    if (!e || e.target === document.getElementById('duration-picker')) {
+      document.getElementById('duration-picker').classList.remove('open');
+    }
+  }
+
+  function selectDuration(mode, el) {
+    const label = mode === 'single' ? 'יום אחד' : 'מספר ימים';
+    document.getElementById('duration-tag').textContent = label;
+    document.querySelectorAll('#duration-picker .picker-option').forEach(o => {
+      o.classList.remove('selected');
+      o.innerHTML = o.textContent.trim();
+    });
+    el.classList.add('selected');
+    el.innerHTML = label + `<svg width="18" height="14" viewBox="0 0 18 14" fill="none"><path d="M1.5 7L7 12.5L16.5 1.5" stroke="#0C69FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    closeDurationPicker();
+    applyDurationMode(mode);
+  }
+
+  function openTypePicker() {
+    document.getElementById('type-picker').classList.add('open');
+  }
+
+  function closeTypePicker(e) {
+    if (!e || e.target === document.getElementById('type-picker')) {
+      document.getElementById('type-picker').classList.remove('open');
+    }
+  }
+
+  function selectType(type, el) {
+    document.getElementById('type-tag').textContent = type;
+    document.querySelectorAll('.picker-option').forEach(o => {
+      o.classList.remove('selected');
+      o.innerHTML = o.textContent.trim();
+    });
+    el.classList.add('selected');
+    el.innerHTML = type + `<svg width="18" height="14" viewBox="0 0 18 14" fill="none"><path d="M1.5 7L7 12.5L16.5 1.5" stroke="#0C69FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    closeTypePicker();
+  }
+
+  function simulateUpload() {
+    document.getElementById('upload-area').style.display = 'none';
+    document.getElementById('file-row').style.display = 'flex';
+    document.getElementById('file-name-text').textContent = 'document_' + Date.now().toString().slice(-6) + '.pdf';
+  }
+
+  function removeFile() {
+    document.getElementById('file-row').style.display = 'none';
+    document.getElementById('upload-area').style.display = 'flex';
+  }
+</script>
+
+</body>
+</html>

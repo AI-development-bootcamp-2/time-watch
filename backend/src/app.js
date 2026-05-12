@@ -5,6 +5,7 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
 const { authenticate } = require("./middleware/auth");
 const adminRouter = require("./routes/admin");
+const absencesRouter = require("./routes/absences");
 const authRouter = require("./routes/auth");
 const clientsRouter = require("./routes/clients");
 const monthsRouter = require("./routes/months");
@@ -45,6 +46,7 @@ function createApp() {
 
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   app.use("/api/admin", adminRouter);
+  app.use("/api/absences", absencesRouter);
   app.use("/api/auth", authRouter);
   app.use("/api/clients", clientsRouter);
   app.use("/api/month-locks", monthsRouter);

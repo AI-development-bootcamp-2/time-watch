@@ -16,7 +16,7 @@ const uploadDocument = multer({
   },
 })
 
-const VALID_TYPES = ['vacation', 'half_vacation_day', 'sick', 'military_reserve', 'other']
+const VALID_TYPES = ['vacation', 'half_vacation_day', 'sick', 'military_reserve']
 const FUTURE_ALLOWED_TYPES = ['sick', 'military_reserve']
 
 const DATE_RE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
