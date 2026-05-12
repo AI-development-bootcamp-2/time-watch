@@ -1,15 +1,16 @@
 # Claude Code
+.claude/
 
-# Node
+# Dependencies
 node_modules/
-coverage/
-npm-debug.log*
 
 # Environment
 .env
 .env.local
-.claude/settings.local.json
-.claude/settings.json
 
 # Frontend build output
 frontend/dist/
+
+# Test coverage reports
+coverage/
+**/coverage/
