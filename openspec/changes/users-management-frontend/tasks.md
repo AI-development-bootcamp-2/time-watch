@@ -15,18 +15,23 @@ The Admin User Management backend PR (Story 4.1) is awaiting review. Frontend de
 
 Write all component and API-service tests against mocked responses. Integration-test against the real backend once the PR is merged.
 
+**User object shape** (as returned by the API — use this as the source of truth for table rows and modal pre-fill):
+```js
+{ id, full_name, email, role, is_active }
+```
+
 ---
 
 ## Task 1 — Create `usersApi.js` service
 
 **File:** `frontend/src/services/usersApi.js`
 
-- [ ] Create the file following the pattern in `frontend/src/services/authApi.js`
-- [ ] Export `getUsers()` → `request('GET', '/api/users')`
-- [ ] Export `createUser(data)` → `request('POST', '/api/users', data)`
-- [ ] Export `updateUser(id, data)` → `request('PUT', `/api/users/${id}`, data)`
-- [ ] Export `deactivateUser(id)` → `request('PATCH', `/api/users/${id}/deactivate`)`
-- [ ] Write unit tests in `frontend/src/services/usersApi.test.js`:
+- [x] Create the file following the pattern in `frontend/src/services/authApi.js`
+- [x] Export `getUsers()` → `request('GET', '/api/users')`
+- [x] Export `createUser(data)` → `request('POST', '/api/users', data)`
+- [x] Export `updateUser(id, data)` → `request('PUT', `/api/users/${id}`, data)`
+- [x] Export `deactivateUser(id)` → `request('PATCH', `/api/users/${id}/deactivate`)`
+- [x] Write unit tests in `frontend/src/services/usersApi.test.js`:
   - Each function calls the correct HTTP method and path
   - `createUser` passes the body payload
   - `updateUser` interpolates the id into the URL
@@ -127,6 +132,7 @@ Context: Follow the modal shell pattern from `frontend/src/features/daily-report
   - On 400: display the API error message inline in the modal
   - On success: call `onSaved()`
 - [ ] Disable the submit button and show "שומר..." while `saving === true`
+- [ ] On close (`onClose` called): reset field errors and modal-level API error to their empty initial values so reopening is clean
 - [ ] Write tests:
   - Renders with empty fields in create mode
   - Renders pre-filled fields in edit mode
@@ -136,6 +142,7 @@ Context: Follow the modal shell pattern from `frontend/src/features/daily-report
   - Deactivate button absent in create mode
   - Edit save with empty password field: `password` key is absent from the PUT request body
   - Edit save with non-empty password field: `password` key is present in the PUT request body
+  - Closing the modal clears field errors and API error state
 
 ---
 

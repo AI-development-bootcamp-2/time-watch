@@ -1,3 +1,21 @@
+## Data Shapes
+
+### User object (returned by `GET /api/users` and `POST /api/users` / `PUT /api/users/:id`)
+
+```js
+{
+  id:        string,   // UUID
+  full_name: string,
+  email:     string,
+  role:      'employee' | 'admin',
+  is_active: boolean
+}
+```
+
+This shape is the source of truth for pre-filling the edit modal and for rendering each table row. No other fields are read or written by the frontend.
+
+---
+
 ## ADDED Requirements
 
 ### Requirement: Admin can view all users in a table
@@ -58,6 +76,21 @@ The system SHALL display a pre-filled `UserModal` when the admin clicks on a use
 - **AND** the password field is empty (filling it is optional — only updates the password if non-empty)
 - **AND** the modal title is "עריכת משתמש"
 - **AND** a "השבת משתמש" (Deactivate) button is visible at the bottom of the modal for active users
+
+---
+
+### Requirement: Closing the modal resets all error state
+The system SHALL clear all validation errors and API errors when the modal is closed, so that reopening the modal (for any user) shows a clean form with no residual error state.
+
+#### Scenario: Admin closes modal after a validation error
+- **WHEN** the admin submits the modal with invalid data (triggering inline field errors) and then closes the modal
+- **THEN** all field-level validation errors are cleared
+- **AND** reopening the modal shows no error messages
+
+#### Scenario: Admin closes modal after an API error
+- **WHEN** the modal displays an inline API error (e.g., duplicate email) and the admin closes it
+- **THEN** the modal-level API error is cleared
+- **AND** reopening the modal shows no error messages
 
 ---
 
