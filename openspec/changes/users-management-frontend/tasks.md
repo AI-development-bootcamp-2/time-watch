@@ -109,31 +109,31 @@ Context: Mirrors the validation pattern in `backend/src/utils/validate.js` and t
 
 Context: Follow the modal shell pattern from `frontend/src/features/daily-reporting/StopTimerModal.tsx` and `frontend/src/features/monthly-view/EditEntryModal.tsx`. Use `InlineError` from `frontend/src/components/InlineError.jsx` for field-level errors. All text in Hebrew.
 
-- [ ] Accept props: `user` (null = create mode, object = edit mode), `onClose()`, `onSaved()`
-- [ ] Initialise local state from `user` prop (empty strings for create, populated for edit)
-- [ ] Render modal shell: fixed overlay → centred white card with `dir="rtl"`, rounded-2xl shadow-xl, `max-w-sm`
+- [x] Accept props: `user` (null = create mode, object = edit mode), `onClose()`, `onSaved()`
+- [x] Initialise local state from `user` prop (empty strings for create, populated for edit)
+- [x] Render modal shell: fixed overlay → centred white card with `dir="rtl"`, rounded-2xl shadow-xl, `max-w-sm`
   - Clicking the backdrop calls `onClose()`
   - Header: title ("משתמש חדש" / "עריכת משתמש") + close button (×)
-- [ ] Render form fields:
+- [x] Render form fields:
   - שם מלא (text input, required)
   - אימייל (email input, required)
   - תפקיד (select: `employee` → "עובד", `admin` → "אדמין")
   - סיסמה (password input; placeholder "השאר ריק לאי-שינוי" in edit mode)
   - סטטוס (toggle or checkbox: "פעיל" / "לא פעיל"; defaults to active in create mode)
-- [ ] On submit: run `validateUserForm` → set field errors and return early if invalid
-- [ ] On valid submit: set `saving = true`, call `createUser` or `updateUser` from `usersApi.js`
+- [x] On submit: run `validateUserForm` → set field errors and return early if invalid
+- [x] On valid submit: set `saving = true`, call `createUser` or `updateUser` from `usersApi.js`
   - In edit mode: build the payload **without** the `password` key when the password field is empty; only include `password` when the admin entered a non-empty value
   - On success: call `onSaved()`
   - On 409 error: set inline modal error `'כתובת האימייל כבר קיימת במערכת'`
   - On other API error: set inline modal error `'אירעה שגיאה. נסה שוב.'`
   - Always: set `saving = false`
-- [ ] In edit mode only: render "השבת משתמש" button (visible only when `user.is_active === true`)
+- [x] In edit mode only: render "השבת משתמש" button (visible only when `user.is_active === true`)
   - On click: call `deactivateUser(user.id)` from `usersApi.js`
   - On 400: display the API error message inline in the modal
   - On success: call `onSaved()`
-- [ ] Disable the submit button and show "שומר..." while `saving === true`
-- [ ] On close (`onClose` called): reset field errors and modal-level API error to their empty initial values so reopening is clean
-- [ ] Write tests:
+- [x] Disable the submit button and show "שומר..." while `saving === true`
+- [x] On close (`onClose` called): reset field errors and modal-level API error to their empty initial values so reopening is clean
+- [x] Write tests:
   - Renders with empty fields in create mode
   - Renders pre-filled fields in edit mode
   - Inline validation errors appear for empty required fields
