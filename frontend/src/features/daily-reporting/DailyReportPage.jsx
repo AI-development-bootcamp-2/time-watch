@@ -28,14 +28,21 @@ function buildWorkBody(payload) {
   }
 }
 
+// Map the Hebrew labels the form uses to the enum values absences.js expects.
+const ABSENCE_TYPE_MAP = {
+  'חופשה': 'vacation',
+  'מחלה': 'sick',
+  'מילואים': 'military_reserve',
+  'אחר': 'other',
+}
+
 function buildAbsenceBody(payload) {
   return {
-    type: payload.type,
-    startDate: payload.startDate,
-    endDate: payload.endDate,
-    partialDay: payload.partialDay,
-    notes: payload.notes,
-    documentName: payload.documentName,
+    type: ABSENCE_TYPE_MAP[payload.type] || payload.type,
+    start_date: payload.startDate,
+    end_date: payload.endDate,
+    is_partial: Boolean(payload.partialDay),
+    notes: payload.notes || null,
   }
 }
 
