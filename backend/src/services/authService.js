@@ -5,7 +5,7 @@ const usersRepository = require('../repositories/usersRepository');
 const { signToken } = require('../utils/jwt');
 const {
   InvalidCredentialsError, AccountLockedError, AccountInactiveError,
-  UnauthorizedError, PasswordComplexityError,
+  UnauthorizedError, PasswordComplexityError, PasswordReuseError,
 } = require('../utils/errors');
 const { validatePasswordComplexity } = require('../utils/validate');
 const { BCRYPT_COST } = require('../config/constants');
@@ -38,6 +38,11 @@ async function login({ email, password }) {
     throw new InvalidCredentialsError();
   }
 
+  // Intentional enumeration trade-off: we reveal ACCOUNT_INACTIVE only when the
+  // password is correct. An attacker who already knows the password gains nothing
+  // new; an attacker who doesn't will receive INVALID_CREDENTIALS (401) before
+  // reaching this point. For this internal, admin-managed app the UX benefit of
+  // a clear "account is inactive" message outweighs the marginal disclosure risk.
   if (!user.is_active) {
     throw new AccountInactiveError();
   }
@@ -50,12 +55,16 @@ async function login({ email, password }) {
   return { token, user: safeUser };
 }
 
-// Verifies current password, validates and hashes new password, updates DB and clears must_change_password
+// Verifies current password, validates and hashes new password, updates DB and clears must_change_password.
+// Lockout behaviour intentionally mirrors login: wrong current_password increments failed_attempts and
+// eventually locks the account for 15 minutes after MAX_FAILED_ATTEMPTS consecutive failures.
+// Because userId comes from a verified JWT (not user-supplied input), checking lockout before bcrypt
+// carries no enumeration risk and avoids the expensive hash when the account is already locked.
 async function changePassword(userId, { current_password, new_password }) {
   const user = await usersRepository.findByIdFull(userId);
   if (!user) throw new UnauthorizedError();
 
-  // ISSUE-06: check lockout before expensive bcrypt (userId is known from JWT — no enumeration risk)
+  // Check lockout before expensive bcrypt — userId is known from JWT so no enumeration risk
   if (user.locked_until && user.locked_until > new Date()) {
     const minutesRemaining = Math.ceil((user.locked_until - new Date()) / (60 * 1000));
     throw new AccountLockedError(minutesRemaining);
@@ -63,16 +72,18 @@ async function changePassword(userId, { current_password, new_password }) {
 
   const match = await bcrypt.compare(current_password, user.password_hash);
   if (!match) {
-    await usersRepository.incrementFailedAttempts(userId); // ISSUE-06: mirror login lockout
+    // Mirror login: increment counter; locks after MAX_FAILED_ATTEMPTS wrong attempts
+    await usersRepository.incrementFailedAttempts(userId);
     throw new UnauthorizedError('סיסמה נוכחית שגויה');
   }
 
-  if (!user.is_active) throw new AccountInactiveError(); // ISSUE-03: block deactivated users
+  // Block deactivated users even with a valid JWT (token may have been issued before deactivation)
+  if (!user.is_active) throw new AccountInactiveError();
 
-  // ISSUE-01: reject if new_password is the same as the current one
+  // Reject reuse of the current password — distinct from complexity failures (PASSWORD_REUSE vs PASSWORD_COMPLEXITY)
   const isSamePassword = await bcrypt.compare(new_password, user.password_hash);
   if (isSamePassword) {
-    throw new PasswordComplexityError([{ field: 'new_password', message: 'הסיסמה החדשה חייבת להיות שונה מהסיסמה הנוכחית' }]);
+    throw new PasswordReuseError();
   }
 
   validatePasswordComplexity(new_password, 'new_password');

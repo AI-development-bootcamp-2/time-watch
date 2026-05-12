@@ -5,6 +5,7 @@ process.env.JWT_SECRET = 'test-secret-used-only-in-jest-at-least-32-chars!!';
 
 const request = require('supertest');
 const knex = require('knex');
+const jwt = require('jsonwebtoken');
 const knexConfigs = require('../../knexfile.cjs');
 const { createApp } = require('../app');
 const { closeDatabase } = require('../db/knex');
@@ -93,6 +94,24 @@ describe('GET /api/users', () => {
     expect(user).not.toHaveProperty('password_hash');
     expect(user).not.toHaveProperty('failed_attempts');
     expect(user).not.toHaveProperty('locked_until');
+  });
+
+  // Security trade-off (documented): admin CRUD routes trust the JWT role claim and do NOT
+  // re-check the caller's DB row on every request.  A deactivated admin's token therefore
+  // remains valid for these routes until the 8-hour JWT expires.
+  // Only /me and /change-password re-check the DB — those are the only two routes that
+  // return 401/403 immediately when the caller is inactive.
+  it('deactivated admin JWT still passes admin routes — JWT expiry is the only eviction', async () => {
+    const [deactivatedAdmin] = await db('users')
+      .insert({ ...seedUser, email: 'deactivated-admin@example.com', role: 'admin', full_name: 'אדמין מבוטל', is_active: false })
+      .returning('*');
+
+    const cookie = `token=${jwt.sign({ sub: deactivatedAdmin.id, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '8h' })}`;
+
+    const res = await request(app).get('/api/users').set('Cookie', cookie);
+
+    // 200 — the route does not consult the DB for the caller; JWT alone is trusted
+    expect(res.status).toBe(200);
   });
 });
 

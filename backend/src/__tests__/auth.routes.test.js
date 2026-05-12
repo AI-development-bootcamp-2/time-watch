@@ -63,6 +63,8 @@ describe('POST /api/auth/login', () => {
     expect(cookieStr).toMatch(/^token=/);
     expect(cookieStr).toMatch(/HttpOnly/i);
     expect(cookieStr).toMatch(/SameSite=Strict/i);
+    // 8 hours = 28 800 seconds; verify a reasonable session lifetime
+    expect(cookieStr).toMatch(/Max-Age=28800/i);
 
     expect(res.body).toHaveProperty('id');
     expect(res.body.name).toBe(TEST_USER.full_name);
@@ -72,6 +74,23 @@ describe('POST /api/auth/login', () => {
     expect(res.body).not.toHaveProperty('password_hash');
     expect(res.body).not.toHaveProperty('failed_attempts');
     expect(res.body).not.toHaveProperty('locked_until');
+  });
+
+  it('Secure flag is set on cookie when NODE_ENV=production', async () => {
+    await insertUser();
+    const orig = process.env.NODE_ENV;
+    try {
+      process.env.NODE_ENV = 'production';
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: TEST_USER.email, password: TEST_PASSWORD });
+      const cookieStr = Array.isArray(res.headers['set-cookie'])
+        ? res.headers['set-cookie'][0]
+        : res.headers['set-cookie'];
+      expect(cookieStr).toMatch(/;\s*Secure/i);
+    } finally {
+      process.env.NODE_ENV = orig;
+    }
   });
 
   it('400 — missing email', async () => {
@@ -134,6 +153,9 @@ describe('POST /api/auth/login', () => {
     expect(unknownEmailRes.body.message).toBe(wrongPasswordRes.body.message);
   });
 
+  // Intentional trade-off: for this internal, admin-managed app we surface ACCOUNT_INACTIVE
+  // only when the password is correct. An attacker who already knows the password learns
+  // nothing new; wrong passwords still receive INVALID_CREDENTIALS (see 7.6 below).
   it('7.4 — inactive user + correct password → 403 ACCOUNT_INACTIVE', async () => {
     await insertUser({ is_active: false });
 
@@ -377,18 +399,16 @@ describe('POST /api/auth/change-password', () => {
     expect(res.body.code).toBe('UNAUTHENTICATED');
   });
 
-  // ISSUE-01: new_password must differ from current password
-  it('8.9 — new_password same as current_password → 422 PASSWORD_COMPLEXITY', async () => {
+  // new_password must differ from current — uses PASSWORD_REUSE (not PASSWORD_COMPLEXITY)
+  // so the client can show a targeted message rather than a generic complexity error
+  it('8.9 — new_password same as current_password → 422 PASSWORD_REUSE', async () => {
     const res = await request(app)
       .post('/api/auth/change-password')
       .set('Cookie', userCookie)
       .send({ current_password: TEST_PASSWORD, new_password: TEST_PASSWORD });
 
     expect(res.status).toBe(422);
-    expect(res.body.code).toBe('PASSWORD_COMPLEXITY');
-    expect(res.body.details).toEqual(
-      expect.arrayContaining([expect.objectContaining({ field: 'new_password' })])
-    );
+    expect(res.body.code).toBe('PASSWORD_REUSE');
   });
 
   // ISSUE-03: deactivated user with a forged-but-valid JWT must be blocked
@@ -437,6 +457,44 @@ describe('POST /api/auth/change-password', () => {
 
     const row = await db('users').where({ email: TEST_USER.email }).first();
     expect(row.failed_attempts).toBe(1);
+  });
+
+  // Consistency with login lockout: 3 consecutive wrong current_password values lock the account
+  it('8.13 — 3 wrong current_password attempts → account locked (423 ACCOUNT_LOCKED)', async () => {
+    for (let i = 0; i < 3; i++) {
+      await request(app)
+        .post('/api/auth/change-password')
+        .set('Cookie', userCookie)
+        .send({ current_password: 'WrongPass1!', new_password: NEW_PASSWORD });
+    }
+
+    // Even the correct password is now blocked by the lockout check
+    const res = await request(app)
+      .post('/api/auth/change-password')
+      .set('Cookie', userCookie)
+      .send({ current_password: TEST_PASSWORD, new_password: NEW_PASSWORD });
+
+    expect(res.status).toBe(423);
+    expect(res.body.code).toBe('ACCOUNT_LOCKED');
+  });
+
+  it('8.14 — successful password change resets failed_attempts counter to 0', async () => {
+    // Two wrong attempts to bump the counter
+    for (let i = 0; i < 2; i++) {
+      await request(app)
+        .post('/api/auth/change-password')
+        .set('Cookie', userCookie)
+        .send({ current_password: 'WrongPass1!', new_password: NEW_PASSWORD });
+    }
+
+    // Correct change
+    await request(app)
+      .post('/api/auth/change-password')
+      .set('Cookie', userCookie)
+      .send({ current_password: TEST_PASSWORD, new_password: NEW_PASSWORD });
+
+    const row = await db('users').where({ email: TEST_USER.email }).first();
+    expect(row.failed_attempts).toBe(0);
   });
 });
 

@@ -71,11 +71,19 @@ class AccountInactiveError extends AppError {
   }
 }
 
+// Distinct from PASSWORD_COMPLEXITY: fired specifically when new_password === current_password
+class PasswordReuseError extends AppError {
+  constructor() {
+    super(422, 'PASSWORD_REUSE', 'הסיסמה החדשה חייבת להיות שונה מהסיסמה הנוכחית');
+  }
+}
+
 module.exports = {
   AppError,
   ValidationError,
   ConflictError,
   PasswordComplexityError,
+  PasswordReuseError,
   UnauthorizedError,
   ForbiddenError,
   InvalidCredentialsError,
