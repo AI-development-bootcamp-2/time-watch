@@ -1,6 +1,6 @@
 'use strict';
 
-const { login: loginService } = require('../services/authService');
+const { login: loginService, changePassword: changePasswordService } = require('../services/authService');
 const usersRepository = require('../repositories/usersRepository');
 const { validateLogin } = require('../utils/validate');
 const { ValidationError, UnauthorizedError } = require('../utils/errors');
@@ -30,6 +30,7 @@ async function login(req, res, next) {
       name: user.full_name,
       email: user.email,
       role: user.role,
+      must_change_password: user.must_change_password,
     });
   } catch (err) {
     next(err);
@@ -51,4 +52,14 @@ async function me(req, res, next) {
   }
 }
 
-module.exports = { login, logout, me };
+// Handles POST /api/auth/change-password; requires valid session via authenticate middleware
+async function changePassword(req, res, next) {
+  try {
+    await changePasswordService(req.user.id, req.body);
+    res.status(200).json({ message: 'הסיסמה שונתה בהצלחה' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { login, logout, me, changePassword };

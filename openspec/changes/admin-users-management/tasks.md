@@ -70,30 +70,30 @@
 
 ## 7. [Backend] Login — inactive guard + must_change_password response
 
-- [ ] 7.1 In `authService.js` login flow, after successful bcrypt match, check `user.is_active`; if false throw `ForbiddenError({ code: 'ACCOUNT_INACTIVE', message: 'החשבון אינו פעיל' })`
-- [ ] 7.2 In `authController.js`, map the new `ForbiddenError` from login to HTTP 403
-- [ ] 7.3 Update login success response in `authController.js` to include `must_change_password` from the user record
-- [ ] 7.4 Integration test: deactivated user with correct credentials → 403 with code ACCOUNT_INACTIVE
-- [ ] 7.5 Integration test: active user with correct credentials → 200 (regression guard)
-- [ ] 7.6 Integration test: deactivated user with wrong password → 401 (lockout runs first; deactivation check is not reached)
-- [ ] 7.7 Integration test: user with `must_change_password = true` logs in with correct credentials → 200 with `must_change_password: true` in response body (login is not blocked by this flag)
-- [ ] 7.8 Integration test: user with `must_change_password = false` logs in → 200 with `must_change_password: false`
+- [x] 7.1 In `authService.js` login flow, after successful bcrypt match, check `user.is_active`; if false throw `ForbiddenError({ code: 'ACCOUNT_INACTIVE', message: 'החשבון אינו פעיל' })`
+- [x] 7.2 In `authController.js`, map the new `ForbiddenError` from login to HTTP 403
+- [x] 7.3 Update login success response in `authController.js` to include `must_change_password` from the user record
+- [x] 7.4 Integration test: deactivated user with correct credentials → 403 with code ACCOUNT_INACTIVE
+- [x] 7.5 Integration test: active user with correct credentials → 200 (regression guard)
+- [x] 7.6 Integration test: deactivated user with wrong password → 401 (lockout runs first; deactivation check is not reached)
+- [x] 7.7 Integration test: user with `must_change_password = true` logs in with correct credentials → 200 with `must_change_password: true` in response body (login is not blocked by this flag)
+- [x] 7.8 Integration test: user with `must_change_password = false` logs in → 200 with `must_change_password: false`
 
 ## 8. [Backend] POST /api/auth/change-password — forced password change
 
-- [ ] 8.1 Add `changePassword(userId, { current_password, new_password })` to `authService.js`:
+- [x] 8.1 Add `changePassword(userId, { current_password, new_password })` to `authService.js`:
   - Fetch user by id via `findByIdFull` (§2.2b) — needs `password_hash` and must work for any non-deleted user
   - Compare `current_password` against stored `password_hash` with `bcrypt.compare()`; throw `UnauthorizedError` on mismatch
-  - Validate `new_password` complexity (≥8 chars, ≥1 upper, ≥1 lower, ≥1 digit, ≥1 special); throw `ValidationError` if weak
+  - Validate `new_password` complexity (≥8 chars, ≥1 upper, ≥1 lower, ≥1 digit, ≥1 special); throw `PasswordComplexityError` if weak
   - Hash `new_password` with bcrypt cost 12
   - Call `updatePassword(userId, newHash)` (§2.7)
-- [ ] 8.2 Add `changePassword` handler to `authController.js` — return 200 `{ message: 'הסיסמה שונתה בהצלחה' }` on success; map `UnauthorizedError` → 401, `ValidationError` → 422
-- [ ] 8.3 Register `POST /api/auth/change-password` in `routes/auth.js` — no additional role guard; the global `authenticate` middleware already requires a valid session
-- [ ] 8.4 Integration test: wrong `current_password` → 401
-- [ ] 8.5 Integration test: `new_password` fails complexity → 422 with rule description
-- [ ] 8.6 Integration test: valid request → 200; subsequent `findByIdFull` shows `must_change_password = false` and a different `password_hash`
-- [ ] 8.7 Integration test: after successful change, login response body includes `must_change_password: false`
-- [ ] 8.8 Integration test: unauthenticated request (no cookie) → 401 (global `authenticate` blocks it)
+- [x] 8.2 Add `changePassword` handler to `authController.js` — return 200 `{ message: 'הסיסמה שונתה בהצלחה' }` on success; map `UnauthorizedError` → 401, `PasswordComplexityError` → 422
+- [x] 8.3 Register `POST /api/auth/change-password` in `routes/auth.js` — no additional role guard; the global `authenticate` middleware already requires a valid session
+- [x] 8.4 Integration test: wrong `current_password` → 401
+- [x] 8.5 Integration test: `new_password` fails complexity → 422 with rule description
+- [x] 8.6 Integration test: valid request → 200; subsequent `findByIdFull` shows `must_change_password = false` and a different `password_hash`
+- [x] 8.7 Integration test: after successful change, login response body includes `must_change_password: false`
+- [x] 8.8 Integration test: unauthenticated request (no cookie) → 401 (global `authenticate` blocks it)
 
 ## 9. [Backend] Verification
 

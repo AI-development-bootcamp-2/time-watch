@@ -5,12 +5,11 @@ const { db } = require('../db/knex');
 const SAFE_COLUMNS = ['id', 'full_name', 'email', 'role', 'is_active', 'must_change_password', 'created_at'];
 const MAX_FAILED_ATTEMPTS = 3;
 
-// Returns the full user row (with password_hash) for active non-deleted users; used by login
+// Returns the full user row (with password_hash) for any non-deleted user; used by login (is_active checked in service)
 async function findByEmail(email) {
   return db('users')
     .whereRaw('LOWER(email) = LOWER(?)', [email])
     .whereNull('deleted_at')
-    .where({ is_active: true })
     .first();
 }
 

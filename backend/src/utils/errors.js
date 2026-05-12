@@ -65,6 +65,12 @@ class BadRequestError extends AppError {
   }
 }
 
+class AccountInactiveError extends AppError {
+  constructor() {
+    super(403, 'ACCOUNT_INACTIVE', 'החשבון אינו פעיל');
+  }
+}
+
 module.exports = {
   AppError,
   ValidationError,
@@ -76,4 +82,5 @@ module.exports = {
   AccountLockedError,
   NotFoundError,
   BadRequestError,
+  AccountInactiveError,
 };
