@@ -57,31 +57,38 @@ Response: array of absence objects.
 - Check `month_locks` for the new date range → `423` if locked
 
 #### Task B.2.4 — `POST /api/absences/:id/document`
-- [ ] Upload a supporting document using multer.
+- [x] Upload a supporting document using multer (`memoryStorage` — no disk I/O).
 - Return `404` if absence not found or soft-deleted
 - Accept only `application/pdf`, `image/jpeg`, `image/png` → `400` for other mime types
 - Max file size: **20 MB** → `413` if exceeded
-- Save file to `uploads/absences/` directory
-- If `document_url` already exists on the record, delete the old file from disk before saving the new one
-- Update `document_url` and `document_uploaded_at = NOW()` on the record
-- Return updated absence object
+- Store `req.file.buffer` as `document_data` (bytea), `req.file.originalname` as `document_filename`, and `req.file.mimetype` as `document_mimetype` on the record
+- If a document already exists, the new BLOB simply overwrites it in the same UPDATE — no file deletion needed
+- Update `document_uploaded_at = NOW()` on the record
+- Return updated absence object (excluding `document_data` from the JSON response)
+
+#### Task B.2.4b — `GET /api/absences/:id/document`
+- [x] Stream the stored BLOB back to the client.
+- Return `404` if absence not found, soft-deleted, or has no document
+- Set `Content-Type` to the stored `document_mimetype`
+- Set `Content-Disposition: inline; filename="<document_filename>"`
+- Send the raw `document_data` buffer
 
 #### Task B.2.6 — `DELETE /api/absences/:id/document`
-- [ ] Delete the uploaded document for a given absence.
-- Return `404` if absence not found, soft-deleted, or has no document
+- [x] Delete the uploaded document for a given absence.
+- Return `404` if absence not found, soft-deleted, or has no document (`document_data IS NULL`)
 - Only the owner or an admin may delete → `403` otherwise
-- Delete the file from disk (`uploads/absences/`)
-- Set `document_url = NULL` and `document_uploaded_at = NULL` on the record
+- Set `document_data = NULL`, `document_filename = NULL`, `document_mimetype = NULL`, and `document_uploaded_at = NULL` on the record
 - Return updated absence object
 
 #### Task B.2.5 — Tests (Jest + Supertest)
-- [ ] Cover:
-- `GET` with and without `?month=` filter
-- `POST` happy path (single month, multi-month split)
-- `POST` validation errors: bad type, past future-date rule, Fri–Sat-only range, locked month
-- `PUT` ownership guard, locked month block
-- Document upload: wrong mime type → 400, oversized → 413, success → `document_url` saved, old file replaced
-- Document delete (`DELETE /api/absences/:id/document`): success → `document_url` nulled, file removed from disk; non-owner → 403; no document → 404
+- [x] Integration tests using the real DB — no mocks except multer's in-memory buffer. Cover:
+- `GET` with and without `?month=` filter; soft-deleted rows excluded; other user's rows excluded
+- `POST` happy path (single month, multi-month split verified in DB)
+- `POST` validation errors: bad type, future-date rule, Fri–Sat-only range, locked month
+- `PUT` ownership guard, admin override, locked month block, 404 for missing record
+- `POST /:id/document`: wrong mime type → 400, oversized → 413, success → `document_data` buffer persisted in DB, re-upload → BLOB overwritten, non-existent absence → 404
+- `GET /:id/document`: streams BLOB with correct `Content-Type`; 404 when no document stored
+- `DELETE /api/absences/:id/document`: success → all document columns nulled in DB; non-owner → 403; no document → 404; non-existent absence → 404
 
 ---
 
