@@ -1,13 +1,12 @@
 'use strict';
 
-const { AppError, ValidationError } = require('../utils/errors');
+const { AppError } = require('../utils/errors');
 
 function errorHandler(err, req, res, _next) {
-  if (err instanceof ValidationError) {
-    return res.status(400).json({ code: err.code, message: err.message, details: err.details });
-  }
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({ code: err.code, message: err.message });
+    const body = { code: err.code, message: err.message };
+    if (err.details) body.details = err.details;
+    return res.status(err.statusCode).json(body);
   }
   console.error(err);
   res.status(500).json({ code: 'INTERNAL_ERROR', message: 'שגיאת שרת' });

@@ -2,7 +2,7 @@
 
 const router = require('express').Router();
 const { requireRole } = require('../middleware/auth');
-const { create } = require('../controllers/usersController');
+const { create, list, update, deactivate } = require('../controllers/usersController');
 
 /**
  * @swagger
@@ -68,10 +68,172 @@ const { create } = require('../controllers/usersController');
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
+/**
+ * @swagger
+ * /api/users:
+ *   get:
+ *     summary: List all users (admin only)
+ *     tags: [Users]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Array of all non-deleted users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Caller is not an admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/', requireRole('admin'), list);
+
 router.post('/', requireRole('admin'), create);
 
-router.get('/',             (_req, res) => res.status(501).json({ code: 'NOT_IMPLEMENTED', message: 'לא מומש' }));
-router.put('/:id',          (_req, res) => res.status(501).json({ code: 'NOT_IMPLEMENTED', message: 'לא מומש' }));
-router.patch('/:id/deactivate', (_req, res) => res.status(501).json({ code: 'NOT_IMPLEMENTED', message: 'לא מומש' }));
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   put:
+ *     summary: Update a user's profile (admin only)
+ *     tags: [Users]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [full_name, email, role]
+ *             properties:
+ *               full_name:
+ *                 type: string
+ *                 maxLength: 150
+ *                 example: ישראל ישראלי
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: israel@example.com
+ *               role:
+ *                 type: string
+ *                 enum: [employee, admin]
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *                 description: Optional — if provided must meet complexity rules
+ *                 example: NewPass1!
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation error (missing or invalid field)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationErrorResponse'
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Caller is not an admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       409:
+ *         description: Email already taken by another user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       422:
+ *         description: Password does not meet complexity requirements
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationErrorResponse'
+ */
+router.put('/:id', requireRole('admin'), update);
+
+/**
+ * @swagger
+ * /api/users/{id}/deactivate:
+ *   patch:
+ *     summary: Soft-deactivate a user (admin only; idempotent)
+ *     tags: [Users]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User deactivated (or was already inactive — idempotent)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Cannot deactivate the last active admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Caller is not an admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.patch('/:id/deactivate', requireRole('admin'), deactivate);
 
 module.exports = router;
