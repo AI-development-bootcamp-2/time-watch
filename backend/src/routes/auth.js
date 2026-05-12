@@ -166,12 +166,24 @@ router.get('/me', authenticate, me);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Account is deactivated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       422:
- *         description: new_password does not meet complexity requirements
+ *         description: new_password does not meet complexity requirements or equals the current password
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ValidationErrorResponse'
+ *       423:
+ *         description: Account locked after too many failed attempts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/change-password', authenticate, changePassword);
 

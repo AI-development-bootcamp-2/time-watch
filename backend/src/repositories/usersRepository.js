@@ -73,9 +73,10 @@ async function findAll() {
     .orderBy('full_name', 'asc');
 }
 
-// Updates allowed fields on a non-deleted user; returns updated safe columns
-async function update(id, patch) {
-  const [row] = await db('users')
+// Updates allowed fields on a non-deleted user; returns updated safe columns.
+// Pass an optional knex transaction (trx) to participate in a caller-managed transaction.
+async function update(id, patch, trx) {
+  const [row] = await (trx || db)('users')
     .where({ id })
     .whereNull('deleted_at')
     .update({ ...patch, updated_at: db.raw('NOW()') })

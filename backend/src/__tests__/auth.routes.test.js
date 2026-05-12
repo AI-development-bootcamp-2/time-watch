@@ -376,6 +376,68 @@ describe('POST /api/auth/change-password', () => {
     expect(res.status).toBe(401);
     expect(res.body.code).toBe('UNAUTHENTICATED');
   });
+
+  // ISSUE-01: new_password must differ from current password
+  it('8.9 — new_password same as current_password → 422 PASSWORD_COMPLEXITY', async () => {
+    const res = await request(app)
+      .post('/api/auth/change-password')
+      .set('Cookie', userCookie)
+      .send({ current_password: TEST_PASSWORD, new_password: TEST_PASSWORD });
+
+    expect(res.status).toBe(422);
+    expect(res.body.code).toBe('PASSWORD_COMPLEXITY');
+    expect(res.body.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field: 'new_password' })])
+    );
+  });
+
+  // ISSUE-03: deactivated user with a forged-but-valid JWT must be blocked
+  it('8.10 — deactivated user with valid JWT → 403 ACCOUNT_INACTIVE', async () => {
+    const inactiveUser = await insertUser({ email: 'inactive@example.com', is_active: false });
+    const forgedToken = jwt.sign(
+      { sub: inactiveUser.id, role: inactiveUser.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '8h' }
+    );
+
+    const res = await request(app)
+      .post('/api/auth/change-password')
+      .set('Cookie', `token=${forgedToken}`)
+      .send({ current_password: TEST_PASSWORD, new_password: NEW_PASSWORD });
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('ACCOUNT_INACTIVE');
+  });
+
+  // ISSUE-06: locked account is rejected before the password check
+  it('8.11 — locked account → 423 ACCOUNT_LOCKED', async () => {
+    const lockedUntil = new Date(Date.now() + 10 * 60 * 1000);
+    const lockedUser = await insertUser({ email: 'locked@example.com', locked_until: lockedUntil });
+    const forgedToken = jwt.sign(
+      { sub: lockedUser.id, role: lockedUser.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '8h' }
+    );
+
+    const res = await request(app)
+      .post('/api/auth/change-password')
+      .set('Cookie', `token=${forgedToken}`)
+      .send({ current_password: TEST_PASSWORD, new_password: NEW_PASSWORD });
+
+    expect(res.status).toBe(423);
+    expect(res.body.code).toBe('ACCOUNT_LOCKED');
+  });
+
+  // ISSUE-06: wrong current_password increments failed_attempts (mirrors login lockout)
+  it('8.12 — wrong current_password increments failed_attempts in DB', async () => {
+    await request(app)
+      .post('/api/auth/change-password')
+      .set('Cookie', userCookie)
+      .send({ current_password: 'WrongPass1!', new_password: NEW_PASSWORD });
+
+    const row = await db('users').where({ email: TEST_USER.email }).first();
+    expect(row.failed_attempts).toBe(1);
+  });
 });
 
 describe('POST /api/auth/logout', () => {

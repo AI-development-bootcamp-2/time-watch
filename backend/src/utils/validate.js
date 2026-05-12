@@ -1,5 +1,7 @@
 'use strict';
 
+const { PasswordComplexityError } = require('./errors');
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const VALID_ROLES = new Set(['employee', 'admin']);
 
@@ -72,4 +74,18 @@ function validateUpdateUser({ full_name, email, role } = {}) {
   return { valid: errors.length === 0, errors };
 }
 
-module.exports = { validateCreateUser, validateLogin, validateUpdateUser };
+// Throws PasswordComplexityError if password does not meet complexity rules.
+// fieldName defaults to 'password'; pass 'new_password' for change-password flows.
+function validatePasswordComplexity(password, fieldName = 'password') {
+  const missing = [];
+  if (password.length < 8)             missing.push('לפחות 8 תווים');
+  if (!/[A-Z]/.test(password))         missing.push('אות גדולה אחת לפחות');
+  if (!/[a-z]/.test(password))         missing.push('אות קטנה אחת לפחות');
+  if (!/\d/.test(password))            missing.push('ספרה אחת לפחות');
+  if (!/[^A-Za-z0-9]/.test(password))  missing.push('תו מיוחד אחד לפחות');
+  if (missing.length > 0) {
+    throw new PasswordComplexityError([{ field: fieldName, message: `הסיסמה חייבת לכלול: ${missing.join(', ')}` }]);
+  }
+}
+
+module.exports = { validateCreateUser, validateLogin, validateUpdateUser, validatePasswordComplexity };

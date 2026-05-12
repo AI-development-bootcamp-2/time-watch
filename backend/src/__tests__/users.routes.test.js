@@ -134,6 +134,28 @@ describe('POST /api/users', () => {
     expect(res.body.code).toBe('EMAIL_CONFLICT');
   });
 
+  // ISSUE-07: email normalization
+  it('normalizes mixed-case email to lowercase before storing', async () => {
+    const res = await request(app)
+      .post('/api/users')
+      .set('Cookie', adminCookie())
+      .send({ ...validBody, email: 'Israel@Example.COM' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.email).toBe('israel@example.com');
+  });
+
+  it('409 — email differing only by case is treated as a duplicate', async () => {
+    await request(app).post('/api/users').set('Cookie', adminCookie()).send(validBody); // israel@example.com
+    const res = await request(app)
+      .post('/api/users')
+      .set('Cookie', adminCookie())
+      .send({ ...validBody, full_name: 'אחר', email: 'Israel@Example.COM' });
+
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('EMAIL_CONFLICT');
+  });
+
   // Validation: required fields
   it('400 — missing full_name', async () => {
     const { full_name, ...body } = validBody;
@@ -332,6 +354,48 @@ describe('PUT /api/users/:id', () => {
     expect(res.body.details).toEqual(
       expect.arrayContaining([expect.objectContaining({ field: 'role' })])
     );
+  });
+
+  // ISSUE-07: email normalization on update
+  it('normalizes mixed-case email to lowercase before updating', async () => {
+    const res = await request(app)
+      .put(`/api/users/${userId}`)
+      .set('Cookie', adminCookie())
+      .send({ full_name: 'שרה כהן', email: 'Sarah@Example.COM', role: 'employee' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.email).toBe('sarah@example.com');
+  });
+
+  // ISSUE-02: last-active-admin protection on role change
+  it('5.9 — demoting the only active admin to employee → 400 BAD_REQUEST', async () => {
+    const [adminRow] = await db('users')
+      .insert({ ...seedUser, email: 'sole-admin@example.com', role: 'admin', full_name: 'אדמין יחיד' })
+      .returning('id');
+
+    const res = await request(app)
+      .put(`/api/users/${adminRow.id}`)
+      .set('Cookie', adminCookie())
+      .send({ full_name: 'אדמין לשעבר', email: 'sole-admin@example.com', role: 'employee' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('BAD_REQUEST');
+  });
+
+  it('5.10 — demoting one of two active admins to employee → 200', async () => {
+    await db('users')
+      .insert({ ...seedUser, email: 'admin2@example.com', role: 'admin', full_name: 'אדמין שני' });
+    const [adminRow] = await db('users')
+      .insert({ ...seedUser, email: 'admin1@example.com', role: 'admin', full_name: 'אדמין ראשון' })
+      .returning('id');
+
+    const res = await request(app)
+      .put(`/api/users/${adminRow.id}`)
+      .set('Cookie', adminCookie())
+      .send({ full_name: 'אדמין ראשון', email: 'admin1@example.com', role: 'employee' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('role', 'employee');
   });
 });
 

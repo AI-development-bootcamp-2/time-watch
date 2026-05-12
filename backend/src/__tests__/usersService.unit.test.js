@@ -7,7 +7,7 @@ jest.mock('../db/knex', () => ({ db: { transaction: jest.fn() } }));
 
 const usersRepository = require('../repositories/usersRepository');
 const { db } = require('../db/knex');
-const { createUser, deactivateUser } = require('../services/usersService');
+const { createUser, updateUser, deactivateUser } = require('../services/usersService');
 const { PasswordComplexityError, BadRequestError } = require('../utils/errors');
 
 describe('createUser unit', () => {
@@ -46,6 +46,49 @@ describe('createUser unit', () => {
       createUser({ full_name: 'Test', email: 'test@example.com', password: 'weak', role: 'employee' })
     ).rejects.toBeInstanceOf(PasswordComplexityError);
     expect(usersRepository.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('updateUser unit', () => {
+  let mockTrx;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockTrx = {
+      commit: jest.fn().mockResolvedValue(undefined),
+      rollback: jest.fn().mockResolvedValue(undefined),
+    };
+    db.transaction.mockImplementation(async (cb) => {
+      try {
+        const result = await cb(mockTrx);
+        await mockTrx.commit();
+        return result;
+      } catch (err) {
+        await mockTrx.rollback();
+        throw err;
+      }
+    });
+  });
+
+  it('5.A — demoting last active admin → throws BadRequestError, update never called', async () => {
+    usersRepository.lockUserForUpdate.mockResolvedValue({ id: 1, role: 'admin', is_active: true });
+    usersRepository.lockActiveAdmins.mockResolvedValue([{ id: 1 }]);
+
+    await expect(
+      updateUser(1, { full_name: 'Test', email: 'test@example.com', role: 'employee' })
+    ).rejects.toBeInstanceOf(BadRequestError);
+    expect(usersRepository.update).not.toHaveBeenCalled();
+  });
+
+  it('5.B — demoting last active admin → transaction rolled back, never committed', async () => {
+    usersRepository.lockUserForUpdate.mockResolvedValue({ id: 1, role: 'admin', is_active: true });
+    usersRepository.lockActiveAdmins.mockResolvedValue([{ id: 1 }]);
+
+    await expect(
+      updateUser(1, { full_name: 'Test', email: 'test@example.com', role: 'employee' })
+    ).rejects.toBeInstanceOf(BadRequestError);
+    expect(mockTrx.rollback).toHaveBeenCalledTimes(1);
+    expect(mockTrx.commit).not.toHaveBeenCalled();
   });
 });
 
