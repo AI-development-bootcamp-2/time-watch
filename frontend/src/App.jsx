@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import DailyReportPage from './features/daily-reporting/DailyReportPage.jsx'
 import LoginPage from './features/auth/LoginPage.jsx'
-import PrivateRoute from './features/auth/PrivateRoute.jsx'
+// Disable the below import AND remove the PrivateRoute wrapper from the daily report route so that /daily-report is reachable without a token.
+ import PrivateRoute from './features/auth/PrivateRoute.jsx'
 
 export default function App() {
   return (

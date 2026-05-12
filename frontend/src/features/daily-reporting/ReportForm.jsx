@@ -5,6 +5,7 @@ import ProjectPicker from './ProjectPicker.jsx'
 const DAILY_STANDARD = 9
 const DAYS_HE = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש']
 const LOCATIONS = ['משרד', 'לקוח', 'בית']
+const TASKS = ['UX UI Design', 'Front-end', 'Back-end', 'QA']
 const ABSENCE_TYPES = ['חופשה', 'מחלה', 'מילואים', 'אחר']
 const ABSENCE_REQUIRES_DOC = new Set(['מחלה', 'מילואים'])
 
@@ -249,6 +250,9 @@ export default function ReportForm({ onClose, onSave, date = new Date(), isSubmi
                     onChange={e => updateProject(p.id, 'task', e.target.value)}
                   >
                     <option value=""></option>
+                    {TASKS.map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
                   </select>
                 </div>
                 {pErrs.task && <div className="rf-error">{pErrs.task}</div>}
