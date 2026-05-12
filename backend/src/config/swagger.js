@@ -15,12 +15,13 @@ const spec = swaggerJsdoc({
         User: {
           type: 'object',
           properties: {
-            id:         { type: 'string', format: 'uuid' },
-            full_name:  { type: 'string' },
-            email:      { type: 'string', format: 'email' },
-            role:       { type: 'string', enum: ['employee', 'admin'] },
-            is_active:  { type: 'boolean' },
-            created_at: { type: 'string', format: 'date-time' },
+            id:                   { type: 'string', format: 'uuid' },
+            full_name:            { type: 'string' },
+            email:                { type: 'string', format: 'email' },
+            role:                 { type: 'string', enum: ['employee', 'admin'] },
+            is_active:            { type: 'boolean' },
+            must_change_password: { type: 'boolean' },
+            created_at:           { type: 'string', format: 'date-time' },
           },
         },
         ErrorResponse: {
