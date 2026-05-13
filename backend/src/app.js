@@ -18,6 +18,7 @@ const absencesRouter    = require("./routes/absences");
 const monthsRouter      = require("./routes/months");
 const adminRouter       = require("./routes/admin");
 const workEntriesRouter = require("./routes/workEntries");
+const userTasksRouter   = require("./routes/userTasks");
 
 if (process.env.NODE_ENV === 'production' && !process.env.FRONTEND_URL) {
   throw new Error('FRONTEND_URL environment variable is required in production');
@@ -58,6 +59,7 @@ function createApp() {
   app.use("/api/months",     monthsRouter);
   app.use("/api/admin",      adminRouter);
   app.use("/api/work-entries", workEntriesRouter);
+  app.use("/api/user-tasks",   userTasksRouter);
 
   app.use(errorHandler);
 
