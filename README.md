@@ -40,6 +40,7 @@ Time Watch provides a structured, unified mechanism for work-hour reporting — 
 | Database | PostgreSQL |
 | Containerization | Docker + Docker Compose |
 | CI/CD | GitHub Actions + free deployment service (Vercel / Render / Railway) |
+The code is written with tsx.
 
 ---
 

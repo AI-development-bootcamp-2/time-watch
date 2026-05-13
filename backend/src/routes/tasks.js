@@ -1,8 +1,6 @@
 const router = require('express').Router()
-const { requireRole } = require('../middleware/auth')
+const { authenticate, requireRole } = require('../middleware/auth')
 const db = require('../db/knex')
-
-router.use(requireRole('admin'))
 
 /**
  * @swagger
@@ -28,8 +26,37 @@ router.use(requireRole('admin'))
  *       200:
  *         description: List of tasks joined with project name and client name
  */
+router.get('/mine', authenticate, async (req, res) => {
+  try {
+    const tasks = await db('user_tasks')
+      .join('tasks', 'user_tasks.task_id', 'tasks.id')
+      .join('projects', 'tasks.project_id', 'projects.id')
+      .join('clients', 'projects.client_id', 'clients.id')
+      .select(
+        'tasks.id as task_id',
+        'tasks.name as task_name',
+        'projects.id as project_id',
+        'projects.name as project_name',
+        'clients.id as client_id',
+        'clients.name as client_name'
+      )
+      .where('user_tasks.user_id', req.user.id)
+      .where('tasks.status', 'open')
+      .whereNull('user_tasks.deleted_at')
+      .whereNull('tasks.deleted_at')
+      .orderBy('clients.name', 'asc')
+      .orderBy('projects.name', 'asc')
+      .orderBy('tasks.name', 'asc')
+
+    res.json(tasks)
+  } catch (err) {
+    console.error('GET /api/tasks/mine error:', err)
+    res.status(500).json({ message: 'Internal server error' })
+  }
+})
+
 // Returns all non-deleted tasks joined with project and client; supports ?project_id and ?status filters
-router.get('/', async (req, res) => {
+router.get('/', requireRole('admin'), async (req, res) => {
   try {
     const query = db('tasks')
       .join('projects', 'tasks.project_id', 'projects.id')
@@ -89,7 +116,7 @@ router.get('/', async (req, res) => {
  *         description: Validation error
  */
 // Creates a new task with status=open; validates name and project_id before inserting
-router.post('/', async (req, res) => {
+router.post('/', requireRole('admin'), async (req, res) => {
   try {
     const { name, project_id } = req.body
 
@@ -167,7 +194,7 @@ router.post('/', async (req, res) => {
  *         description: Task not found
  */
 // Updates an existing task's name and/or status by id; returns task with project and client names
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const { id } = req.params
     const { name, status } = req.body

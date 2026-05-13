@@ -10,9 +10,9 @@ const adminTabs = [
 
 export default function AdminLayout() {
   return (
-    <div dir="rtl" className="space-y-4">
+    <div dir="rtl" className="mx-auto w-full max-w-lg space-y-4 px-4 pt-4 lg:max-w-[740px]">
       {/* Tab bar */}
-      <div className="flex overflow-x-auto gap-1 -mx-4 px-4 pb-1 scrollbar-hide">
+      <div className="flex overflow-x-auto gap-1 pb-1 scrollbar-hide">
         {adminTabs.map(({ to, label }) => (
           <NavLink
             key={to}

@@ -12,7 +12,7 @@ import {
   startOfDay,
 } from 'date-fns'
 import { HebrewCalendar } from '@hebcal/core'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import EditEntryModal from './EditEntryModal'
 import { type Entry } from './EntryList'
 
@@ -223,6 +223,7 @@ function DayRow({ day, dayData, status, isExpanded, onToggle, isLocked, onEdit, 
 
 export default function MonthlyCalendar() {
   const navigate = useNavigate()
+  const [, setSearchParams] = useSearchParams()
   const [currentDate, setCurrentDate] = useState(startOfMonth(new Date()))
   const [dayDataMap, setDayDataMap] = useState<Record<string, DayData>>({})
   const [loading, setLoading] = useState(false)
@@ -351,7 +352,7 @@ export default function MonthlyCalendar() {
                   onToggle={() => setExpandedDate((prev) => (prev === dateKey ? null : dateKey))}
                   isLocked={isLocked}
                   onEdit={setEditingEntry}
-                  onAddEntry={(date) => console.log('add entry', date)}
+                  onAddEntry={(date) => setSearchParams({ report: 'work', date })}
                 />
               )
             })}

@@ -12,9 +12,6 @@ import ClientsPage from './features/admin/ClientsPage'
 import ProjectsPage from './features/admin/ProjectsPage'
 import TasksPage from './features/admin/TasksPage'
 import AdminReportsPage from './features/admin/AdminReportsPage'
-import AbsencePage from './features/absences/AbsencePage'
-import ProtectedRoute from './components/ProtectedRoute'
-
 
 export default function App() {
   return (
@@ -32,7 +29,6 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/daily"    element={<DailyReportPage />} />
             <Route path="/monthly"  element={<MonthlyCalendar />} />
-            <Route path="/absences" element={<AbsencePage />} />
 
             {/* Admin-only routes — AdminRoute redirects employees to / */}
             <Route element={<AdminRoute />}>

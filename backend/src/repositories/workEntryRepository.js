@@ -56,7 +56,7 @@ async function getMonthlyAbsences(userId, month) {
   const firstStr = firstDay.toISOString().slice(0, 10) // "YYYY-MM-01"
   const lastStr = lastDay.toISOString().slice(0, 10)   // "YYYY-MM-DD"
 
-  const rows = await knex('absence_entries')
+  const rows = await knex('absences')
     .where('user_id', userId)
     .andWhere('start_date', '>=', firstStr)
     .andWhere('start_date', '<=', lastStr)
@@ -66,4 +66,23 @@ async function getMonthlyAbsences(userId, month) {
   return rows
 }
 
-module.exports = { getMonthlyEntries, getMonthlyAbsences }
+// Insert a single work entry row and return the created record
+async function insertWorkEntry(userId, { date, start_time, end_time, location, task_id, description }) {
+  const [sh, sm] = start_time.split(':').map(Number)
+  const [eh, em] = end_time.split(':').map(Number)
+  const duration_hours = parseFloat(((eh + em / 60) - (sh + sm / 60)).toFixed(2))
+
+  const [row] = await knex('work_entries').insert({
+    user_id: userId,
+    task_id: task_id ?? null,
+    date,
+    location: location ?? null,
+    start_time,
+    end_time,
+    duration_hours,
+    description: description ?? null,
+  }).returning('*')
+  return row
+}
+
+module.exports = { getMonthlyEntries, getMonthlyAbsences, insertWorkEntry }

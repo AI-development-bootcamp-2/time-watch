@@ -1,7 +1,7 @@
 'use strict'
 
 const router = require('express').Router()
-const { getMonthlyEntries, getMonthlyAbsences } = require('../repositories/workEntryRepository')
+const { getMonthlyEntries, getMonthlyAbsences, insertWorkEntry } = require('../repositories/workEntryRepository')
 const { computeDayStatus } = require('../utils/dayStatus')
 
 /**
@@ -149,6 +149,86 @@ router.get('/', async (req, res) => {
     return res.status(200).json({ month, userId, days })
   } catch (err) {
     console.error('GET /api/work-entries error:', err)
+    return res.status(500).json({ message: 'Internal server error' })
+  }
+})
+
+/**
+ * @swagger
+ * /api/work-entries:
+ *   post:
+ *     summary: Create work entries for a given date
+ *     tags: [WorkEntries]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [date, entries]
+ *             properties:
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: "2025-05-13"
+ *               entries:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required: [start_time, end_time]
+ *                   properties:
+ *                     start_time:
+ *                       type: string
+ *                       example: "09:00"
+ *                     end_time:
+ *                       type: string
+ *                       example: "18:00"
+ *                     location:
+ *                       type: string
+ *                       enum: [משרד, לקוח, בית]
+ *                     task_id:
+ *                       type: integer
+ *                     description:
+ *                       type: string
+ *     responses:
+ *       201:
+ *         description: Created work entries
+ *       400:
+ *         description: Validation error
+ */
+router.post('/', async (req, res) => {
+  try {
+    const { date, entries } = req.body
+
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ message: 'date must be in YYYY-MM-DD format' })
+    }
+    if (!Array.isArray(entries) || entries.length === 0) {
+      return res.status(400).json({ message: 'entries must be a non-empty array' })
+    }
+
+    const timeRe = /^\d{2}:\d{2}$/
+    for (const entry of entries) {
+      if (!entry.start_time || !timeRe.test(entry.start_time)) {
+        return res.status(400).json({ message: 'each entry requires start_time in HH:MM format' })
+      }
+      if (!entry.end_time || !timeRe.test(entry.end_time)) {
+        return res.status(400).json({ message: 'each entry requires end_time in HH:MM format' })
+      }
+      if (entry.end_time <= entry.start_time) {
+        return res.status(400).json({ message: 'end_time must be after start_time' })
+      }
+    }
+
+    const userId = req.user.id
+
+    const created = await Promise.all(
+      entries.map(entry => insertWorkEntry(userId, { date, ...entry }))
+    )
+
+    return res.status(201).json(created)
+  } catch (err) {
+    console.error('POST /api/work-entries error:', err)
     return res.status(500).json({ message: 'Internal server error' })
   }
 })

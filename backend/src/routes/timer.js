@@ -114,6 +114,10 @@ router.post('/stop', async (req, res) => {
     const userId = STUB_USER_ID
     const { task_id, location, description } = req.body
 
+    if (!task_id || !location) {
+      return res.status(400).json({ message: 'task_id and location are required' })
+    }
+
     const timer = await findActiveTimer(userId)
     if (!timer) {
       return res.status(404).json({ message: 'No active timer' })

@@ -5,13 +5,13 @@
 import { useSyncExternalStore } from 'react'
 
 const TOKEN_KEY = 'time_watch_token'
-const listeners = new Set()
+const listeners = new Set<() => void>()
 
 function emit() {
   listeners.forEach(l => l())
 }
 
-export function getToken() {
+export function getToken(): string | null {
   try {
     return localStorage.getItem(TOKEN_KEY)
   } catch {
@@ -19,7 +19,7 @@ export function getToken() {
   }
 }
 
-export function setToken(token) {
+export function setToken(token: string | null) {
   try {
     if (token) localStorage.setItem(TOKEN_KEY, token)
     else localStorage.removeItem(TOKEN_KEY)
@@ -36,7 +36,7 @@ export function clearToken() {
 // Decode a JWT payload without verifying the signature (server is the source
 // of truth — this is only used to short-circuit obviously-expired tokens on
 // the client).
-function decodeJwt(token) {
+function decodeJwt(token: string | null): Record<string, unknown> | null {
   if (!token || typeof token !== 'string') return null
   const parts = token.split('.')
   if (parts.length !== 3) return null
@@ -49,7 +49,7 @@ function decodeJwt(token) {
   }
 }
 
-export function isTokenValid(token = getToken()) {
+export function isTokenValid(token: string | null = getToken()): boolean {
   const payload = decodeJwt(token)
   if (!payload) return false
   if (typeof payload.exp === 'number') {
@@ -63,9 +63,9 @@ export function getCurrentUser() {
   return decodeJwt(getToken())
 }
 
-function subscribe(listener) {
+function subscribe(listener: () => void) {
   listeners.add(listener)
-  const onStorage = e => {
+  const onStorage = (e: StorageEvent) => {
     if (e.key === TOKEN_KEY) listener()
   }
   if (typeof window !== 'undefined') {
@@ -79,11 +79,11 @@ function subscribe(listener) {
   }
 }
 
-function getSnapshot() {
+function getSnapshot(): string | null {
   return getToken()
 }
 
-function getServerSnapshot() {
+function getServerSnapshot(): string | null {
   return null
 }
 

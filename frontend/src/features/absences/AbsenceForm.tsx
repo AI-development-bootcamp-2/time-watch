@@ -5,8 +5,8 @@ import './AbsenceForm.css'
 import { IconUpload, IconTrash } from './absenceIcons'
 import { createAbsence, deleteDocument, updateAbsence, uploadDocument } from './absencesApi'
 
-type AbsenceType = 'vacation' | 'half_vacation_day' | 'sick' | 'military_reserve'
-type LegacyAbsenceType = AbsenceType | 'half_day_vac'
+type AbsenceType = 'vacation' | 'half_day_vac' | 'sick' | 'military_reserve'
+type LegacyAbsenceType = AbsenceType
 type AbsenceDuration = 'single' | 'range'
 type UploadStatus = 'success' | 'error' | null
 export type AbsenceDocument = File | { name: string } | string | null
@@ -51,6 +51,7 @@ type AbsenceFormProps = {
   onSave?: (absence: AbsencePayload) => void | Promise<{ id?: number } | void>
   initialValues?: AbsenceInitialValues
   reportingMonth?: string | null
+  onSwitchToWork?: () => void
 }
 
 type DateFieldButtonProps = {
@@ -65,7 +66,7 @@ TODAY.setHours(0, 0, 0, 0)
 
 const ABSENCE_TYPES = [
   { value: 'vacation', label: 'חופשה' },
-  { value: 'half_vacation_day', label: 'חצי יום חופש' },
+  { value: 'half_day_vac', label: 'חצי יום חופש' },
   { value: 'sick', label: 'מחלה' },
   { value: 'military_reserve', label: 'מילואים' },
 ] satisfies Array<{ value: AbsenceType; label: string }>
@@ -95,7 +96,6 @@ const EMPTY_FORM: AbsenceFormValues = {
 }
 
 function normalizeType(type: LegacyAbsenceType | '' | undefined): AbsenceType | '' {
-  if (type === 'half_day_vac') return 'half_vacation_day'
   return type ?? ''
 }
 
@@ -108,7 +108,7 @@ function normalizeInitialValues(initialValues?: AbsenceInitialValues): AbsenceFo
     ...EMPTY_FORM,
     id: initialValues?.id,
     type,
-    duration: type === 'half_vacation_day' ? 'single' : (initialValues?.duration ?? (endDate && endDate !== startDate ? 'range' : 'single')),
+    duration: type === 'half_day_vac' ? 'single' : (initialValues?.duration ?? (endDate && endDate !== startDate ? 'range' : 'single')),
     startDate,
     endDate: endDate === startDate ? '' : endDate,
     notes: initialValues?.notes ?? '',
@@ -267,7 +267,7 @@ const DateFieldButton = forwardRef<HTMLButtonElement, DateFieldButtonProps>(
 )
 DateFieldButton.displayName = 'DateFieldButton'
 
-export default function AbsenceForm({ onClose = () => {}, onSave, initialValues, reportingMonth }: AbsenceFormProps) {
+export default function AbsenceForm({ onClose = () => {}, onSave, initialValues, reportingMonth, onSwitchToWork }: AbsenceFormProps) {
   const [values, setValues] = useState<AbsenceFormValues>(() => normalizeInitialValues(initialValues))
   const [errors, setErrors] = useState<AbsenceFormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -283,7 +283,7 @@ export default function AbsenceForm({ onClose = () => {}, onSave, initialValues,
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const effectiveEndDate = values.duration === 'single' ? values.startDate : values.endDate
-  const workDays = values.type === 'half_vacation_day' ? 0.5 : countWorkDays(values.startDate, effectiveEndDate)
+  const workDays = values.type === 'half_day_vac' ? 0.5 : countWorkDays(values.startDate, effectiveEndDate)
   const liveErrors = useMemo(() => liveValidationErrors(values, fileError, reportingMonth), [values, fileError, reportingMonth])
   const visibleErrors = { ...liveErrors, ...errors }
   const dateFieldLabel = values.duration === 'single' ? 'תאריך' : 'טווח תאריכים'
@@ -318,8 +318,8 @@ export default function AbsenceForm({ onClose = () => {}, onSave, initialValues,
     updateValues(prev => ({
       ...prev,
       type: draftType,
-      duration: draftType === 'half_vacation_day' ? 'single' : prev.duration,
-      endDate: draftType === 'half_vacation_day' ? '' : prev.endDate,
+      duration: draftType === 'half_day_vac' ? 'single' : prev.duration,
+      endDate: draftType === 'half_day_vac' ? '' : prev.endDate,
       document: draftType === 'sick' || draftType === 'military_reserve' ? prev.document : null,
     }))
     if (draftType !== 'sick' && draftType !== 'military_reserve') {
@@ -373,10 +373,15 @@ export default function AbsenceForm({ onClose = () => {}, onSave, initialValues,
 
   async function hasWorkEntryConflict(payload: AbsencePayload) {
     const dates = datesInRange(payload.startDate, payload.endDate)
-    for (const date of dates) {
-      const res = await fetch(`/api/work-entries?date=${encodeURIComponent(date)}`, { credentials: 'include' })
+    const months = [...new Set(dates.map(d => d.slice(0, 7)))]
+    const monthData: Record<string, unknown> = {}
+    for (const month of months) {
+      const res = await fetch(`/api/work-entries?month=${encodeURIComponent(month)}`, { credentials: 'include' })
       if (!res.ok) continue
-      const data = await res.json().catch(() => null)
+      monthData[month] = await res.json().catch(() => null)
+    }
+    for (const date of dates) {
+      const data = monthData[date.slice(0, 7)]
       if (extractEntries(data, date).length > 0) return true
     }
     return false
@@ -395,8 +400,8 @@ export default function AbsenceForm({ onClose = () => {}, onSave, initialValues,
           type: payload.type,
           start_date: payload.startDate,
           end_date: payload.endDate,
-          is_partial: payload.type === 'half_vacation_day',
-          partial_hours: payload.type === 'half_vacation_day' ? 4.5 : null,
+          is_partial: payload.type === 'half_day_vac',
+          partial_hours: payload.type === 'half_day_vac' ? 4.5 : null,
           notes: payload.notes,
         }
         const result = payload.id
@@ -494,7 +499,7 @@ export default function AbsenceForm({ onClose = () => {}, onSave, initialValues,
 
           {!initialValues && (
             <div className="af-segmented" role="tablist" aria-label="בחירת סוג דיווח">
-              <button type="button" className="af-seg-option af-seg-option--inactive" role="tab" aria-selected="false" onClick={onClose}>
+              <button type="button" className="af-seg-option af-seg-option--inactive" role="tab" aria-selected="false" onClick={onSwitchToWork ?? onClose}>
                 דיווח עבודה
               </button>
               <button type="button" className="af-seg-option af-seg-option--active" role="tab" aria-selected="true">
@@ -505,7 +510,7 @@ export default function AbsenceForm({ onClose = () => {}, onSave, initialValues,
 
           <div>
             <div className="af-card">
-              {values.type !== 'half_vacation_day' && (
+              {values.type !== 'half_day_vac' && (
                 <button type="button" className="af-card-row af-card-row-button" onClick={() => {
                   setDraftDuration(values.duration)
                   setIsDurationPickerOpen(true)

@@ -18,13 +18,24 @@ const { UnauthorizedError, ForbiddenError } = require('../utils/errors');
 //
 // When a DB check IS performed (findById / findByIdFull), it targets users.id (the
 // primary key, always indexed) and is never duplicated within the same request chain.
+function extractToken(req) {
+  if (req.cookies?.token) return req.cookies.token;
+
+  const authHeader = req.get?.('authorization') || req.headers?.authorization;
+  if (typeof authHeader !== 'string') return null;
+
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1] : null;
+}
+
 function authenticate(req, res, next) {
-  const token = req.cookies?.token;
+  const token = extractToken(req);
   if (!token) return next(new UnauthorizedError());
 
   try {
     const payload = verifyToken(token);
-    req.user = { id: payload.sub, role: payload.role };
+    // payload.sub is the current standard; payload.id supports tokens issued by the old inline login handler
+    req.user = { id: payload.sub ?? payload.id, role: payload.role };
     next();
   } catch (err) {
     if (err instanceof TokenExpiredError || err instanceof JsonWebTokenError) {
@@ -43,4 +54,4 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { authenticate, requireRole };
+module.exports = { authenticate, requireRole, extractToken };

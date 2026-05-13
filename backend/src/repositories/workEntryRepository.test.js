@@ -13,7 +13,7 @@
 //     .orderBy(...)  x2
 //
 // getMonthlyAbsences builds this chain:
-//   knex('absence_entries')
+//   knex('absences')
 //     .where(...)
 //     .andWhere(...)  x2
 //     .whereNull(...)
@@ -51,7 +51,7 @@ mockLeftJoin.mockImplementation(() => ({
   where: mockWhere,
 }))
 
-// ---- absence_entries builder (getMonthlyAbsences) ----
+// ---- absences builder (getMonthlyAbsences) ----
 
 const mockAbsOrderBy = jest.fn()
 const mockAbsWhereNull = jest.fn(() => ({ orderBy: mockAbsOrderBy }))
@@ -66,7 +66,7 @@ mockAbsAndWhere.mockImplementation(() => ({
 // ---- table-aware knex mock ----
 
 const mockKnex = jest.fn((table) => {
-  if (table === 'absence_entries') {
+  if (table === 'absences') {
     return { where: mockAbsWhere }
   }
   return { leftJoin: mockLeftJoin }
@@ -96,7 +96,7 @@ beforeEach(() => {
   mockOrderBy.mockImplementation(() => ({ orderBy: mockOrderBy2 }))
   mockOrderBy2.mockResolvedValue([]) // default: empty result
 
-  // absence_entries chain
+  // absences chain
   mockAbsAndWhere.mockImplementation(() => ({
     andWhere: mockAbsAndWhere,
     whereNull: mockAbsWhereNull,
@@ -106,7 +106,7 @@ beforeEach(() => {
 
   // Re-apply table-aware knex dispatch
   mockKnex.mockImplementation((table) => {
-    if (table === 'absence_entries') {
+    if (table === 'absences') {
       return { where: mockAbsWhere }
     }
     return { leftJoin: mockLeftJoin }
@@ -230,10 +230,10 @@ describe('getMonthlyEntries', () => {
 // ---------------------------------------------------------------------------
 
 describe('getMonthlyAbsences', () => {
-  test('queries the absence_entries table', async () => {
+  test('queries the absences table', async () => {
     await getMonthlyAbsences(5, '2025-05')
 
-    expect(mockKnex).toHaveBeenCalledWith('absence_entries')
+    expect(mockKnex).toHaveBeenCalledWith('absences')
   })
 
   test('filters by userId', async () => {

@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import { useAuth } from './authSlice.js'
+import { useAuth } from './authSlice.ts'
 
 /**
  * Route guard: renders `children` only if the user has a valid (non-expired)
