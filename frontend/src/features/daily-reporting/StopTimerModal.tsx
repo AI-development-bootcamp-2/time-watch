@@ -17,7 +17,10 @@ export default function StopTimerModal({ onClose, onSaved }: StopTimerModalProps
       const res = await fetch('/api/timer/stop', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description: description || null }),
+        body: JSON.stringify({
+          description: description || null,
+          timezone_offset_minutes: new Date().getTimezoneOffset(),
+        }),
       })
       if (res.ok) { onSaved(); return }
       const body = await res.json().catch(() => ({}))

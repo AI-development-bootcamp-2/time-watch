@@ -109,33 +109,33 @@ router.post('/start', async (req, res) => {
  *       404:
  *         description: No active timer
  */
+// Convert a UTC Date to a local HH:MM:SS string using the client's timezone offset.
+// getTimezoneOffset() returns minutes where local = UTC - offset (e.g. Israel UTC+3 → -180).
+function utcToLocalTimeStr(utcDate, offsetMin) {
+  const localMs = utcDate.getTime() - offsetMin * 60 * 1000
+  const d = new Date(localMs)
+  return [d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds()]
+    .map(n => String(n).padStart(2, '0'))
+    .join(':')
+}
+
 router.post('/stop', async (req, res) => {
   try {
     const userId = STUB_USER_ID
-    const { task_id, location, description } = req.body
+    const { task_id, location, description, timezone_offset_minutes } = req.body
+    const offsetMin = typeof timezone_offset_minutes === 'number' ? timezone_offset_minutes : 0
 
     const timer = await findActiveTimer(userId)
     if (!timer) {
       return res.status(404).json({ message: 'No active timer' })
     }
 
-    const timerStart = new Date(timer.start_time)
-    const startHH = String(timerStart.getUTCHours()).padStart(2, '0')
-    const startMM = String(timerStart.getUTCMinutes()).padStart(2, '0')
-    const startSS = String(timerStart.getUTCSeconds()).padStart(2, '0')
-    const start_time = `${startHH}:${startMM}:${startSS}`
+    const stopMs = Date.now()
+    const start_time = utcToLocalTimeStr(new Date(timer.start_time), offsetMin)
+    const end_time = utcToLocalTimeStr(new Date(stopMs), offsetMin)
 
-    const now = new Date()
-    const endHH = String(now.getUTCHours()).padStart(2, '0')
-    const endMM = String(now.getUTCMinutes()).padStart(2, '0')
-    const endSS = String(now.getUTCSeconds()).padStart(2, '0')
-    const end_time = `${endHH}:${endMM}:${endSS}`
-
-    const parseHours = (t) => {
-      const [h, m, s] = t.split(':').map(Number)
-      return h + m / 60 + (s || 0) / 3600
-    }
-    const duration_hours = Math.round((parseHours(end_time) - parseHours(start_time)) * 100) / 100
+    // Compute duration from epoch ms so crossing midnight never produces a negative value
+    const duration_hours = Math.round(((stopMs - new Date(timer.start_time).getTime()) / 3600000) * 100) / 100
 
     const [entry] = await knex('work_entries')
       .insert({
