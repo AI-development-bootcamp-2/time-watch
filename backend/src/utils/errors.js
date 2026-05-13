@@ -17,7 +17,14 @@ class ValidationError extends AppError {
 
 class ConflictError extends AppError {
   constructor(message = 'כתובת האימייל כבר קיימת במערכת') {
-    super(409, 'CONFLICT', message);
+    super(409, 'EMAIL_CONFLICT', message);
+  }
+}
+
+class PasswordComplexityError extends AppError {
+  constructor(details) {
+    super(422, 'PASSWORD_COMPLEXITY', 'הסיסמה אינה עומדת בדרישות');
+    this.details = details;
   }
 }
 
@@ -46,12 +53,42 @@ class AccountLockedError extends AppError {
   }
 }
 
+class NotFoundError extends AppError {
+  constructor(message = 'המשאב לא נמצא') {
+    super(404, 'NOT_FOUND', message);
+  }
+}
+
+class BadRequestError extends AppError {
+  constructor(message = 'בקשה לא תקינה') {
+    super(400, 'BAD_REQUEST', message);
+  }
+}
+
+class AccountInactiveError extends AppError {
+  constructor() {
+    super(403, 'ACCOUNT_INACTIVE', 'החשבון אינו פעיל');
+  }
+}
+
+// Distinct from PASSWORD_COMPLEXITY: fired specifically when new_password === current_password
+class PasswordReuseError extends AppError {
+  constructor() {
+    super(422, 'PASSWORD_REUSE', 'הסיסמה החדשה חייבת להיות שונה מהסיסמה הנוכחית');
+  }
+}
+
 module.exports = {
   AppError,
   ValidationError,
   ConflictError,
+  PasswordComplexityError,
+  PasswordReuseError,
   UnauthorizedError,
   ForbiddenError,
   InvalidCredentialsError,
   AccountLockedError,
+  NotFoundError,
+  BadRequestError,
+  AccountInactiveError,
 };

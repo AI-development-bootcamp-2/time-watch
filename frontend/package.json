@@ -14,6 +14,7 @@
     "@hebcal/core": "^6.4.1",
     "@testing-library/dom": "^10.4.1",
     "date-fns": "^4.1.0",
+    "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-big-calendar": "^1.19.4",
     "react-datepicker": "^9.1.0",

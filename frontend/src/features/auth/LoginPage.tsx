@@ -8,7 +8,7 @@ export default function LoginPage() {
   const { user, isLoading } = useAuth()
 
   if (isLoading) return <LoadingSpinner fullPage />
-  if (user) return <Navigate to="/" replace />
+  if (user) return <Navigate to="/daily" replace />
 
   return (
     <div className="login-page">

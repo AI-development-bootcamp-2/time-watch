@@ -5,7 +5,7 @@
 //
 // getMonthlyEntries builds this chain:
 //   knex('work_entries')
-//     .join(...)  x3
+//     .leftJoin(...)  x3
 //     .where(...)
 //     .andWhere(...)  x2
 //     .whereNull(...)
@@ -13,7 +13,7 @@
 //     .orderBy(...)  x2
 //
 // getMonthlyAbsences builds this chain:
-//   knex('absences')
+//   knex('absence_entries')
 //     .where(...)
 //     .andWhere(...)  x2
 //     .whereNull(...)
@@ -29,7 +29,7 @@ const mockSelect = jest.fn(() => ({ orderBy: mockOrderBy }))
 const mockWhereNull = jest.fn(() => ({ select: mockSelect }))
 const mockAndWhere = jest.fn()
 const mockWhere = jest.fn(() => ({ andWhere: mockAndWhere }))
-const mockJoin = jest.fn()
+const mockLeftJoin = jest.fn()
 
 // orderBy is called twice (date asc, start_time asc); the second call is the
 // one awaited.  Return a fresh chainable object on the first call so the
@@ -44,14 +44,14 @@ mockAndWhere.mockImplementation(() => ({
   whereNull: mockWhereNull,
 }))
 
-// join is called three times; each returns something that supports the next
+// leftJoin is called three times; each returns something that supports the next
 // method in the chain.
-mockJoin.mockImplementation(() => ({
-  join: mockJoin,
+mockLeftJoin.mockImplementation(() => ({
+  leftJoin: mockLeftJoin,
   where: mockWhere,
 }))
 
-// ---- absences builder (getMonthlyAbsences) ----
+// ---- absence_entries builder (getMonthlyAbsences) ----
 
 const mockAbsOrderBy = jest.fn()
 const mockAbsWhereNull = jest.fn(() => ({ orderBy: mockAbsOrderBy }))
@@ -66,10 +66,10 @@ mockAbsAndWhere.mockImplementation(() => ({
 // ---- table-aware knex mock ----
 
 const mockKnex = jest.fn((table) => {
-  if (table === 'absences') {
+  if (table === 'absence_entries') {
     return { where: mockAbsWhere }
   }
-  return { join: mockJoin }
+  return { leftJoin: mockLeftJoin }
 })
 
 jest.mock('../db/knex', () => mockKnex)
@@ -86,7 +86,7 @@ beforeEach(() => {
   // Re-apply default chain implementations after clearAllMocks wipes them.
 
   // work_entries chain
-  mockJoin.mockImplementation(() => ({ join: mockJoin, where: mockWhere }))
+  mockLeftJoin.mockImplementation(() => ({ leftJoin: mockLeftJoin, where: mockWhere }))
   mockAndWhere.mockImplementation(() => ({
     andWhere: mockAndWhere,
     whereNull: mockWhereNull,
@@ -96,7 +96,7 @@ beforeEach(() => {
   mockOrderBy.mockImplementation(() => ({ orderBy: mockOrderBy2 }))
   mockOrderBy2.mockResolvedValue([]) // default: empty result
 
-  // absences chain
+  // absence_entries chain
   mockAbsAndWhere.mockImplementation(() => ({
     andWhere: mockAbsAndWhere,
     whereNull: mockAbsWhereNull,
@@ -106,10 +106,10 @@ beforeEach(() => {
 
   // Re-apply table-aware knex dispatch
   mockKnex.mockImplementation((table) => {
-    if (table === 'absences') {
+    if (table === 'absence_entries') {
       return { where: mockAbsWhere }
     }
-    return { join: mockJoin }
+    return { leftJoin: mockLeftJoin }
   })
 })
 
@@ -204,8 +204,8 @@ describe('getMonthlyEntries', () => {
 
     await getMonthlyEntries(7, '2025-05')
 
-    // join() is called three times; verify all three join targets appear
-    const joinCalls = mockJoin.mock.calls
+    // leftJoin() is called three times; verify all three join targets appear
+    const joinCalls = mockLeftJoin.mock.calls
     const joinedTables = joinCalls.map((args) => args[0])
     expect(joinedTables).toContain('tasks')
     expect(joinedTables).toContain('projects')
@@ -230,10 +230,10 @@ describe('getMonthlyEntries', () => {
 // ---------------------------------------------------------------------------
 
 describe('getMonthlyAbsences', () => {
-  test('queries the absences table', async () => {
+  test('queries the absence_entries table', async () => {
     await getMonthlyAbsences(5, '2025-05')
 
-    expect(mockKnex).toHaveBeenCalledWith('absences')
+    expect(mockKnex).toHaveBeenCalledWith('absence_entries')
   })
 
   test('filters by userId', async () => {

@@ -165,4 +165,68 @@ router.get('/me', authenticate, (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
+router.get('/me', authenticate, me);
+
+/**
+ * @swagger
+ * /api/auth/change-password:
+ *   post:
+ *     summary: Change the authenticated user's password
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [current_password, new_password]
+ *             properties:
+ *               current_password:
+ *                 type: string
+ *                 example: Temp1234!
+ *               new_password:
+ *                 type: string
+ *                 minLength: 8
+ *                 description: Min 8 chars, ≥1 uppercase, ≥1 lowercase, ≥1 digit, ≥1 special character
+ *                 example: NewPass1@
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: הסיסמה שונתה בהצלחה
+ *       401:
+ *         description: Not authenticated or current_password is wrong
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Account is deactivated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       422:
+ *         description: new_password does not meet complexity requirements or equals the current password
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationErrorResponse'
+ *       423:
+ *         description: Account locked after too many failed attempts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/change-password', authenticate, changePassword);
+
 module.exports = router;

@@ -28,8 +28,13 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // Merge a partial update into the current user without a round-trip to /api/auth/me
+  function patchUser(patch) {
+    setUser(prev => prev ? { ...prev, ...patch } : null)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, patchUser }}>
       {children}
     </AuthContext.Provider>
   )

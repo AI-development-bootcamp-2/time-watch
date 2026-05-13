@@ -56,7 +56,7 @@ async function getMonthlyAbsences(userId, month) {
   const firstStr = firstDay.toISOString().slice(0, 10) // "YYYY-MM-01"
   const lastStr = lastDay.toISOString().slice(0, 10)   // "YYYY-MM-DD"
 
-  const rows = await knex('absences')
+  const rows = await knex('absence_entries')
     .where('user_id', userId)
     .andWhere('start_date', '>=', firstStr)
     .andWhere('start_date', '<=', lastStr)

@@ -1,0 +1,380 @@
+/* Working hours report form — matches design spec */
+.report-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 40px 24px;
+  gap: 16px;
+  isolation: isolate;
+  position: relative;
+  width: 540px;
+  max-width: 100%;
+  min-height: 1000px;
+  background: #F2F2F7;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #1c1c1e;
+  margin: 0 auto;
+  box-sizing: border-box;
+  border-radius: 16px;
+}
+
+/* Header */
+.rf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.rf-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.rf-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(120, 120, 128, 0.12);
+  color: #1c1c1e;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.rf-close:hover { background: rgba(120, 120, 128, 0.2); }
+
+/* Tabs */
+.rf-tabs {
+  display: flex;
+  width: 100%;
+  background: #e9e9eb;
+  padding: 3px;
+  border-radius: 10px;
+  gap: 2px;
+  box-sizing: border-box;
+}
+.rf-tab {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: #1c1c1e;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.rf-tab.active {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  font-weight: 600;
+}
+
+/* Date row */
+.rf-date-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.rf-date {
+  font-size: 14px;
+  font-weight: 500;
+}
+.rf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #d6f5e3;
+  color: #0a7d3d;
+  padding: 4px 10px 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.rf-badge-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #1aa75a;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+/* Field rows (input + label) */
+.rf-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #e5e5ea;
+  border-radius: 10px;
+  padding: 0 14px;
+  height: 48px;
+  box-sizing: border-box;
+}
+.rf-label {
+  font-size: 14px;
+  color: #1c1c1e;
+  font-weight: 500;
+}
+.rf-input {
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: #1c1c1e;
+  outline: none;
+  font-family: inherit;
+  padding: 0;
+}
+.rf-input[type="time"] {
+  direction: ltr;
+  text-align: left;
+  min-width: 80px;
+}
+.rf-input.rf-select {
+  direction: rtl;
+  text-align: right;
+  min-width: 100px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%238e8e93' d='M1 1l4 4 4-4'/></svg>");
+  background-repeat: no-repeat;
+  background-position: left center;
+  padding-left: 16px;
+}
+
+/* Section heading */
+.rf-section {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  align-self: stretch;
+  text-align: right;
+}
+
+/* Project block */
+.rf-project {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Notes field */
+.rf-notes {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 4px 4px;
+  font-size: 13px;
+  color: #1c1c1e;
+  outline: none;
+  text-align: right;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.rf-notes::placeholder {
+  color: #8e8e93;
+  font-style: italic;
+}
+
+/* Delete project link */
+.rf-delete {
+  align-self: center;
+  background: none;
+  border: none;
+  color: #ff3b30;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 4px 8px;
+}
+.rf-delete:hover { text-decoration: underline; }
+
+/* Add project button */
+.rf-add {
+  align-self: center;
+  background: none;
+  border: none;
+  color: #0a84ff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+}
+.rf-add:hover { text-decoration: underline; }
+.rf-plus {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #0a84ff;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+.rf-add:hover .rf-plus { text-decoration: none; }
+
+/* Footer */
+.rf-footer {
+  width: 100%;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e5ea;
+}
+.rf-progress-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 12px;
+}
+.rf-progress-count { color: #1c1c1e; font-weight: 500; }
+.rf-progress-status { color: #1c1c1e; }
+.rf-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #e5e5ea;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.rf-progress-fill {
+  height: 100%;
+  background: #0a84ff;
+  transition: width 0.2s ease;
+}
+
+/* Action buttons */
+.rf-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 4px;
+}
+.rf-btn {
+  flex: 1;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+.rf-btn-primary {
+  background: #0a84ff;
+  color: #fff;
+}
+.rf-btn-primary:hover { background: #006fe0; }
+.rf-btn-secondary {
+  background: #fff;
+  color: #1c1c1e;
+  border: 1px solid #d1d1d6;
+}
+.rf-btn-secondary:hover { background: #f5f5f7; }
+
+/* Validation error states */
+.rf-field.has-error,
+.rf-field-button.has-error {
+  border-color: #ff3b30;
+}
+.rf-error {
+  width: 100%;
+  font-size: 12px;
+  color: #ff3b30;
+  text-align: right;
+  margin-top: -10px;
+  padding: 0 4px;
+  box-sizing: border-box;
+}
+
+/* Disabled button state */
+.rf-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Absence-tab specific */
+.rf-field-upload {
+  justify-content: space-between;
+}
+.rf-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: #f2f2f7;
+  border: 1px solid #d1d1d6;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #0a84ff;
+  cursor: pointer;
+  max-width: 60%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rf-upload-btn:hover { background: #e9e9eb; }
+.rf-warning {
+  width: 100%;
+  background: #fff4e5;
+  border: 1px solid #ffcc99;
+  color: #b25400;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: right;
+  box-sizing: border-box;
+}
+
+/* Page wrapper */
+.daily-report-page {
+  min-height: 100vh;
+  padding: 24px 12px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Submit-status banners */
+.page-banner {
+  width: 540px;
+  max-width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  text-align: right;
+  direction: rtl;
+  box-sizing: border-box;
+  font-weight: 500;
+}
+.page-banner.error {
+  background: #ffe5e5;
+  color: #b30000;
+  border: 1px solid #ff9999;
+}
+.page-banner.success {
+  background: #d6f5e3;
+  color: #0a7d3d;
+  border: 1px solid #1aa75a;
+}

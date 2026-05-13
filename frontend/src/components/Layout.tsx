@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import AbsenceForm, { type AbsencePayload } from '../features/absences/AbsenceForm'
+import { useAuth } from '../context/AuthContext'
 
 // ─── Bottom nav items ─────────────────────────────────────────────────────────
 
@@ -54,6 +54,7 @@ const NAV_ITEMS: { to: string; label: string; end?: boolean; icon: ReactNode }[]
 
 export default function Layout() {
   const navigate = useNavigate()
+  const { user, logout } = useAuth() as { user: { role: string } | null; logout: () => Promise<void> }
   const [timerStarting, setTimerStarting] = useState(false)
   const [showAbsenceForm, setShowAbsenceForm] = useState(false)
 
@@ -183,7 +184,7 @@ export default function Layout() {
 
         {/* LEFT (RTL flex-end): יציאה */}
         <button
-          onClick={() => navigate('/login')}
+          onClick={async () => { await logout(); navigate('/login') }}
           className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-800 min-h-[40px] px-1 transition-colors"
         >
           יציאה
@@ -200,7 +201,7 @@ export default function Layout() {
 
       {/* ── Bottom navigation ── */}
       <nav className="fixed bottom-0 right-0 left-0 z-10 bg-white border-t border-gray-200 flex">
-        {NAV_ITEMS.map(({ to, label, icon, end }) => (
+        {NAV_ITEMS.filter(item => item.to !== '/admin' || user?.role === 'admin').map(({ to, label, icon, end }) => (
           <NavLink
             key={to}
             to={to}

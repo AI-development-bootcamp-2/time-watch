@@ -1,6 +1,6 @@
 const multer = require('multer')
 const router = require('express').Router()
-const { db } = require('../db/knex')
+const db = require('../db/knex')
 
 const ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
 const MAX_FILE_SIZE = 20 * 1024 * 1024
