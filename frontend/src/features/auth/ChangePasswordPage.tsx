@@ -1,14 +1,14 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { changePassword } from '../../services/authApi'
 
 const PASSWORD_RULES = [
-  { test: p => p.length >= 8,            label: 'לפחות 8 תווים' },
-  { test: p => /[A-Z]/.test(p),          label: 'אות גדולה אחת לפחות' },
-  { test: p => /[a-z]/.test(p),          label: 'אות קטנה אחת לפחות' },
-  { test: p => /\d/.test(p),             label: 'ספרה אחת לפחות' },
-  { test: p => /[^A-Za-z0-9]/.test(p),  label: 'תו מיוחד אחד לפחות' },
+  { test: (p: string) => p.length >= 8,            label: 'לפחות 8 תווים' },
+  { test: (p: string) => /[A-Z]/.test(p),          label: 'אות גדולה אחת לפחות' },
+  { test: (p: string) => /[a-z]/.test(p),          label: 'אות קטנה אחת לפחות' },
+  { test: (p: string) => /\d/.test(p),             label: 'ספרה אחת לפחות' },
+  { test: (p: string) => /[^A-Za-z0-9]/.test(p),  label: 'תו מיוחד אחד לפחות' },
 ]
 
 // Full-page forced password change — shown on first login when must_change_password is true
@@ -24,7 +24,7 @@ export default function ChangePasswordPage() {
   const newPwRules = PASSWORD_RULES.map(r => ({ ...r, met: r.test(newPw) }))
   const newPwValid = newPw.length > 0 && newPwRules.every(r => r.met)
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!currentPw) { setError('יש להזין את הסיסמה הנוכחית'); return }
     if (!newPwValid) { setError('הסיסמה החדשה אינה עומדת בדרישות'); return }
@@ -37,9 +37,10 @@ export default function ChangePasswordPage() {
       patchUser({ must_change_password: false })
       navigate('/monthly', { replace: true })
     } catch (err) {
-      if (err?.status === 401) setError('הסיסמה הנוכחית שגויה')
-      else if (err?.status === 423) setError('החשבון נעול זמנית. נסה שוב מאוחר יותר.')
-      else if (err?.message) setError(err.message)
+      const e = err as { status?: number; message?: string }
+      if (e.status === 401) setError('הסיסמה הנוכחית שגויה')
+      else if (e.status === 423) setError('החשבון נעול זמנית. נסה שוב מאוחר יותר.')
+      else if (e.message) setError(e.message)
       else setError('אירעה שגיאה. נסה שוב.')
     } finally {
       setSaving(false)
