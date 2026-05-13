@@ -20,4 +20,13 @@ function employeeCookie() {
   return `token=${token}`;
 }
 
-module.exports = { adminCookie, employeeCookie };
+function projectManagerCookie() {
+  const token = jwt.sign(
+    { sub: 'test-pm-id', role: 'project_manager' },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+  return `token=${token}`;
+}
+
+module.exports = { adminCookie, employeeCookie, projectManagerCookie };
