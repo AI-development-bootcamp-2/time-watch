@@ -3,9 +3,10 @@ import { useContext } from 'react'
 import { describe, it, expect, vi } from 'vitest'
 import { renderWithAuth } from './renderWithAuth'
 import { AuthContext } from '../context/AuthProvider'
+import type { AuthContextType } from '../context/AuthProvider'
 
 function AuthConsumer() {
-  const { user, isLoading } = useContext(AuthContext)
+  const { user, isLoading } = useContext(AuthContext)!
   return (
     <>
       <span data-testid="user">{user ? String(user.id) : 'null'}</span>
@@ -22,7 +23,7 @@ describe('renderWithAuth', () => {
   })
 
   it('provides user when given', () => {
-    renderWithAuth(<AuthConsumer />, { user: { id: 7 } })
+    renderWithAuth(<AuthConsumer />, { user: { id: 7 } as AuthContextType['user'] })
     expect(screen.getByTestId('user')).toHaveTextContent('7')
   })
 
@@ -32,9 +33,9 @@ describe('renderWithAuth', () => {
   })
 
   it('provides vi.fn() stubs for login and logout by default', () => {
-    let capturedLogin
+    let capturedLogin: AuthContextType['login'] | undefined
     function LoginCapture() {
-      const { login } = useContext(AuthContext)
+      const { login } = useContext(AuthContext)!
       capturedLogin = login
       return null
     }
@@ -43,10 +44,10 @@ describe('renderWithAuth', () => {
   })
 
   it('uses provided login function', () => {
-    const login = vi.fn()
-    let capturedLogin
+    const login = vi.fn() as unknown as AuthContextType['login']
+    let capturedLogin: AuthContextType['login'] | undefined
     function LoginCapture() {
-      const ctx = useContext(AuthContext)
+      const ctx = useContext(AuthContext)!
       capturedLogin = ctx.login
       return null
     }

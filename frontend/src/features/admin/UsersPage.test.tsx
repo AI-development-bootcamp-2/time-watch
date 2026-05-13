@@ -3,13 +3,18 @@ import userEvent from '@testing-library/user-event'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import UsersPage from './UsersPage'
 
-// Mock API and UserModal so UsersPage can be tested in isolation
+interface MockUserModalProps {
+  user: { full_name?: string } | null
+  onClose: () => void
+  onSaved: () => void
+}
+
 vi.mock('../../services/usersApi', () => ({
   getUsers: vi.fn(),
 }))
 
 vi.mock('./UserModal', () => ({
-  default: ({ user, onClose, onSaved }) => (
+  default: ({ user, onClose, onSaved }: MockUserModalProps) => (
     <div data-testid="user-modal">
       <span data-testid="modal-mode">{user === null ? 'create' : 'edit'}</span>
       {user && <span data-testid="modal-user-name">{user.full_name}</span>}
@@ -21,6 +26,8 @@ vi.mock('./UserModal', () => ({
 
 import { getUsers } from '../../services/usersApi'
 
+const mockedGetUsers = vi.mocked(getUsers)
+
 const SAMPLE_USERS = [
   { id: '1', full_name: 'ישראל ישראלי', email: 'israel@example.com', role: 'admin',    is_active: true  },
   { id: '2', full_name: 'שרה כהן',      email: 'sarah@example.com',  role: 'employee', is_active: false },
@@ -28,12 +35,8 @@ const SAMPLE_USERS = [
 
 beforeEach(() => {
   vi.clearAllMocks()
-  getUsers.mockResolvedValue(SAMPLE_USERS)
+  mockedGetUsers.mockResolvedValue(SAMPLE_USERS)
 })
-
-// ───────────────────────────────────────────
-// Table rendering
-// ───────────────────────────────────────────
 
 describe('table rendering', () => {
   it('renders all user rows after a successful fetch', async () => {
@@ -59,16 +62,12 @@ describe('table rendering', () => {
   })
 
   it('shows a load-error alert when getUsers rejects', async () => {
-    getUsers.mockRejectedValue(new Error('network'))
+    mockedGetUsers.mockRejectedValue(new Error('network'))
     render(<UsersPage />)
     const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent('אירעה שגיאה בטעינת המשתמשים')
   })
 })
-
-// ───────────────────────────────────────────
-// Status filter
-// ───────────────────────────────────────────
 
 describe('status filter', () => {
   it('"פעיל" filter shows only active rows', async () => {
@@ -102,10 +101,6 @@ describe('status filter', () => {
     expect(screen.getByText('שרה כהן')).toBeInTheDocument()
   })
 })
-
-// ───────────────────────────────────────────
-// Modal integration
-// ───────────────────────────────────────────
 
 describe('modal integration', () => {
   it('clicking "הוסף משתמש" opens the modal in create mode', async () => {

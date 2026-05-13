@@ -3,8 +3,15 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { describe, it, expect } from 'vitest'
 import AdminRoute from './AdminRoute'
 import { renderWithAuth } from '../test-utils'
+import type { AuthContextType } from '../context/AuthProvider'
 
-function setup({ isLoading = false, user = null, initialEntry = '/admin' } = {}) {
+interface SetupOptions {
+  isLoading?: boolean
+  user?: { id: number; role?: string } | null
+  initialEntry?: string
+}
+
+function setup({ isLoading = false, user = null, initialEntry = '/admin' }: SetupOptions = {}) {
   renderWithAuth(
     <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
@@ -15,7 +22,7 @@ function setup({ isLoading = false, user = null, initialEntry = '/admin' } = {})
         </Route>
       </Routes>
     </MemoryRouter>,
-    { isLoading, user }
+    { isLoading, user: user as AuthContextType['user'] }
   )
 }
 
