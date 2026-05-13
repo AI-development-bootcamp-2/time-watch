@@ -3,7 +3,7 @@
 // relative (e.g. '/api/reports'); Vite's dev proxy forwards `/api` to the
 // backend container.
 
-import { getToken, clearToken } from '../features/auth/authSlice.ts'
+import { getToken, clearToken } from '../features/auth/authSlice'
 
 export class ApiError extends Error {
   status: number
