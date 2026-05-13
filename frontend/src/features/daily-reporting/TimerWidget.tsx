@@ -19,7 +19,7 @@ export default function TimerWidget() {
 
   // Check server status on mount — syncs with any timer started externally (e.g. header button)
   useEffect(() => {
-    fetch('/api/timer/status')
+    fetch('/api/timer/status', { credentials: 'include' })
       .then((r) => r.json())
       .then((data) => {
         if (data.timer?.start_time) {
@@ -51,7 +51,7 @@ export default function TimerWidget() {
 
     const poll = async () => {
       try {
-        const res = await fetch('/api/timer/status');
+        const res = await fetch('/api/timer/status', { credentials: 'include' });
         if (!res.ok) return;
         const data = await res.json();
         if (data.timer === null) {
@@ -76,7 +76,7 @@ export default function TimerWidget() {
     setError(null);
 
     try {
-      const res = await fetch('/api/timer/start', { method: 'POST' });
+      const res = await fetch('/api/timer/start', { method: 'POST', credentials: 'include' });
 
       if (res.status === 201) {
         const { timer } = await res.json();

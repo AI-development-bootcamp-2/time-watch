@@ -16,6 +16,7 @@ export default function StopTimerModal({ onClose, onSaved }: StopTimerModalProps
     try {
       const res = await fetch('/api/timer/stop', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           description: description || null,
