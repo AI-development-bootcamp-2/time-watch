@@ -2,6 +2,7 @@ require('dotenv').config()
 
 const { createApp } = require('./app')
 const { runMigrations } = require('./db/knex')
+const { scheduleMidnightSplit } = require('./cron/midnightSplit')
 
 const PORT = process.env.PORT || 3000
 const shouldRunMigrations = process.env.RUN_MIGRATIONS_ON_STARTUP !== 'false'
@@ -13,7 +14,12 @@ async function startServer() {
 
   const app = createApp()
 
-  app.listen(PORT, () => console.log(`Backend running on port ${PORT}`))
+  scheduleMidnightSplit()
+
+  app.listen(PORT, () => {
+    console.log(`Backend running on port ${PORT}`)
+    console.log(`Swagger UI: http://localhost:${PORT}/api-docs`)
+  })
 }
 
 startServer().catch((error) => {
