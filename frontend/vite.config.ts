@@ -22,13 +22,13 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: './src/test-setup.js',
+    setupFiles: './src/test-setup.ts',
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{js,jsx,ts,tsx}'],
       exclude: [
         'src/test-utils/**',
-        'src/test-setup.js',
+        'src/test-setup.ts',
         'src/main.tsx',
       ],
       thresholds: {
