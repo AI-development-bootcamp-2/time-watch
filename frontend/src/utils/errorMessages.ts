@@ -5,4 +5,4 @@ export const AUTH_ERRORS = {
   NETWORK_ERROR:     'אירעה שגיאת רשת. נסי שוב מאוחר יותר',
   REQUIRED_FIELD:    'שדה חובה',
   INVALID_EMAIL:     'כתובת האימייל אינה תקינה',
-}
+} as const
