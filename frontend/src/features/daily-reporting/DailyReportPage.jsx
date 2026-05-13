@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import ReportForm from './ReportForm.jsx'
+import ReportForm from './ReportForm.tsx'
 import { apiFetch } from '../../api/client.js'
 import './ReportForm.css'
 
