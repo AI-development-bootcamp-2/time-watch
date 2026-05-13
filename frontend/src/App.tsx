@@ -13,6 +13,7 @@ import ClientsPage from './features/admin/ClientsPage'
 import ProjectsPage from './features/admin/ProjectsPage'
 import TasksPage from './features/admin/TasksPage'
 import AdminReportsPage from './features/admin/AdminReportsPage'
+import AssignmentsPage from './features/admin/AssignmentsPage'
 
 export default function App() {
   return (
@@ -39,7 +40,8 @@ export default function App() {
                 <Route path="users"    element={<UsersPage />} />
                 <Route path="clients"  element={<ClientsPage />} />
                 <Route path="projects" element={<ProjectsPage />} />
-                <Route path="tasks"    element={<TasksPage />} />
+                <Route path="tasks"       element={<TasksPage />} />
+                <Route path="assignments" element={<AssignmentsPage />} />
                 <Route path="reports"  element={<AdminReportsPage />} />
               </Route>
             </Route>

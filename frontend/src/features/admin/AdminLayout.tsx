@@ -4,8 +4,9 @@ const adminTabs = [
   { to: '/admin/users',    label: 'משתמשים' },
   { to: '/admin/clients',  label: 'לקוחות' },
   { to: '/admin/projects', label: 'פרויקטים' },
-  { to: '/admin/tasks',    label: 'משימות' },
-  { to: '/admin/reports',  label: 'דוחות' },
+  { to: '/admin/tasks',        label: 'משימות' },
+  { to: '/admin/assignments',  label: 'שיוך משימות' },
+  { to: '/admin/reports',      label: 'דוחות' },
 ]
 
 export default function AdminLayout() {
