@@ -17,13 +17,26 @@ const MOCK_PROJECT_GROUPS = [
   },
 ]
 
+interface ProjectGroup {
+  client: string
+  projects: string[]
+}
+
+interface ProjectPickerProps {
+  selected?: string
+  onSelect: (value: string) => void
+  onClose: () => void
+  onBack?: () => void
+  groups?: ProjectGroup[]
+}
+
 export default function ProjectPicker({
   selected,
   onSelect,
   onClose,
   onBack,
   groups = MOCK_PROJECT_GROUPS,
-}) {
+}: ProjectPickerProps) {
   const [query, setQuery] = useState('')
 
   const filtered = useMemo(() => {

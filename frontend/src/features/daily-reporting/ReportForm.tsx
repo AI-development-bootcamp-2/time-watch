@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import './ReportForm.css'
-import ProjectPicker from './ProjectPicker.jsx'
+import ProjectPicker from './ProjectPicker'
 
 const DAILY_STANDARD = 9
 const DAYS_HE = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש']
