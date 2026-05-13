@@ -1,9 +1,12 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
-export async function request(method, path, body) {
+// Errors thrown by request() carry HTTP status and optional API code
+type HttpError = Error & { status: number; code?: unknown }
+
+export async function request(method: string, path: string, body?: unknown): Promise<unknown> {
   try {
     const url = `${BASE_URL}${path}`
-    const options = { method, credentials: 'include' }
+    const options: RequestInit = { method, credentials: 'include' }
 
     if (body !== undefined) {
       options.headers = { 'Content-Type': 'application/json' }
@@ -20,13 +23,13 @@ export async function request(method, path, body) {
     }
 
     const errorBody = await res.json().catch(() => null)
-    const err = new Error(errorBody?.message || `HTTP ${res.status}`)
+    const err = new Error(errorBody?.message || `HTTP ${res.status}`) as HttpError
     err.status = res.status
     err.code = errorBody?.code ?? null
     throw err
   } catch (err) {
-    if (typeof err.status === 'number') throw err
-    const netErr = new Error('Network error')
+    if (typeof (err as HttpError).status === 'number') throw err
+    const netErr = new Error('Network error') as HttpError
     netErr.status = 0
     throw netErr
   }
