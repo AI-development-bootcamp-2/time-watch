@@ -166,6 +166,18 @@ describe('AbsenceForm', () => {
     expect(mockUploadDocument).not.toHaveBeenCalled()
   })
 
+  it.each(['מחלה', 'מילואים'])('requires a document before submitting %s absence', async label => {
+    render(<AbsenceForm />)
+
+    await chooseType(label)
+    await fillSingleDate()
+    await submit()
+
+    expect(screen.getByText('עליך להעלות מסמך כדי להמשיך')).toBeInTheDocument()
+    expect(mockCreateAbsence).not.toHaveBeenCalled()
+    expect(mockUploadDocument).not.toHaveBeenCalled()
+  })
+
   it('shows the conflict modal; cancel closes it and replace submits', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,

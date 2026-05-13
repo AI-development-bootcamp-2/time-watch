@@ -63,6 +63,7 @@ type DateFieldButtonProps = {
 const MAX_FILE_SIZE = 20 * 1024 * 1024
 const TODAY = new Date()
 TODAY.setHours(0, 0, 0, 0)
+const REQUIRED_DOCUMENT_ERROR = 'עליך להעלות מסמך כדי להמשיך'
 
 const ABSENCE_TYPES = [
   { value: 'vacation', label: 'חופשה' },
@@ -215,10 +216,14 @@ function documentName(document: AbsenceDocument) {
   return typeof document === 'string' ? document : document.name
 }
 
+function requiresDocument(type: AbsenceFormValues['type']) {
+  return type === 'sick' || type === 'military_reserve'
+}
+
 function validate(values: AbsenceFormValues, fileError = '', reportingMonth?: string | null) {
   const errs: AbsenceFormErrors = {}
   const effectiveEndDate = values.duration === 'single' ? values.startDate : values.endDate
-  const futureBlocked = values.type !== 'sick' && values.type !== 'military_reserve'
+  const futureBlocked = !requiresDocument(values.type)
 
   if (!values.type) errs.type = 'שדה חובה'
   if (!values.startDate) errs.startDate = 'שדה חובה'
@@ -238,6 +243,7 @@ function validate(values: AbsenceFormValues, fileError = '', reportingMonth?: st
       errs.endDate = 'ניתן לדווח רק על תאריכים בחודש הנבחר'
     }
   }
+  if (requiresDocument(values.type) && !values.document) errs.document = REQUIRED_DOCUMENT_ERROR
   if (fileError) errs.document = fileError
   return errs
 }
@@ -247,6 +253,7 @@ function liveValidationErrors(values: AbsenceFormValues, fileError = '', reporti
   if (!values.type) delete errs.type
   if (!values.startDate) delete errs.startDate
   if (values.duration === 'range' && !values.endDate) delete errs.endDate
+  if (requiresDocument(values.type) && !values.document && !fileError) delete errs.document
   return errs
 }
 
@@ -290,7 +297,7 @@ export default function AbsenceForm({ onClose = () => {}, onSave, initialValues,
   const dateFieldSummary = getDateSummary(values.duration, values.startDate, values.endDate)
   const startDateValue = parseLocalDate(values.startDate)
   const endDateValue = parseLocalDate(values.endDate)
-  const showDocumentField = values.type === 'sick' || values.type === 'military_reserve'
+  const showDocumentField = requiresDocument(values.type)
   const monthMinDate = firstDayOfMonth(reportingMonth)
   const monthMaxDate = lastDayOfMonth(reportingMonth)
   const datePickerMinDate = monthMinDate ?? undefined
@@ -320,9 +327,9 @@ export default function AbsenceForm({ onClose = () => {}, onSave, initialValues,
       type: draftType,
       duration: draftType === 'half_day_vac' ? 'single' : prev.duration,
       endDate: draftType === 'half_day_vac' ? '' : prev.endDate,
-      document: draftType === 'sick' || draftType === 'military_reserve' ? prev.document : null,
+      document: requiresDocument(draftType) ? prev.document : null,
     }))
-    if (draftType !== 'sick' && draftType !== 'military_reserve') {
+    if (!requiresDocument(draftType)) {
       setFileError('')
       setUploadStatus(null)
       if (fileInputRef.current) fileInputRef.current.value = ''

@@ -29,6 +29,7 @@ export default function App() {
             <Route path="/monthly"  element={<MonthlyCalendar />} />
 
           {/* Admin routes — own full-screen layout with dark sidebar */}
+          </Route>
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Navigate to="users" replace />} />
