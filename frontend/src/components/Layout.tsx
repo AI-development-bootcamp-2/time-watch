@@ -52,7 +52,7 @@ export default function Layout() {
 
   // Sync with any active timer on mount
   useEffect(() => {
-    fetch('/api/timer/status')
+    fetch('/api/timer/status', { credentials: 'include' })
       .then(r => r.json())
       .then(data => {
         if (data.timer?.start_time) {
@@ -76,7 +76,7 @@ export default function Layout() {
     if (timerStarting || timerRunning) return
     setTimerStarting(true)
     try {
-      const res = await fetch('/api/timer/start', { method: 'POST' })
+      const res = await fetch('/api/timer/start', { method: 'POST', credentials: 'include' })
       if (res.status === 201) {
         const { timer } = await res.json()
         setStartTime(timer.start_time)
@@ -84,7 +84,7 @@ export default function Layout() {
         setTimerRunning(true)
       } else if (res.status === 409) {
         // Already running on server — sync state
-        const status = await fetch('/api/timer/status').then(r => r.json())
+        const status = await fetch('/api/timer/status', { credentials: 'include' }).then(r => r.json())
         if (status.timer?.start_time) {
           setStartTime(status.timer.start_time)
           setTimerRunning(true)
