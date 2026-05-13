@@ -3,6 +3,14 @@ import LoadingSpinner from '../../components/LoadingSpinner'
 import UserModal from './UserModal'
 import { getUsers } from '../../services/usersApi'
 
+interface UserListItem {
+  id: number
+  full_name: string
+  email: string
+  role: string
+  is_active: boolean
+}
+
 const FILTERS = [
   { key: 'all',      label: 'הכל' },
   { key: 'active',   label: 'פעיל' },
@@ -11,12 +19,12 @@ const FILTERS = [
 
 // Admin page — lists all users with status filter and add/edit modal
 export default function UsersPage() {
-  const [users, setUsers]         = useState([])
+  const [users, setUsers]         = useState<UserListItem[]>([])
   const [loading, setLoading]     = useState(true)
   const [loadError, setLoadError] = useState('')
   const [filter, setFilter]       = useState('all')
   // undefined = closed, null = create mode, object = edit mode
-  const [modalUser, setModalUser] = useState(undefined)
+  const [modalUser, setModalUser] = useState<UserListItem | null | undefined>(undefined)
 
   // Fetch the full user list; called on mount and after each save
   async function fetchUsers() {
@@ -24,7 +32,7 @@ export default function UsersPage() {
     setLoadError('')
     try {
       const data = await getUsers()
-      setUsers(data)
+      setUsers(data as UserListItem[])
     } catch {
       setLoadError('אירעה שגיאה בטעינת המשתמשים. נסה לרענן.')
     } finally {

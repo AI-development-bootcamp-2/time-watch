@@ -1,8 +1,8 @@
 import { isRequired, isValidEmail } from '../../utils/validation'
 
 // Complexity rules applied when creating a user or when a non-empty password is supplied in edit mode
-function validatePassword(password) {
-  const missing = []
+function validatePassword(password: string): string[] {
+  const missing: string[] = []
   if (password.length < 8)              missing.push('לפחות 8 תווים')
   if (!/[A-Z]/.test(password))          missing.push('אות גדולה אחת לפחות')
   if (!/[a-z]/.test(password))          missing.push('אות קטנה אחת לפחות')
@@ -12,8 +12,11 @@ function validatePassword(password) {
 }
 
 // Validates user form fields; isCreate=true requires password and enforces complexity
-export function validateUserForm({ full_name = '', email = '', password = '' } = {}, isCreate) {
-  const errors = {}
+export function validateUserForm(
+  { full_name = '', email = '', password = '' }: { full_name?: string; email?: string; password?: string } = {},
+  isCreate: boolean
+): { valid: boolean; errors: { full_name?: string; email?: string; password?: string } } {
+  const errors: { full_name?: string; email?: string; password?: string } = {}
 
   if (!isRequired(full_name)) {
     errors.full_name = 'שדה חובה'

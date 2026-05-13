@@ -1,10 +1,24 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import InlineError from '../../components/InlineError'
 import { validateUserForm } from './validateUserForm'
 import { createUser, updateUser, deactivateUser, activateUser } from '../../services/usersApi'
 
+interface UserRecord {
+  id: number
+  full_name: string
+  email: string
+  role: string
+  is_active: boolean
+}
+
+interface UserModalProps {
+  user: UserRecord | null
+  onClose: () => void
+  onSaved: () => void
+}
+
 // Modal for creating a new user (user=null) or editing an existing one (user=object)
-export default function UserModal({ user, onClose, onSaved }) {
+export default function UserModal({ user, onClose, onSaved }: UserModalProps) {
   const isCreate = user == null
 
   const [fullName, setFullName]   = useState(user?.full_name ?? '')
@@ -12,7 +26,7 @@ export default function UserModal({ user, onClose, onSaved }) {
   const [role, setRole]           = useState(user?.role ?? 'employee')
   const [password, setPassword]   = useState('')
 
-  const [fieldErrors, setFieldErrors] = useState({})
+  const [fieldErrors, setFieldErrors] = useState<{ full_name?: string; email?: string; password?: string }>({})
   const [apiError, setApiError]       = useState('')
   const [saving, setSaving]           = useState(false)
 
@@ -23,7 +37,7 @@ export default function UserModal({ user, onClose, onSaved }) {
     onClose()
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const { valid, errors } = validateUserForm(
       { full_name: fullName, email, password },
@@ -40,13 +54,15 @@ export default function UserModal({ user, onClose, onSaved }) {
       if (isCreate) {
         await createUser({ full_name: fullName, email, role, password })
       } else {
-        const payload = { full_name: fullName, email, role }
+        const payload: { full_name: string; email: string; role: string; password?: string } =
+          { full_name: fullName, email, role }
         if (password !== '') payload.password = password
-        await updateUser(user.id, payload)
+        await updateUser(user!.id, payload)
       }
       onSaved()
     } catch (err) {
-      if (err?.status === 409) {
+      const e = err as { status?: number }
+      if (e.status === 409) {
         setApiError('כתובת האימייל כבר קיימת במערכת')
       } else {
         setApiError('אירעה שגיאה. נסה שוב.')
@@ -59,20 +75,22 @@ export default function UserModal({ user, onClose, onSaved }) {
   async function handleDeactivate() {
     setApiError('')
     try {
-      await deactivateUser(user.id)
+      await deactivateUser(user!.id)
       onSaved()
     } catch (err) {
-      setApiError(err?.message || 'אירעה שגיאה. נסה שוב.')
+      const e = err as { message?: string }
+      setApiError(e.message || 'אירעה שגיאה. נסה שוב.')
     }
   }
 
   async function handleActivate() {
     setApiError('')
     try {
-      await activateUser(user.id)
+      await activateUser(user!.id)
       onSaved()
     } catch (err) {
-      setApiError(err?.message || 'אירעה שגיאה. נסה שוב.')
+      const e = err as { message?: string }
+      setApiError(e.message || 'אירעה שגיאה. נסה שוב.')
     }
   }
 
@@ -173,7 +191,7 @@ export default function UserModal({ user, onClose, onSaved }) {
             {!isCreate && (
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-700">סטטוס:</span>
-                {user.is_active
+                {user!.is_active
                   ? <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 px-2.5 py-0.5 text-xs font-medium">פעיל</span>
                   : <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-500 px-2.5 py-0.5 text-xs font-medium">לא פעיל</span>
                 }
@@ -203,7 +221,7 @@ export default function UserModal({ user, onClose, onSaved }) {
 
             {/* Activate / Deactivate — edit mode only, based on current status */}
             {!isCreate && (
-              user.is_active
+              user!.is_active
                 ? (
                   <button
                     type="button"
