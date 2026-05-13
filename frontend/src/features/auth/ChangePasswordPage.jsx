@@ -35,7 +35,7 @@ export default function ChangePasswordPage() {
     try {
       await changePassword(currentPw, newPw)
       patchUser({ must_change_password: false })
-      navigate('/daily', { replace: true })
+      navigate('/monthly', { replace: true })
     } catch (err) {
       if (err?.status === 401) setError('הסיסמה הנוכחית שגויה')
       else if (err?.status === 423) setError('החשבון נעול זמנית. נסה שוב מאוחר יותר.')

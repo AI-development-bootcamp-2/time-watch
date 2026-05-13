@@ -4,20 +4,11 @@ import { NavLink, Outlet, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import AbsenceForm, { type AbsencePayload } from '../features/absences/AbsenceForm'
 import ReportForm, { type WorkPayload } from '../features/daily-reporting/ReportForm'
+import StopTimerModal from '../features/daily-reporting/StopTimerModal'
 
 // ─── Bottom nav items ─────────────────────────────────────────────────────────
 
-const NAV_ITEMS: { to: string; label: string; end?: boolean; icon: ReactNode }[] = [
-  {
-    to: '/daily',
-    label: 'דיווח יומי',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <circle cx="12" cy="12" r="9" />
-        <path strokeLinecap="round" d="M12 7v5l3 3" />
-      </svg>
-    ),
-  },
+const NAV_ITEMS: { to: string; label: string; end?: boolean; adminOnly?: boolean; icon: ReactNode }[] = [
   {
     to: '/monthly',
     label: 'לוח חודשי',
@@ -29,20 +20,10 @@ const NAV_ITEMS: { to: string; label: string; end?: boolean; icon: ReactNode }[]
     ),
   },
   {
-    to: '/absences',
-    label: 'היעדרויות',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path strokeLinecap="round" d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
-  {
     to: '/admin',
     end: false,
     label: 'ניהול',
+    adminOnly: true,
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
@@ -52,12 +33,21 @@ const NAV_ITEMS: { to: string; label: string; end?: boolean; icon: ReactNode }[]
   },
 ]
 
+function formatElapsed(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  return [h, m, s].map(n => String(n).padStart(2, '0')).join(':')
+}
+
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
 export default function Layout() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { user, logout } = useAuth() as { user: { role: string } | null; logout: () => Promise<void> }
+
+  const [timerRunning, setTimerRunning] = useState(false)
   const [timerStarting, setTimerStarting] = useState(false)
   const [showAbsenceForm, setShowAbsenceForm] = useState(false)
   const [showWorkForm, setShowWorkForm] = useState(false)
@@ -78,19 +68,52 @@ export default function Layout() {
     setShowAbsenceForm(false)
     setShowWorkForm(true)
   }, [reportRequest, requestedWorkDate])
+  const [startTime, setStartTime] = useState<string | null>(null)
+  const [elapsed, setElapsed] = useState(0)
+  const [showStopModal, setShowStopModal] = useState(false)
+
+  // Sync with any active timer on mount
+  useEffect(() => {
+    fetch('/api/timer/status')
+      .then(r => r.json())
+      .then(data => {
+        if (data.timer?.start_time) {
+          setStartTime(data.timer.start_time)
+          setTimerRunning(true)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  // Tick elapsed counter every second while running
+  useEffect(() => {
+    if (!timerRunning || !startTime) return
+    const tick = () => setElapsed(Math.floor((Date.now() - new Date(startTime).getTime()) / 1000))
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [timerRunning, startTime])
 
   async function handleStartTimer() {
-    if (timerStarting) return
+    if (timerStarting || timerRunning) return
     setTimerStarting(true)
     try {
       const res = await fetch('/api/timer/start', { method: 'POST' })
-      // 201 = started, 409 = already running — both cases go to daily view
-      if (res.status === 201 || res.status === 409) {
-        navigate('/daily')
+      if (res.status === 201) {
+        const { timer } = await res.json()
+        setStartTime(timer.start_time)
+        setElapsed(0)
+        setTimerRunning(true)
+      } else if (res.status === 409) {
+        // Already running on server — sync state
+        const status = await fetch('/api/timer/status').then(r => r.json())
+        if (status.timer?.start_time) {
+          setStartTime(status.timer.start_time)
+          setTimerRunning(true)
+        }
       }
     } catch {
-      // Network error — still navigate so user sees the widget
-      navigate('/daily')
+      // ignore network errors
     } finally {
       setTimerStarting(false)
     }
@@ -152,6 +175,13 @@ export default function Layout() {
     setShowAbsenceForm(false)
   }
 
+  function handleTimerSaved() {
+    setShowStopModal(false)
+    setTimerRunning(false)
+    setStartTime(null)
+    setElapsed(0)
+  }
+
   return (
     <div dir="rtl" className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: '#F2F2F7' }}>
 
@@ -182,7 +212,6 @@ export default function Layout() {
               boxShadow: '0 4px 12px rgba(255,109,0,0.40)',
             }}
           >
-            {/* Pencil-on-calendar icon */}
             <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <rect x="3" y="4" width="18" height="18" rx="2" fill="rgba(255,255,255,0.25)" stroke="white" />
               <path strokeLinecap="round" stroke="white" d="M16 2v4M8 2v4M3 10h18" />
@@ -191,36 +220,57 @@ export default function Layout() {
             דיווח ידני
           </button>
 
-          {/* הפעלת שעון — pink gradient pill */}
-          <button
-            onClick={handleStartTimer}
-            disabled={timerStarting}
-            className="flex min-w-[136px] flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-bold text-white min-h-[44px] active:scale-95 transition-all disabled:opacity-70 sm:flex-none sm:px-4"
-            style={{
-              background: 'linear-gradient(135deg, #FF4DB8 0%, #D6006E 100%)',
-              boxShadow: '0 4px 12px rgba(214,0,110,0.40)',
-            }}
-          >
-            {/* Circle-play icon: ring + filled triangle */}
-            <span className="relative flex items-center justify-center w-[20px] h-[20px]">
-              {timerStarting ? (
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-30" cx="12" cy="12" r="10" stroke="white" strokeWidth={3} />
-                  <path className="opacity-90" fill="white" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z" />
+          {/* Timer button — toggles between start and stop */}
+          {timerRunning ? (
+            <button
+              onClick={() => setShowStopModal(true)}
+              className="flex flex-col items-center justify-center gap-0.5 px-4 py-1.5 rounded-full text-sm font-bold text-white min-h-[40px] active:scale-95 transition-all"
+              style={{
+                background: 'linear-gradient(135deg, #FF6B6B 0%, #C0392B 100%)',
+                boxShadow: '0 4px 12px rgba(192,57,43,0.40)',
+              }}
+            >
+              <span className="flex items-center gap-1.5">
+                {/* Stop square icon */}
+                <svg className="w-[14px] h-[14px]" viewBox="0 0 14 14" fill="white">
+                  <rect x="2" y="2" width="10" height="10" rx="1.5" />
                 </svg>
-              ) : (
-                <>
-                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.6)" strokeWidth={2} />
+                הפסקת שעון
+              </span>
+              <span className="text-[11px] font-mono opacity-90 leading-none tabular-nums">
+                {formatElapsed(elapsed)}
+              </span>
+            </button>
+          ) : (
+            <button
+              onClick={handleStartTimer}
+              disabled={timerStarting}
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white min-h-[40px] active:scale-95 transition-all disabled:opacity-70"
+              style={{
+                background: 'linear-gradient(135deg, #FF4DB8 0%, #D6006E 100%)',
+                boxShadow: '0 4px 12px rgba(214,0,110,0.40)',
+              }}
+            >
+              <span className="relative flex items-center justify-center w-[20px] h-[20px]">
+                {timerStarting ? (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-30" cx="12" cy="12" r="10" stroke="white" strokeWidth={3} />
+                    <path className="opacity-90" fill="white" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  <svg className="relative w-[10px] h-[10px] mr-[-1px]" viewBox="0 0 10 10" fill="white">
-                    <polygon points="2,1 9,5 2,9" />
-                  </svg>
-                </>
-              )}
-            </span>
-            {timerStarting ? 'מפעיל...' : 'הפעלת שעון'}
-          </button>
+                ) : (
+                  <>
+                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.6)" strokeWidth={2} />
+                    </svg>
+                    <svg className="relative w-[10px] h-[10px] mr-[-1px]" viewBox="0 0 10 10" fill="white">
+                      <polygon points="2,1 9,5 2,9" />
+                    </svg>
+                  </>
+                )}
+              </span>
+              {timerStarting ? 'מפעיל...' : 'הפעלת שעון'}
+            </button>
+          )}
         </div>
 
         {/* LEFT (RTL flex-end): יציאה */}
@@ -242,7 +292,7 @@ export default function Layout() {
 
       {/* ── Bottom navigation ── */}
       <nav className="fixed bottom-0 right-0 left-0 z-10 bg-white border-t border-gray-200 flex">
-        {NAV_ITEMS.filter(item => item.to !== '/admin' || user?.role === 'admin').map(({ to, label, icon, end }) => (
+        {NAV_ITEMS.filter(item => !item.adminOnly || user?.role === 'admin').map(({ to, label, icon, end }) => (
           <NavLink
             key={to}
             to={to}
@@ -282,6 +332,14 @@ export default function Layout() {
           onClose={() => setShowAbsenceForm(false)}
           onSave={handleSaveAbsence}
           onSwitchToWork={handleSwitchToWork}
+        />
+      )}
+
+      {/* Stop timer modal — rendered at layout level so it's available from any page */}
+      {showStopModal && (
+        <StopTimerModal
+          onClose={() => setShowStopModal(false)}
+          onSaved={handleTimerSaved}
         />
       )}
     </div>
