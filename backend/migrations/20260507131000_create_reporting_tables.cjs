@@ -59,7 +59,7 @@ exports.up = async function up(knex) {
     await knex.schema.createTable("absences", (table) => {
       table.increments("id").primary();
       table.integer("user_id").unsigned().notNullable().references("id").inTable("users").onDelete("RESTRICT");
-      table.enu("type", ["חופשה", "מחלה", "מילואים", "אחר"]).notNullable();
+      table.enu("type", ["vacation", "sick", "military_reserve", "other"]).notNullable();
       table.date("start_date").notNullable();
       table.date("end_date").notNullable();
       table.boolean("is_partial").notNullable().defaultTo(false);

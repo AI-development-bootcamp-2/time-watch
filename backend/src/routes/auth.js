@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const router = require('express').Router()
-const { db } = require('../db/knex')
+const db = require('../db/knex')
 const { authenticate } = require('../middleware/auth')
 
 const COOKIE_OPTS = {

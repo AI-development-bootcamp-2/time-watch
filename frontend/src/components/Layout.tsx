@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import AbsenceForm, { type AbsencePayload } from '../features/absences/AbsenceForm'
 
 // ─── Bottom nav items ─────────────────────────────────────────────────────────
 
@@ -54,6 +55,7 @@ const NAV_ITEMS: { to: string; label: string; end?: boolean; icon: ReactNode }[]
 export default function Layout() {
   const navigate = useNavigate()
   const [timerStarting, setTimerStarting] = useState(false)
+  const [showAbsenceForm, setShowAbsenceForm] = useState(false)
 
   async function handleStartTimer() {
     if (timerStarting) return
@@ -70,6 +72,45 @@ export default function Layout() {
     } finally {
       setTimerStarting(false)
     }
+  }
+
+  async function handleSaveAbsence(absence: AbsencePayload) {
+    const createRes = await fetch('/api/absences', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: absence.type,
+        start_date: absence.startDate,
+        end_date: absence.endDate,
+        is_partial: false,
+        partial_hours: null,
+        notes: '',
+      }),
+    })
+
+    const created = await createRes.json().catch(() => null)
+    if (!createRes.ok) {
+      throw new Error(created?.error || 'שמירת הדיווח נכשלה')
+    }
+
+    if (absence.document instanceof File) {
+      const formData = new FormData()
+      formData.append('document', absence.document)
+
+      const uploadRes = await fetch(`/api/absences/${created.id}/document`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      })
+
+      if (!uploadRes.ok) {
+        const uploadError = await uploadRes.json().catch(() => null)
+        throw new Error(uploadError?.error || 'העלאת המסמך נכשלה')
+      }
+    }
+
+    setShowAbsenceForm(false)
   }
 
   return (
@@ -92,7 +133,7 @@ export default function Layout() {
 
           {/* דיווח ידני — orange gradient pill */}
           <button
-            onClick={() => navigate('/daily')}
+            onClick={() => setShowAbsenceForm(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white min-h-[40px] active:scale-95 transition-transform"
             style={{
               background: 'linear-gradient(135deg, #FFAA00 0%, #FF6D00 100%)',
@@ -180,6 +221,13 @@ export default function Layout() {
           </NavLink>
         ))}
       </nav>
+
+      {showAbsenceForm && (
+        <AbsenceForm
+          onClose={() => setShowAbsenceForm(false)}
+          onSave={handleSaveAbsence}
+        />
+      )}
     </div>
   )
 }

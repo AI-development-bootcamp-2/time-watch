@@ -3,12 +3,14 @@ import Layout from './components/Layout'
 import AdminLayout from './features/admin/AdminLayout'
 import DailyReportPage from './features/daily-reporting/DailyReportPage'
 import MonthlyCalendar from './features/monthly-view/MonthlyCalendar'
-import AbsencePage from './features/absences/AbsencePage'
 import UsersPage from './features/admin/UsersPage'
 import ClientsPage from './features/admin/ClientsPage'
 import ProjectsPage from './features/admin/ProjectsPage'
 import TasksPage from './features/admin/TasksPage'
 import AdminReportsPage from './features/admin/AdminReportsPage'
+import AbsencePage from './features/absences/AbsencePage'
+import ProtectedRoute from './components/ProtectedRoute'
+
 
 export default function App() {
   return (
@@ -21,7 +23,6 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/daily"    element={<DailyReportPage />} />
           <Route path="/monthly"  element={<MonthlyCalendar />} />
-          <Route path="/absences" element={<AbsencePage />} />
 
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="users" replace />} />
@@ -31,6 +32,11 @@ export default function App() {
             <Route path="tasks"    element={<TasksPage />} />
             <Route path="reports"  element={<AdminReportsPage />} />
           </Route>
+        </Route>
+
+        <Route element={<ProtectedRoute />}>
+          <Route path="/absences/new" element={<AbsencePage />} />
+          <Route path="/absences/:id/edit" element={<AbsencePage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/daily" replace />} />

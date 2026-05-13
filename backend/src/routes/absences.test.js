@@ -23,7 +23,7 @@ function authCookie(userId, role = 'employee') {
 
 // Inserts a test absence and returns the full row.
 async function insertAbsence(overrides = {}) {
-  const [row] = await db('absence_entries')
+  const [row] = await db('absences')
     .insert({
       user_id: owner.id,
       type: 'vacation',
@@ -63,14 +63,14 @@ beforeAll(async () => {
 }, 30_000)
 
 beforeEach(async () => {
-  await db('absence_entries')
+  await db('absences')
     .whereIn('user_id', [owner.id, admin.id, other.id])
     .delete()
   await db('month_locks').where({ year: 2024 }).delete()
 })
 
 afterAll(async () => {
-  await db('absence_entries')
+  await db('absences')
     .whereIn('user_id', [owner.id, admin.id, other.id])
     .delete()
   await db('month_locks').where({ year: 2024 }).delete()
@@ -123,7 +123,7 @@ describe('GET /api/absences', () => {
 
   it('does not return soft-deleted absences', async () => {
     const absence = await insertAbsence()
-    await db('absence_entries').where({ id: absence.id }).update({ deleted_at: new Date() })
+    await db('absences').where({ id: absence.id }).update({ deleted_at: new Date() })
 
     const res = await request(app)
       .get('/api/absences')
@@ -153,7 +153,7 @@ describe('POST /api/absences', () => {
     expect(res.status).toBe(201)
     expect(res.body).toMatchObject({ type: 'vacation', user_id: owner.id })
 
-    const row = await db('absence_entries').where({ id: res.body.id }).first()
+    const row = await db('absences').where({ id: res.body.id }).first()
     expect(row).toBeTruthy()
     expect(row.type).toBe('vacation')
   })
@@ -166,7 +166,7 @@ describe('POST /api/absences', () => {
 
     expect(res.status).toBe(201)
 
-    const row = await db('absence_entries').where({ id: res.body.id }).first()
+    const row = await db('absences').where({ id: res.body.id }).first()
     expect(row.end_date.toISOString().startsWith('2024-01-31')).toBe(true)
   })
 
@@ -262,7 +262,7 @@ describe('PUT /api/absences/:id', () => {
     expect(res.status).toBe(200)
     expect(res.body.type).toBe('sick')
 
-    const row = await db('absence_entries').where({ id: absence.id }).first()
+    const row = await db('absences').where({ id: absence.id }).first()
     expect(row.type).toBe('sick')
   })
 
@@ -343,7 +343,7 @@ describe('POST /api/absences/:id/document', () => {
     expect(res.body.document_uploaded_at).toBeTruthy()
 
     // Verify the raw bytes were persisted.
-    const row = await db('absence_entries').where({ id: absence.id }).first()
+    const row = await db('absences').where({ id: absence.id }).first()
     expect(row.document_data).toEqual(fileContent)
     expect(row.document_filename).toBe('report.pdf')
   })
@@ -365,7 +365,7 @@ describe('POST /api/absences/:id/document', () => {
     expect(res.status).toBe(200)
     expect(res.body.document_filename).toBe('new.pdf')
 
-    const row = await db('absence_entries').where({ id: absence.id }).first()
+    const row = await db('absences').where({ id: absence.id }).first()
     expect(row.document_data).toEqual(newContent)
   })
 
@@ -492,7 +492,7 @@ describe('DELETE /api/absences/:id/document', () => {
     expect(res.body.document_mimetype).toBeNull()
     expect(res.body.document_uploaded_at).toBeNull()
 
-    const row = await db('absence_entries').where({ id: absence.id }).first()
+    const row = await db('absences').where({ id: absence.id }).first()
     expect(row.document_data).toBeNull()
     expect(row.document_filename).toBeNull()
   })
