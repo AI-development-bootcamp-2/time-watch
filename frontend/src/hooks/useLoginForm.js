@@ -27,7 +27,7 @@ export function useLoginForm({ onSubmit }) {
     setIsSubmitting(true)
     try {
       await onSubmit(email, password)
-      navigate("/daily", { replace: true })
+      navigate("/monthly", { replace: true })
     } catch (err) {
       setErrors({ form: err.message || "אימייל או סיסמה שגויים" })
     } finally {

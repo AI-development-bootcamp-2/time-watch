@@ -6,17 +6,7 @@ import StopTimerModal from '../features/daily-reporting/StopTimerModal'
 
 // ─── Bottom nav items ─────────────────────────────────────────────────────────
 
-const NAV_ITEMS: { to: string; label: string; end?: boolean; icon: ReactNode }[] = [
-  {
-    to: '/daily',
-    label: 'דיווח יומי',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <circle cx="12" cy="12" r="9" />
-        <path strokeLinecap="round" d="M12 7v5l3 3" />
-      </svg>
-    ),
-  },
+const NAV_ITEMS: { to: string; label: string; end?: boolean; adminOnly?: boolean; icon: ReactNode }[] = [
   {
     to: '/monthly',
     label: 'לוח חודשי',
@@ -28,20 +18,10 @@ const NAV_ITEMS: { to: string; label: string; end?: boolean; icon: ReactNode }[]
     ),
   },
   {
-    to: '/absences',
-    label: 'היעדרויות',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path strokeLinecap="round" d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
-  {
     to: '/admin',
     end: false,
     label: 'ניהול',
+    adminOnly: true,
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
@@ -231,7 +211,7 @@ export default function Layout() {
 
       {/* ── Bottom navigation ── */}
       <nav className="fixed bottom-0 right-0 left-0 z-10 bg-white border-t border-gray-200 flex">
-        {NAV_ITEMS.filter(item => item.to !== '/admin' || user?.role === 'admin').map(({ to, label, icon, end }) => (
+        {NAV_ITEMS.filter(item => !item.adminOnly || user?.role === 'admin').map(({ to, label, icon, end }) => (
           <NavLink
             key={to}
             to={to}
