@@ -102,4 +102,32 @@ router.post('/', async (req, res) => {
   }
 })
 
+// Soft-deletes an active user-task assignment by setting deleted_at
+router.delete('/', async (req, res) => {
+  try {
+    const { user_id, task_id } = req.body
+
+    if (!user_id || !task_id || !Number.isInteger(Number(user_id)) || !Number.isInteger(Number(task_id))) {
+      return res.status(400).json({ message: 'user_id and task_id are required and must be valid integers' })
+    }
+
+    const uid = Number(user_id)
+    const tid = Number(task_id)
+
+    const count = await db('user_tasks')
+      .where({ user_id: uid, task_id: tid })
+      .whereNull('deleted_at')
+      .update({ deleted_at: db.fn.now(), updated_at: db.fn.now() })
+
+    if (count === 0) {
+      return res.status(404).json({ message: 'Assignment not found' })
+    }
+
+    return res.status(200).json({ message: 'Assignment removed' })
+  } catch (err) {
+    console.error('DELETE /api/user-tasks error:', err)
+    res.status(500).json({ message: 'Internal server error' })
+  }
+})
+
 module.exports = router
