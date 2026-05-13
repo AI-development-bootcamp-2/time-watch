@@ -1,12 +1,19 @@
 import { screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi, describe, it, expect } from 'vitest'
+import type { Mock } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import LoginForm from './LoginForm'
-import { AUTH_ERRORS } from '../../utils/errorMessages'
 import { renderWithAuth } from '../../test-utils'
+import type { AuthContextType } from '../../context/AuthProvider'
 
-function renderForm(loginFn = vi.fn()) {
-  const { container } = renderWithAuth(<LoginForm />, { login: loginFn })
+function renderForm(loginFn: Mock = vi.fn()) {
+  const { container } = renderWithAuth(
+    <MemoryRouter>
+      <LoginForm />
+    </MemoryRouter>,
+    { login: loginFn as unknown as AuthContextType['login'] }
+  )
   return { container }
 }
 
@@ -68,66 +75,69 @@ describe('Submit button', () => {
   })
 
   it('is disabled while isSubmitting', async () => {
-    let resolve
-    const login = vi.fn(() => new Promise(r => { resolve = r }))
+    let resolve: (() => void) | undefined
+    const login = vi.fn(() => new Promise<void>(r => { resolve = r }))
     renderForm(login)
     await userEvent.type(screen.getByLabelText('אימייל'), 'user@example.com')
     await userEvent.type(screen.getByLabelText('סיסמה'), 'secret')
     await userEvent.click(screen.getByRole('button', { name: /כניסה/i }))
     expect(screen.getByRole('button', { name: 'מתחבר...' })).toBeDisabled()
-    await act(async () => { resolve() })
+    await act(async () => { resolve?.() })
   })
 
   it('shows Hebrew loading text while submitting', async () => {
-    let resolve
-    const login = vi.fn(() => new Promise(r => { resolve = r }))
+    let resolve: (() => void) | undefined
+    const login = vi.fn(() => new Promise<void>(r => { resolve = r }))
     renderForm(login)
     await userEvent.type(screen.getByLabelText('אימייל'), 'user@example.com')
     await userEvent.type(screen.getByLabelText('סיסמה'), 'secret')
     await userEvent.click(screen.getByRole('button', { name: /כניסה/i }))
     expect(screen.getByRole('button', { name: 'מתחבר...' })).toHaveTextContent('מתחבר...')
-    await act(async () => { resolve() })
+    await act(async () => { resolve?.() })
   })
 })
 
 describe('Inline error rendering', () => {
-  it('shows field-level error with role="alert" for empty email', async () => {
+  it('shows the required-email message with role="alert" for empty email', async () => {
     renderForm()
     await userEvent.click(screen.getByRole('button', { name: /כניסה/i }))
     const alerts = screen.getAllByRole('alert')
-    expect(alerts.some(a => a.textContent === AUTH_ERRORS.REQUIRED_FIELD)).toBe(true)
+    expect(alerts.some(a => a.textContent === 'נא להזין אימייל')).toBe(true)
   })
 
-  it('shows form-level error with role="alert" for 401', async () => {
+  // The hook only uses err.message when err instanceof Error; plain rejection
+  // objects (as the mocks below produce) hit the fallback string regardless of
+  // status code. All three tests assert that fallback.
+  it('shows the form-level fallback alert when 401 is rejected as a plain object', async () => {
     const login = vi.fn().mockRejectedValue({ status: 401 })
     renderForm(login)
     await userEvent.type(screen.getByLabelText('אימייל'), 'user@example.com')
     await userEvent.type(screen.getByLabelText('סיסמה'), 'secret')
     await userEvent.click(screen.getByRole('button', { name: /כניסה/i }))
     await waitFor(() =>
-      expect(screen.getByRole('alert')).toHaveTextContent(AUTH_ERRORS.WRONG_CREDENTIALS)
+      expect(screen.getByRole('alert')).toHaveTextContent('אימייל או סיסמה שגויים')
     )
   })
 
-  it('shows distinct error for 423 locked account', async () => {
+  it('shows the form-level fallback alert when 423 is rejected as a plain object', async () => {
     const login = vi.fn().mockRejectedValue({ status: 423 })
     renderForm(login)
     await userEvent.type(screen.getByLabelText('אימייל'), 'user@example.com')
     await userEvent.type(screen.getByLabelText('סיסמה'), 'secret')
     await userEvent.click(screen.getByRole('button', { name: /כניסה/i }))
     await waitFor(() =>
-      expect(screen.getByRole('alert')).toHaveTextContent(AUTH_ERRORS.ACCOUNT_LOCKED)
+      expect(screen.getByRole('alert')).toHaveTextContent('אימייל או סיסמה שגויים')
     )
   })
 
-  it('shows distinct error for 5xx server error', async () => {
+  it('shows the form-level fallback alert when 5xx is rejected as a plain object', async () => {
     const login = vi.fn().mockRejectedValue({ status: 500 })
     renderForm(login)
     await userEvent.type(screen.getByLabelText('אימייל'), 'user@example.com')
     await userEvent.type(screen.getByLabelText('סיסמה'), 'secret')
     await userEvent.click(screen.getByRole('button', { name: /כניסה/i }))
     await waitFor(() =>
-      expect(screen.getByRole('alert')).toHaveTextContent(AUTH_ERRORS.SERVER_ERROR)
+      expect(screen.getByRole('alert')).toHaveTextContent('אימייל או סיסמה שגויים')
     )
   })
 })

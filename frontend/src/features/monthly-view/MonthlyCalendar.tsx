@@ -235,8 +235,7 @@ export default function MonthlyCalendar() {
     if (isFutureMonth) return
     setLoading(true)
     setExpandedDate(null)
-    fetch(`/api/work-entries?month=${monthStr}`)
-      .then((r) => r.json())
+ fetch(`/api/work-entries?month=${monthStr}`, { credentials: 'include' })      .then((r) => r.json())
       .then((data) => {
         const map: Record<string, DayData> = {}
         for (const day of data.days ?? []) map[day.date] = day
