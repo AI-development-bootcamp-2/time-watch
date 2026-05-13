@@ -12,9 +12,9 @@ export default function App() {
         <Route
           path="/daily-report"
           element={
-            <PrivateRoute>
+            //<PrivateRoute>
               <DailyReportPage />
-            </PrivateRoute>
+            //</PrivateRoute>
           }
         />
         <Route path="/" element={<Navigate to="/daily-report" replace />} />

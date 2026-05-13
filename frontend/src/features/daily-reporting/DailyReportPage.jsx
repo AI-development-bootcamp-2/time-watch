@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReportForm from './ReportForm.jsx'
 import { apiFetch } from '../../api/client.js'
+import { bumpTaskFrequency } from './useTaskAssignments.js'
 import './ReportForm.css'
 
 function toIsoDate(date) {
@@ -65,6 +66,11 @@ export default function DailyReportPage() {
           method: 'POST',
           body: JSON.stringify(buildWorkBody(payload)),
         })
+        // Track per-task usage so "sort by frequency" in the cascading picker
+        // has data to rank by.
+        for (const project of payload.projects) {
+          if (project.taskId != null) bumpTaskFrequency(project.taskId)
+        }
       } else {
         await apiFetch('/api/absences', {
           method: 'POST',

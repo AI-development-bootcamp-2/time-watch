@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import './ReportForm.css'
-import ProjectPicker from './ProjectPicker.jsx'
+import CascadingTaskFields from './CascadingTaskFields.jsx'
+import { useTaskAssignments } from './useTaskAssignments.js'
 
 const DAILY_STANDARD = 9
 const DAYS_HE = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש']
 const LOCATIONS = ['משרד', 'לקוח', 'בית']
-const TASKS = ['UX UI Design', 'Front-end', 'Back-end', 'QA']
 const ABSENCE_TYPES = ['חופשה', 'מחלה', 'מילואים', 'אחר']
 const ABSENCE_REQUIRES_DOC = new Set(['מחלה', 'מילואים'])
 
@@ -41,6 +41,11 @@ function hoursBetween(start, end) {
 function newProject(defaults = {}) {
   return {
     id: Date.now() + Math.random(),
+    clientId: null,
+    projectId: null,
+    taskId: null,
+    // The legacy string fields are kept in sync from the cascading picker so
+    // DailyReportPage.buildWorkBody still has something to send.
     project: '',
     task: '',
     location: '',
@@ -60,8 +65,8 @@ export default function ReportForm({ onClose, onSave, date = new Date(), isSubmi
   const [projects, setProjects] = useState([
     newProject({ startTime: '09:00', endTime: '18:00' }),
   ])
-  // When non-null, render the project picker for this row id instead of the form
-  const [pickerForProjectId, setPickerForProjectId] = useState(null)
+  const [sortBy, setSortBy] = useState('alpha') // 'alpha' | 'freq'
+  const { assignments, frequencies } = useTaskAssignments()
 
   // --- Absence-tab state ---
   const [absenceType, setAbsenceType] = useState('')
@@ -99,8 +104,9 @@ export default function ReportForm({ onClose, onSave, date = new Date(), isSubmi
 
     projects.forEach(p => {
       const pErrs = {}
-      if (!p.project) pErrs.project = 'נדרש לבחור פרויקט'
-      if (!p.task) pErrs.task = 'נדרש לבחור משימה'
+      if (p.clientId == null) pErrs.clientId = 'נדרש לבחור לקוח'
+      if (p.projectId == null) pErrs.projectId = 'נדרש לבחור פרויקט'
+      if (p.taskId == null) pErrs.taskId = 'נדרש לבחור משימה'
       if (!p.location) pErrs.location = 'נדרש לבחור מיקום'
 
       const s = parseTime(p.startTime)
@@ -146,19 +152,25 @@ export default function ReportForm({ onClose, onSave, date = new Date(), isSubmi
 
   const formatHours = h => (Number.isInteger(h) ? h : h.toFixed(1))
 
-  // Picker view replaces the form view while open (form state is preserved
-  // because this component remains mounted)
-  if (pickerForProjectId !== null) {
-    const current = projects.find(p => p.id === pickerForProjectId)
-    return (
-      <ProjectPicker
-        selected={current?.project}
-        onSelect={value => {
-          updateProject(pickerForProjectId, 'project', value)
-          setPickerForProjectId(null)
-        }}
-        onClose={() => setPickerForProjectId(null)}
-      />
+  // Called by CascadingTaskFields whenever a row's selection changes.
+  // We mirror the chosen names into `project` / `task` so downstream code
+  // (DailyReportPage.buildWorkBody) keeps sending the strings the backend
+  // currently looks up.
+  const handleCascadeChange = (rowId, nextSelection) => {
+    const match = assignments.find(a => a.taskId === nextSelection.taskId)
+    setProjects(prev =>
+      prev.map(p =>
+        p.id === rowId
+          ? {
+              ...p,
+              clientId: nextSelection.clientId,
+              projectId: nextSelection.projectId,
+              taskId: nextSelection.taskId,
+              project: match?.projectName || '',
+              task: match?.taskName || '',
+            }
+          : p
+      )
     )
   }
 
@@ -223,39 +235,38 @@ export default function ReportForm({ onClose, onSave, date = new Date(), isSubmi
           </div>
           {errors.exitTime && <div className="rf-error">{errors.exitTime}</div>}
 
-          <h3 className="rf-section">דיווח פרויקטים</h3>
+          <div className="rf-section-row">
+            <h3 className="rf-section">דיווח פרויקטים</h3>
+            <div className="rf-sort-row">
+              <button
+                type="button"
+                className={sortBy === 'alpha' ? 'rf-sort-btn active' : 'rf-sort-btn'}
+                onClick={() => setSortBy('alpha')}
+              >
+                א-ת
+              </button>
+              <button
+                type="button"
+                className={sortBy === 'freq' ? 'rf-sort-btn active' : 'rf-sort-btn'}
+                onClick={() => setSortBy('freq')}
+              >
+                לפי תדירות
+              </button>
+            </div>
+          </div>
 
           {projects.map(p => {
             const pErrs = errors.projects[p.id] || {}
             return (
               <div key={p.id} className="rf-project">
-                <button
-                  type="button"
-                  className={pErrs.project ? 'rf-field-button has-error' : 'rf-field-button'}
-                  onClick={() => setPickerForProjectId(p.id)}
-                >
-                  <span className="rf-label">פרויקט</span>
-                  <span className={p.project ? 'rf-field-value' : 'rf-field-value placeholder'}>
-                    {p.project || ''}
-                    <span className="rf-field-chevron"> ⌄</span>
-                  </span>
-                </button>
-                {pErrs.project && <div className="rf-error">{pErrs.project}</div>}
-
-                <div className={pErrs.task ? 'rf-field has-error' : 'rf-field'}>
-                  <label className="rf-label">משימה</label>
-                  <select
-                    className="rf-input rf-select"
-                    value={p.task}
-                    onChange={e => updateProject(p.id, 'task', e.target.value)}
-                  >
-                    <option value=""></option>
-                    {TASKS.map(t => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-                {pErrs.task && <div className="rf-error">{pErrs.task}</div>}
+                <CascadingTaskFields
+                  assignments={assignments}
+                  selection={{ clientId: p.clientId, projectId: p.projectId, taskId: p.taskId }}
+                  onChange={next => handleCascadeChange(p.id, next)}
+                  frequencies={frequencies}
+                  errors={pErrs}
+                  sortBy={sortBy}
+                />
 
                 <div className={pErrs.location ? 'rf-field has-error' : 'rf-field'}>
                   <label className="rf-label">מיקום</label>

@@ -292,6 +292,39 @@
 }
 .rf-btn-secondary:hover { background: #f5f5f7; }
 
+/* Cascading-dropdown sort toggle */
+.rf-section-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.rf-section-row .rf-section { margin: 0; }
+.rf-sort-row {
+  display: flex;
+  gap: 6px;
+}
+.rf-sort-btn {
+  background: #fff;
+  border: 1px solid #d1d1d6;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #1c1c1e;
+  cursor: pointer;
+  font-family: inherit;
+}
+.rf-sort-btn.active {
+  background: #0a84ff;
+  color: #fff;
+  border-color: #0a84ff;
+}
+.rf-input:disabled {
+  color: #8e8e93;
+  cursor: not-allowed;
+}
+
 /* Validation error states */
 .rf-field.has-error,
 .rf-field-button.has-error {
