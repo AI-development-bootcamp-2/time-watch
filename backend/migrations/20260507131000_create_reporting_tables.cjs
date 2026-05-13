@@ -19,7 +19,7 @@ exports.up = async function up(knex) {
       table.integer("user_id").unsigned().notNullable().references("id").inTable("users").onDelete("RESTRICT");
       table.integer("task_id").unsigned().notNullable().references("id").inTable("tasks").onDelete("RESTRICT");
       table.date("date").notNullable();
-      table.enu("location", ["office", "client_site", "home"]).notNullable();
+      table.enu("location", ["משרד", "לקוח", "בית"]).notNullable();
       table.time("start_time").notNullable();
       table.time("end_time").notNullable();
       table.decimal("duration_hours", 5, 2).notNullable();
@@ -41,7 +41,7 @@ exports.up = async function up(knex) {
       table.timestamp("start_time", { useTz: true }).notNullable();
       table.date("date").notNullable();
       table.integer("task_id").unsigned().nullable().references("id").inTable("tasks").onDelete("RESTRICT");
-      table.enu("location", ["office", "client_site", "home"]).nullable();
+      table.enu("location", ["משרד", "לקוח", "בית"]).nullable();
       table.text("description").nullable();
       addTimestamps(table, knex);
       table.index(["user_id"]);
@@ -59,7 +59,7 @@ exports.up = async function up(knex) {
     await knex.schema.createTable("absence_entries", (table) => {
       table.increments("id").primary();
       table.integer("user_id").unsigned().notNullable().references("id").inTable("users").onDelete("RESTRICT");
-      table.enu("type", ["vacation", "sick", "military_reserve", "other"]).notNullable();
+      table.enu("type", ["vacation", "half_vacation_day", "sick", "military_reserve", "other"]).notNullable();
       table.date("start_date").notNullable();
       table.date("end_date").notNullable();
       table.boolean("is_partial").notNullable().defaultTo(false);
