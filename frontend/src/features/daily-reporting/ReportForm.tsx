@@ -9,7 +9,57 @@ const TASKS = ['UX UI Design', 'Front-end', 'Back-end', 'QA']
 const ABSENCE_TYPES = ['חופשה', 'מחלה', 'מילואים', 'אחר']
 const ABSENCE_REQUIRES_DOC = new Set(['מחלה', 'מילואים'])
 
-function formatDateHe(date) {
+interface ProjectRow {
+  id: number
+  project: string
+  task: string
+  location: string
+  startTime: string
+  endTime: string
+  notes: string
+}
+
+interface ProjectErrors {
+  project?: string
+  task?: string
+  location?: string
+  endTime?: string
+}
+
+interface WorkErrors {
+  exitTime?: string
+  projects: Record<number, ProjectErrors>
+}
+
+interface WorkPayload {
+  kind: 'work'
+  date: Date
+  entryTime: string
+  exitTime: string
+  projects: ProjectRow[]
+}
+
+interface AbsencePayload {
+  kind: 'absence'
+  type: string
+  startDate: string
+  endDate: string
+  partialDay: boolean
+  notes: string
+  documentName: string
+}
+
+type SavePayload = WorkPayload | AbsencePayload
+
+interface ReportFormProps {
+  onClose?: () => void
+  onSave?: (payload: SavePayload) => void
+  date?: Date
+  isSubmitting?: boolean
+}
+
+// Format a Date as "יום X׳ dd/mm/yy" in Hebrew
+function formatDateHe(date: Date): string {
   const day = DAYS_HE[date.getDay()]
   const dd = String(date.getDate()).padStart(2, '0')
   const mm = String(date.getMonth() + 1).padStart(2, '0')
@@ -17,28 +67,32 @@ function formatDateHe(date) {
   return `יום ${day}׳ ${dd}/${mm}/${yy}`
 }
 
-function toIsoDate(date) {
+// Format a Date as YYYY-MM-DD for date inputs
+function toIsoDate(date: Date): string {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
   return `${y}-${m}-${d}`
 }
 
-function parseTime(t) {
+// Parse "HH:MM" string to fractional hours, returning null on empty/invalid
+function parseTime(t: string): number | null {
   if (!t) return null
   const [h, m] = t.split(':').map(Number)
   if (Number.isNaN(h)) return null
   return h + (Number.isNaN(m) ? 0 : m) / 60
 }
 
-function hoursBetween(start, end) {
+// Hours difference between two "HH:MM" strings, clamped at 0
+function hoursBetween(start: string, end: string): number {
   const s = parseTime(start)
   const e = parseTime(end)
   if (s === null || e === null) return 0
   return Math.max(0, e - s)
 }
 
-function newProject(defaults = {}) {
+// Build a fresh ProjectRow with a unique id and optional overrides
+function newProject(defaults: Partial<ProjectRow> = {}): ProjectRow {
   return {
     id: Date.now() + Math.random(),
     project: '',
@@ -51,17 +105,17 @@ function newProject(defaults = {}) {
   }
 }
 
-export default function ReportForm({ onClose, onSave, date = new Date(), isSubmitting = false }) {
+export default function ReportForm({ onClose, onSave, date = new Date(), isSubmitting = false }: ReportFormProps) {
   const [activeTab, setActiveTab] = useState('work')
 
   // --- Work-tab state ---
   const [entryTime, setEntryTime] = useState('09:00')
   const [exitTime, setExitTime] = useState('18:00')
-  const [projects, setProjects] = useState([
+  const [projects, setProjects] = useState<ProjectRow[]>([
     newProject({ startTime: '09:00', endTime: '18:00' }),
   ])
   // When non-null, render the project picker for this row id instead of the form
-  const [pickerForProjectId, setPickerForProjectId] = useState(null)
+  const [pickerForProjectId, setPickerForProjectId] = useState<number | null>(null)
 
   // --- Absence-tab state ---
   const [absenceType, setAbsenceType] = useState('')
@@ -73,7 +127,7 @@ export default function ReportForm({ onClose, onSave, date = new Date(), isSubmi
 
   // --- Validation errors ---
   // Shape: { exitTime?: string, projects: { [id]: { project?, task?, location?, endTime? } } }
-  const [errors, setErrors] = useState({ projects: {} })
+  const [errors, setErrors] = useState<WorkErrors>({ projects: {} })
 
   const totalHours = useMemo(
     () => projects.reduce((sum, p) => sum + hoursBetween(p.startTime, p.endTime), 0),
@@ -82,14 +136,18 @@ export default function ReportForm({ onClose, onSave, date = new Date(), isSubmi
   const remaining = Math.max(0, DAILY_STANDARD - totalHours)
   const progressPct = Math.min(100, (totalHours / DAILY_STANDARD) * 100)
 
-  const updateProject = (id, field, value) => {
+  // Update a single field on the given project row
+  const updateProject = (id: number, field: keyof ProjectRow, value: string) => {
     setProjects(prev => prev.map(p => (p.id === id ? { ...p, [field]: value } : p)))
   }
+  // Append a new empty project row
   const addProject = () => setProjects(prev => [...prev, newProject()])
-  const removeProject = id => setProjects(prev => prev.filter(p => p.id !== id))
+  // Remove the project row with the given id
+  const removeProject = (id: number) => setProjects(prev => prev.filter(p => p.id !== id))
 
-  const validateWork = () => {
-    const errs = { projects: {} }
+  // Build a WorkErrors object reflecting all current validation problems
+  const validateWork = (): WorkErrors => {
+    const errs: WorkErrors = { projects: {} }
 
     const entryMin = parseTime(entryTime)
     const exitMin = parseTime(exitTime)
@@ -98,7 +156,7 @@ export default function ReportForm({ onClose, onSave, date = new Date(), isSubmi
     }
 
     projects.forEach(p => {
-      const pErrs = {}
+      const pErrs: ProjectErrors = {}
       if (!p.project) pErrs.project = 'נדרש לבחור פרויקט'
       if (!p.task) pErrs.task = 'נדרש לבחור משימה'
       if (!p.location) pErrs.location = 'נדרש לבחור מיקום'
@@ -115,7 +173,8 @@ export default function ReportForm({ onClose, onSave, date = new Date(), isSubmi
     return errs
   }
 
-  const workHasErrors = errs =>
+  // True when any validation error is present
+  const workHasErrors = (errs: WorkErrors): boolean =>
     Boolean(errs.exitTime) || Object.keys(errs.projects).length > 0
 
   const handleSave = () => {
@@ -128,7 +187,7 @@ export default function ReportForm({ onClose, onSave, date = new Date(), isSubmi
       setErrors({ projects: {} })
     }
 
-    const payload =
+    const payload: SavePayload =
       activeTab === 'work'
         ? { kind: 'work', date, entryTime, exitTime, projects }
         : {
@@ -144,7 +203,8 @@ export default function ReportForm({ onClose, onSave, date = new Date(), isSubmi
     else console.log('Save report', payload)
   }
 
-  const formatHours = h => (Number.isInteger(h) ? h : h.toFixed(1))
+  // Render hours as integer when whole, otherwise one decimal
+  const formatHours = (h: number): number | string => (Number.isInteger(h) ? h : h.toFixed(1))
 
   // Picker view replaces the form view while open (form state is preserved
   // because this component remains mounted)
