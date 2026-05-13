@@ -2,9 +2,10 @@ const router = require('express').Router()
 const { findActiveTimer, createTimer, deleteTimer } = require('../repositories/timerRepository')
 const knex = require('../db/knex')
 
-// Hardcoded until real auth middleware is wired in (Task N)
-const STUB_USER_ID = 1
-
+// Resolves the authenticated user's id from the JWT-populated req.user. Returns null when missing.
+function getUserId(req) {
+  return req.user && req.user.id ? req.user.id : null
+}
 /**
  * @swagger
  * /api/timer/status:
@@ -27,7 +28,8 @@ const STUB_USER_ID = 1
  */
 router.get('/status', async (req, res) => {
   try {
-    const userId = STUB_USER_ID
+    const userId = getUserId(req)
+    if (!userId) return res.status(401).json({ message: 'Authentication required' })    
     const timer = await findActiveTimer(userId)
     res.json({ timer: timer ?? null })
   } catch (err) {
@@ -60,7 +62,8 @@ router.get('/status', async (req, res) => {
  */
 router.post('/start', async (req, res) => {
   try {
-    const userId = STUB_USER_ID
+    const userId = getUserId(req)
+    if (!userId) return res.status(401).json({ message: 'Authentication required' })
     const existing = await findActiveTimer(userId)
     if (existing) {
       return res.status(409).json({ message: 'Timer already active' })
@@ -121,7 +124,8 @@ function utcToLocalTimeStr(utcDate, offsetMin) {
 
 router.post('/stop', async (req, res) => {
   try {
-    const userId = STUB_USER_ID
+    const userId = getUserId(req)
+    if (!userId) return res.status(401).json({ message: 'Authentication required' })    
     const { task_id, location, description, timezone_offset_minutes } = req.body
     const offsetMin = typeof timezone_offset_minutes === 'number' ? timezone_offset_minutes : 0
 
