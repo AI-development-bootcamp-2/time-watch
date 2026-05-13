@@ -130,14 +130,12 @@ router.post('/stop', async (req, res) => {
       return res.status(404).json({ message: 'No active timer' })
     }
 
+    const stopMs = Date.now()
     const start_time = utcToLocalTimeStr(new Date(timer.start_time), offsetMin)
-    const end_time = utcToLocalTimeStr(new Date(), offsetMin)
+    const end_time = utcToLocalTimeStr(new Date(stopMs), offsetMin)
 
-    const parseHours = (t) => {
-      const [h, m, s] = t.split(':').map(Number)
-      return h + m / 60 + (s || 0) / 3600
-    }
-    const duration_hours = Math.round((parseHours(end_time) - parseHours(start_time)) * 100) / 100
+    // Compute duration from epoch ms so crossing midnight never produces a negative value
+    const duration_hours = Math.round(((stopMs - new Date(timer.start_time).getTime()) / 3600000) * 100) / 100
 
     const [entry] = await knex('work_entries')
       .insert({
