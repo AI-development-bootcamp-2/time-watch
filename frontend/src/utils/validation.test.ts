@@ -19,14 +19,17 @@ describe('isRequired', () => {
   })
 
   it('returns false for null', () => {
+    // @ts-expect-error verifying runtime type guard for non-string input
     expect(isRequired(null)).toBe(false)
   })
 
   it('returns false for undefined', () => {
+    // @ts-expect-error verifying runtime type guard for non-string input
     expect(isRequired(undefined)).toBe(false)
   })
 
   it('returns false for number', () => {
+    // @ts-expect-error verifying runtime type guard for non-string input
     expect(isRequired(42)).toBe(false)
   })
 })

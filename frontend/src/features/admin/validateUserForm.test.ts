@@ -1,12 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { validateUserForm } from './validateUserForm'
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 const VALID_CREATE = { full_name: 'ישראל ישראלי', email: 'israel@example.com', password: 'Abcdef1!' }
 const VALID_EDIT   = { full_name: 'ישראל ישראלי', email: 'israel@example.com', password: '' }
-
-// ─── full_name ────────────────────────────────────────────────────────────────
 
 describe('full_name validation', () => {
   it('returns error when full_name is empty', () => {
@@ -25,8 +21,6 @@ describe('full_name validation', () => {
     expect(errors.full_name).toBeUndefined()
   })
 })
-
-// ─── email ────────────────────────────────────────────────────────────────────
 
 describe('email validation', () => {
   it('returns error when email is empty', () => {
@@ -50,8 +44,6 @@ describe('email validation', () => {
     expect(errors.email).toBeUndefined()
   })
 })
-
-// ─── password — create mode ───────────────────────────────────────────────────
 
 describe('password validation — create mode', () => {
   it('returns required error when password is empty', () => {
@@ -99,8 +91,6 @@ describe('password validation — create mode', () => {
   })
 })
 
-// ─── password — edit mode ─────────────────────────────────────────────────────
-
 describe('password validation — edit mode', () => {
   it('does not require password when field is empty', () => {
     const { valid, errors } = validateUserForm(VALID_EDIT, false)
@@ -124,8 +114,6 @@ describe('password validation — edit mode', () => {
     expect(errors.password).toBeUndefined()
   })
 })
-
-// ─── valid object ─────────────────────────────────────────────────────────────
 
 describe('overall valid flag', () => {
   it('returns valid=true when all create fields are correct', () => {
