@@ -2,4 +2,10 @@
 
 const BCRYPT_COST = 12;
 
-module.exports = { BCRYPT_COST };
+const ROLES = {
+  EMPLOYEE: 'employee',
+  PROJECT_MANAGER: 'project_manager',
+  ADMIN: 'admin',
+};
+
+module.exports = { BCRYPT_COST, ROLES };
