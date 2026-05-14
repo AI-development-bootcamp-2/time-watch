@@ -1,32 +1,42 @@
 name: CD
-
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]  # חייב להיות בדיוק השם שכתבת ב-ci.yml
     branches: [main, dev]
+    types: [completed]
 
 jobs:
   deploy-frontend:
     name: Deploy Frontend to Vercel
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}  # רק אם CI עבר
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
       - name: Install Vercel CLI
         run: npm install -g vercel
+
       - name: Pull Vercel environment
+        working-directory: frontend
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VITE_API_BASE_URL: ${{ secrets.RENDER_BACKEND_URL }}
+
       - name: Build project
+        working-directory: frontend
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           VITE_API_BASE_URL: ${{ secrets.RENDER_BACKEND_URL }}
+
       - name: Deploy to Vercel
+        working-directory: frontend
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -35,6 +45,7 @@ jobs:
   deploy-backend:
     name: Deploy Backend to Render
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}  # רק אם CI עבר
     steps:
       - name: Trigger Render deploy
         run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
