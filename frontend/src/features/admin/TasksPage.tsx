@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+
 interface Task {
   id: number
   name: string
@@ -37,20 +39,20 @@ async function fetchTasks(projectId?: number, status?: string): Promise<Task[]> 
   if (projectId) params.set('project_id', String(projectId))
   if (status) params.set('status', status)
   const url = `/api/tasks${params.toString() ? `?${params}` : ''}`
-  const res = await fetch(url, { credentials: 'include' })
+  const res = await fetch(API_BASE + url, { credentials: 'include' })
   if (!res.ok) throw new Error('שגיאה בטעינת המשימות')
   return res.json()
 }
 
 async function fetchProjects(activeOnly: boolean): Promise<Project[]> {
   const url = activeOnly ? '/api/projects?active=true' : '/api/projects'
-  const res = await fetch(url, { credentials: 'include' })
+  const res = await fetch(API_BASE + url, { credentials: 'include' })
   if (!res.ok) throw new Error('שגיאה בטעינת הפרויקטים')
   return res.json()
 }
 
 async function createTask(form: TaskForm): Promise<Task> {
-  const res = await fetch('/api/tasks', {
+  const res = await fetch(`${API_BASE}/api/tasks`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -61,7 +63,7 @@ async function createTask(form: TaskForm): Promise<Task> {
 }
 
 async function updateTask(id: number, form: TaskForm): Promise<Task> {
-  const res = await fetch(`/api/tasks/${id}`, {
+  const res = await fetch(`${API_BASE}/api/tasks/${id}`, {
     method: 'PUT',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },

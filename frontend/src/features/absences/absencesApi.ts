@@ -1,3 +1,5 @@
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+
 type QueryParams = Record<string, string | number | boolean | null | undefined>
 
 export type AbsenceRequest = {
@@ -48,14 +50,14 @@ function buildQuery(params: QueryParams = {}) {
 }
 
 export async function getAbsences(params?: QueryParams) {
-  const res = await fetch(`/api/absences${buildQuery(params)}`, {
+  const res = await fetch(`${API_BASE}/api/absences${buildQuery(params)}`, {
     credentials: 'include',
   })
   return parseResponse(res)
 }
 
 export async function createAbsence(data: AbsenceRequest) {
-  const res = await fetch('/api/absences', {
+  const res = await fetch(`${API_BASE}/api/absences`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -65,7 +67,7 @@ export async function createAbsence(data: AbsenceRequest) {
 }
 
 export async function updateAbsence(id: number, data: AbsenceRequest) {
-  const res = await fetch(`/api/absences/${id}`, {
+  const res = await fetch(`${API_BASE}/api/absences/${id}`, {
     method: 'PUT',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -78,7 +80,7 @@ export async function uploadDocument(id: number, file: File) {
   const formData = new FormData()
   formData.append('document', file)
 
-  const res = await fetch(`/api/absences/${id}/document`, {
+  const res = await fetch(`${API_BASE}/api/absences/${id}/document`, {
     method: 'POST',
     credentials: 'include',
     body: formData,
@@ -87,7 +89,7 @@ export async function uploadDocument(id: number, file: File) {
 }
 
 export async function deleteDocument(id: number) {
-  const res = await fetch(`/api/absences/${id}/document`, {
+  const res = await fetch(`${API_BASE}/api/absences/${id}/document`, {
     method: 'DELETE',
     credentials: 'include',
   })

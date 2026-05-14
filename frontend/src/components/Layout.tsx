@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 import { useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -74,7 +76,7 @@ export default function Layout() {
 
   // Sync with any active timer on mount
   useEffect(() => {
-    fetch('/api/timer/status', { credentials: 'include' })
+    fetch(`${API_BASE}/api/timer/status`, { credentials: 'include' })
       .then(r => r.json())
       .then(data => {
         if (data.timer?.start_time) {
@@ -98,7 +100,7 @@ export default function Layout() {
     if (timerStarting || timerRunning) return
     setTimerStarting(true)
     try {
-      const res = await fetch('/api/timer/start', { method: 'POST', credentials: 'include' })
+      const res = await fetch(`${API_BASE}/api/timer/start`, { method: 'POST', credentials: 'include' })
       if (res.status === 201) {
         const { timer } = await res.json()
         setStartTime(timer.start_time)
@@ -106,7 +108,7 @@ export default function Layout() {
         setTimerRunning(true)
       } else if (res.status === 409) {
         // Already running on server — sync state
-        const status = await fetch('/api/timer/status', { credentials: 'include' }).then(r => r.json())
+        const status = await fetch(`${API_BASE}/api/timer/status`, { credentials: 'include' }).then(r => r.json())
         if (status.timer?.start_time) {
           setStartTime(status.timer.start_time)
           setTimerRunning(true)
@@ -137,7 +139,7 @@ export default function Layout() {
   }
 
   async function handleSaveAbsence(absence: AbsencePayload) {
-    const createRes = await fetch('/api/absences', {
+    const createRes = await fetch(`${API_BASE}/api/absences`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -160,7 +162,7 @@ export default function Layout() {
       const formData = new FormData()
       formData.append('document', absence.document)
 
-      const uploadRes = await fetch(`/api/absences/${created.id}/document`, {
+      const uploadRes = await fetch(`${API_BASE}/api/absences/${created.id}/document`, {
         method: 'POST',
         credentials: 'include',
         body: formData,
@@ -181,7 +183,7 @@ export default function Layout() {
     setTimerStopping(true)
     const endTime = new Date()
     try {
-      const res = await fetch('/api/timer/stop', { method: 'POST', credentials: 'include' })
+      const res = await fetch(`${API_BASE}/api/timer/stop`, { method: 'POST', credentials: 'include' })
       if (!res.ok) return
       const data = await res.json()
       const timerStart: string = data.start_time ?? startTime ?? endTime.toISOString()

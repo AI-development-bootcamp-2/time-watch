@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+
 interface Client {
   id: number
   name: string
@@ -33,13 +35,13 @@ function IconTrash() {
 }
 
 async function fetchClients(): Promise<Client[]> {
-  const res = await fetch('/api/clients', { credentials: 'include' })
+  const res = await fetch(`${API_BASE}/api/clients`, { credentials: 'include' })
   if (!res.ok) throw new Error('שגיאה בטעינת הלקוחות')
   return res.json()
 }
 
 async function createClient(form: ClientForm): Promise<Client> {
-  const res = await fetch('/api/clients', {
+  const res = await fetch(`${API_BASE}/api/clients`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -50,7 +52,7 @@ async function createClient(form: ClientForm): Promise<Client> {
 }
 
 async function updateClient(id: number, form: ClientForm): Promise<Client> {
-  const res = await fetch(`/api/clients/${id}`, {
+  const res = await fetch(`${API_BASE}/api/clients/${id}`, {
     method: 'PUT',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -62,7 +64,7 @@ async function updateClient(id: number, form: ClientForm): Promise<Client> {
 
 // Deactivates a client by setting is_active=false (soft delete)
 async function deactivateClient(id: number): Promise<void> {
-  const res = await fetch(`/api/clients/${id}`, {
+  const res = await fetch(`${API_BASE}/api/clients/${id}`, {
     method: 'PUT',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },

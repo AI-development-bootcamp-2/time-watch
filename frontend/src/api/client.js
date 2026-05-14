@@ -14,6 +14,8 @@ export class ApiError extends Error {
   }
 }
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+
 export async function apiFetch(path, options = {}) {
   const token = getToken()
   const isFormData = options.body instanceof FormData
@@ -26,7 +28,7 @@ export async function apiFetch(path, options = {}) {
 
   let response
   try {
-    response = await fetch(path, { ...options, headers })
+    response = await fetch(API_BASE + path, { ...options, headers })
   } catch (networkErr) {
     throw new ApiError('שגיאת רשת — נסה שוב', 0, null)
   }

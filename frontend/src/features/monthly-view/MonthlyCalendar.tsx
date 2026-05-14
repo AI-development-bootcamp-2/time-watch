@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 import {
   addMonths,
   subMonths,
@@ -238,7 +240,7 @@ export default function MonthlyCalendar() {
     if (isFutureMonth) return
     setLoading(true)
     setExpandedDate(null)
-    fetch(`/api/work-entries?month=${monthStr}`, { credentials: 'include' })
+    fetch(`${API_BASE}/api/work-entries?month=${monthStr}`, { credentials: 'include' })
       .then((r) => r.json())
       .then((data) => {
         const map: Record<string, DayData> = {}

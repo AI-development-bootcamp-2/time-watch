@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { Entry } from './EntryList'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+
 interface Props {
   entry: Entry
   onClose: () => void
@@ -25,7 +27,7 @@ export default function EditEntryModal({ entry, onClose, onSaved }: Props) {
     setSaving(true)
     setError(null)
     try {
-      const res = await fetch(`/api/reports/${entry.id}`, {
+      const res = await fetch(`${API_BASE}/api/reports/${entry.id}`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

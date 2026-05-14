@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+
 interface Project {
   id: number
   name: string
@@ -32,20 +34,20 @@ function IconPencil() {
 
 async function fetchProjects(clientId?: number): Promise<Project[]> {
   const url = clientId ? `/api/projects?client_id=${clientId}` : '/api/projects'
-  const res = await fetch(url, { credentials: 'include' })
+  const res = await fetch(API_BASE + url, { credentials: 'include' })
   if (!res.ok) throw new Error('שגיאה בטעינת הפרויקטים')
   return res.json()
 }
 
 async function fetchClients(activeOnly: boolean): Promise<Client[]> {
   const url = activeOnly ? '/api/clients?active=true' : '/api/clients'
-  const res = await fetch(url, { credentials: 'include' })
+  const res = await fetch(API_BASE + url, { credentials: 'include' })
   if (!res.ok) throw new Error('שגיאה בטעינת הלקוחות')
   return res.json()
 }
 
 async function createProject(form: ProjectForm): Promise<Project> {
-  const res = await fetch('/api/projects', {
+  const res = await fetch(`${API_BASE}/api/projects`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -56,7 +58,7 @@ async function createProject(form: ProjectForm): Promise<Project> {
 }
 
 async function updateProject(id: number, form: ProjectForm): Promise<Project> {
-  const res = await fetch(`/api/projects/${id}`, {
+  const res = await fetch(`${API_BASE}/api/projects/${id}`, {
     method: 'PUT',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },

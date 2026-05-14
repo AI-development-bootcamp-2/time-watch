@@ -5,6 +5,8 @@ import './AbsenceForm.css'
 import { IconUpload, IconTrash } from './absenceIcons'
 import { createAbsence, deleteDocument, updateAbsence, uploadDocument } from './absencesApi'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+
 type AbsenceType = 'vacation' | 'half_day_vac' | 'sick' | 'military_reserve'
 type LegacyAbsenceType = AbsenceType
 type AbsenceDuration = 'single' | 'range'
@@ -383,7 +385,7 @@ export default function AbsenceForm({ onClose = () => {}, onSave, initialValues,
     const months = [...new Set(dates.map(d => d.slice(0, 7)))]
     const monthData: Record<string, unknown> = {}
     for (const month of months) {
-      const res = await fetch(`/api/work-entries?month=${encodeURIComponent(month)}`, { credentials: 'include' })
+      const res = await fetch(`${API_BASE}/api/work-entries?month=${encodeURIComponent(month)}`, { credentials: 'include' })
       if (!res.ok) continue
       monthData[month] = await res.json().catch(() => null)
     }
