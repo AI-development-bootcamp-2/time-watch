@@ -41,6 +41,8 @@ type ReportFormProps = {
   onSwitchToAbsence?: () => void
   date?: Date
   isSubmitting?: boolean
+  initialEntryTime?: string
+  initialExitTime?: string
 }
 
 type AssignedTaskRow = {
@@ -117,9 +119,9 @@ function buildTaskGroups(rows: AssignedTaskRow[]): ClientGroup[] {
   return Array.from(clients.values())
 }
 
-export default function ReportForm({ onClose, onSave, onSwitchToAbsence, date = new Date(), isSubmitting = false }: ReportFormProps) {
-  const [entryTime, setEntryTime] = useState('09:00')
-  const [exitTime, setExitTime] = useState('')
+export default function ReportForm({ onClose, onSave, onSwitchToAbsence, date = new Date(), isSubmitting = false, initialEntryTime, initialExitTime }: ReportFormProps) {
+  const [entryTime, setEntryTime] = useState(initialEntryTime ?? '09:00')
+  const [exitTime, setExitTime] = useState(initialExitTime ?? '')
   const [workLocation, setWorkLocation] = useState(LOCATIONS[0])
   const [projects, setProjects] = useState<ProjectRow[]>([])
   const [pickerForProjectId, setPickerForProjectId] = useState<number | null>(null)

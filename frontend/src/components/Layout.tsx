@@ -4,7 +4,6 @@ import { NavLink, Outlet, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import AbsenceForm, { type AbsencePayload } from '../features/absences/AbsenceForm'
 import ReportForm, { type WorkPayload } from '../features/daily-reporting/ReportForm'
-import StopTimerModal from '../features/daily-reporting/StopTimerModal'
 
 // ─── Bottom nav items ─────────────────────────────────────────────────────────
 
@@ -70,7 +69,8 @@ export default function Layout() {
   }, [reportRequest, requestedWorkDate])
   const [startTime, setStartTime] = useState<string | null>(null)
   const [elapsed, setElapsed] = useState(0)
-  const [showStopModal, setShowStopModal] = useState(false)
+  const [timerStopping, setTimerStopping] = useState(false)
+  const [timerReportForm, setTimerReportForm] = useState<{ entryTime: string; exitTime: string; date: Date } | null>(null)
 
   // Sync with any active timer on mount
   useEffect(() => {
@@ -175,11 +175,27 @@ export default function Layout() {
     setShowAbsenceForm(false)
   }
 
-  function handleTimerSaved() {
-    setShowStopModal(false)
-    setTimerRunning(false)
-    setStartTime(null)
-    setElapsed(0)
+  // Stops the timer and opens the report form with start/end times pre-filled.
+  async function handleStopTimer() {
+    if (timerStopping) return
+    setTimerStopping(true)
+    const endTime = new Date()
+    try {
+      const res = await fetch('/api/timer/stop', { method: 'POST', credentials: 'include' })
+      if (!res.ok) return
+      const data = await res.json()
+      const timerStart: string = data.start_time ?? startTime ?? endTime.toISOString()
+      setTimerRunning(false)
+      setStartTime(null)
+      setElapsed(0)
+      setTimerReportForm({
+        entryTime: `${String(new Date(timerStart).getHours()).padStart(2, '0')}:${String(new Date(timerStart).getMinutes()).padStart(2, '0')}`,
+        exitTime: `${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}`,
+        date: new Date(timerStart),
+      })
+    } finally {
+      setTimerStopping(false)
+    }
   }
 
   return (
@@ -223,8 +239,9 @@ export default function Layout() {
           {/* Timer button — toggles between start and stop */}
           {timerRunning ? (
             <button
-              onClick={() => setShowStopModal(true)}
-              className="flex flex-col items-center justify-center gap-0.5 px-4 py-1.5 rounded-full text-sm font-bold text-white min-h-[40px] active:scale-95 transition-all"
+              onClick={handleStopTimer}
+              disabled={timerStopping}
+              className="flex flex-col items-center justify-center gap-0.5 px-4 py-1.5 rounded-full text-sm font-bold text-white min-h-[40px] active:scale-95 transition-all disabled:opacity-70"
               style={{
                 background: 'linear-gradient(135deg, #FF6B6B 0%, #C0392B 100%)',
                 boxShadow: '0 4px 12px rgba(192,57,43,0.40)',
@@ -335,11 +352,17 @@ export default function Layout() {
         />
       )}
 
-      {/* Stop timer modal — rendered at layout level so it's available from any page */}
-      {showStopModal && (
-        <StopTimerModal
-          onClose={() => setShowStopModal(false)}
-          onSaved={handleTimerSaved}
+      {timerReportForm && (
+        <ReportForm
+          date={timerReportForm.date}
+          initialEntryTime={timerReportForm.entryTime}
+          initialExitTime={timerReportForm.exitTime}
+          onClose={() => setTimerReportForm(null)}
+          onSave={() => setTimerReportForm(null)}
+          onSwitchToAbsence={() => {
+            setTimerReportForm(null)
+            setShowAbsenceForm(true)
+          }}
         />
       )}
     </div>
