@@ -6,6 +6,7 @@ Israeli software teams lack a structured, Hebrew-native time reporting tool that
 
 - New end-to-end time reporting web application built from scratch
 - React + Vite frontend (Hebrew RTL, mobile-first for employees, desktop for admin panel)
+- tsx
 - Node.js/Express REST API backend
 - PostgreSQL database with full soft-delete support
 - Docker + Docker Compose containerization of all services

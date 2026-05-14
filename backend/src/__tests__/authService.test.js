@@ -3,7 +3,7 @@
 process.env.JWT_SECRET = 'test-secret-for-auth-service-tests-at-least-32-chars!!';
 
 const knex = require('knex');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const knexConfigs = require('../../knexfile.cjs');
 const { login } = require('../services/authService');
 const { closeDatabase } = require('../db/knex');

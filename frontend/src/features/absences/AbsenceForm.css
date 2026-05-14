@@ -1,0 +1,849 @@
+/* AbsenceForm — Figma-spec styles */
+
+/* ── Overlay ────────────────────────────────────────────── */
+.af-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* ── Sheet ──────────────────────────────────────────────── */
+.af-sheet {
+  background: #F2F2F7;
+  border-radius: 20px 20px 0 0;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Assistant', system-ui, sans-serif;
+  direction: rtl;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Drag handle ────────────────────────────────────────── */
+.af-handle {
+  width: 36px;
+  height: 5px;
+  background: rgba(60, 60, 67, 0.18);
+  border-radius: 3px;
+  margin: 10px auto 0;
+  flex-shrink: 0;
+}
+
+/* ── Scrollable body ────────────────────────────────────── */
+.af-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 24px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Header row ─────────────────────────────────────────── */
+.af-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  min-height: 40px;
+}
+
+.af-title {
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 22px;
+  letter-spacing: -0.41px;
+  color: #212525;
+  margin: 0;
+}
+
+.af-close-btn {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 100px;
+  background: #FFFFFF;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(60, 60, 67, 0.6);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.af-close-btn:active { opacity: 0.7; }
+
+/* ── Segmented picker ───────────────────────────────────── */
+.af-segmented {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  padding: 4px;
+  background: rgba(118, 118, 128, 0.12);
+  border-radius: 8px;
+  gap: 0;
+  height: 36px;
+}
+
+.af-seg-option {
+  flex: 1;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  font-family: 'Assistant', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: -0.08px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+  color: #000;
+}
+
+.af-seg-option--active {
+  background: #FFFFFF;
+  font-weight: 600;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04);
+  border: 0.5px solid rgba(0, 0, 0, 0.04);
+}
+
+.af-seg-option--inactive {
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+/* ── Section label ──────────────────────────────────────── */
+.af-section-label {
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  color: rgba(24, 24, 24, 0.64);
+  text-align: right;
+  padding: 5px 0;
+}
+
+/* ── Grouped card ───────────────────────────────────────── */
+.af-card {
+  background: #FFFFFF;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Card row ───────────────────────────────────────────── */
+.af-card-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 8px 12px;
+  gap: 12px;
+  min-height: 48px;
+  position: relative;
+  cursor: pointer;
+}
+
+.af-card-row-button {
+  width: 100%;
+  border: none;
+  background: #FFFFFF;
+  font-family: 'Assistant', system-ui, sans-serif;
+  text-align: right;
+}
+
+.af-datepicker-row {
+  position: relative;
+}
+
+.af-datepicker-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 12px;
+  left: 0;
+  height: 1px;
+  background: #E1E7F3;
+  z-index: 1;
+}
+
+.af-datepicker-row .react-datepicker-wrapper,
+.af-datepicker-row .react-datepicker__input-container {
+  display: block;
+  width: 100%;
+}
+
+#af-datepicker-portal {
+  position: relative;
+  z-index: 10000;
+  direction: rtl;
+}
+
+.react-datepicker-popper,
+.af-datepicker-popper {
+  z-index: 10001 !important;
+}
+
+.react-datepicker {
+  font-family: 'Assistant', system-ui, sans-serif;
+  direction: rtl;
+  border: 1px solid #E1E7F3;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.react-datepicker__header {
+  background: #F2F2F7;
+  border-bottom-color: #E1E7F3;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--in-selecting-range,
+.react-datepicker__day--in-range,
+.react-datepicker__day--range-start,
+.react-datepicker__day--range-end {
+  background: #0C69FF;
+  color: #FFFFFF;
+}
+
+.react-datepicker__day--keyboard-selected {
+  background: rgba(12, 105, 255, 0.16);
+  color: #0C69FF;
+}
+
+.af-card-row + .af-card-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 12px;
+  left: 0;
+  height: 1px;
+  background: #E1E7F3;
+}
+
+/* ── Row field label ────────────────────────────────────── */
+.af-row-tag {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  font-family: 'Assistant', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 20px;
+  color: rgba(24, 24, 24, 0.52);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Row selected value ─────────────────────────────────── */
+.af-row-title {
+  flex: 0 1 auto;
+  max-width: 62%;
+  margin-inline-start: auto;
+  padding: 6px 10px;
+  border-radius: 100px;
+  background: #F0F4FA;
+  color: #0C69FF;
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Row input (inline date / time) ────────────────────── */
+.af-row-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: 'Assistant', system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 400;
+  color: #181818;
+  text-align: right;
+  outline: none;
+  min-width: 0;
+  direction: rtl;
+}
+
+.af-row-input::placeholder {
+  color: rgba(24, 24, 24, 0.28);
+}
+
+/* ── Chevron ────────────────────────────────────────────── */
+.af-chevron {
+  color: rgba(24, 24, 24, 0.24);
+  font-size: 24px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ── Nested choice panel ────────────────────────────────── */
+.af-choice-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  background: #F2F2F7;
+  font-family: 'Assistant', system-ui, sans-serif;
+  color: #181818;
+}
+
+.af-choice-header {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 10px;
+  padding: 44px 22px 18px;
+}
+
+.af-choice-title {
+  margin: 0;
+  text-align: right;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 700;
+  color: #212525;
+}
+
+.af-choice-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: none;
+  background: #FFFFFF;
+  color: rgba(60, 60, 67, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.af-choice-icon-btn--close {
+  font-size: 34px;
+  font-weight: 300;
+}
+
+.af-choice-card {
+  margin: 0 22px;
+  background: #FFFFFF;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.af-choice-row {
+  width: 100%;
+  min-height: 44px;
+  border: none;
+  background: #FFFFFF;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  font-family: 'Assistant', system-ui, sans-serif;
+  cursor: pointer;
+  position: relative;
+}
+
+.af-choice-row + .af-choice-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: #E1E7F3;
+}
+
+.af-choice-label {
+  text-align: right;
+  font-size: 16px;
+  color: #181818;
+}
+
+.af-choice-row--selected .af-choice-label {
+  color: #0C69FF;
+  font-weight: 600;
+}
+
+.af-choice-check {
+  width: 17px;
+  height: 17px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  font-size: 12px;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+.af-choice-row--selected .af-choice-check {
+  background: #0C69FF;
+}
+
+.af-choice-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  padding: 12px 22px 28px;
+  background: rgba(255, 255, 255, 0.92);
+  border-top: 1px solid #ECECEC;
+}
+
+/* ── Toggle row (partial day) ───────────────────────────── */
+.af-toggle-card-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  min-height: 48px;
+}
+
+.af-toggle-label {
+  font-size: 17px;
+  font-weight: 400;
+  color: #181818;
+}
+
+.af-ios-toggle {
+  position: relative;
+  width: 51px;
+  height: 31px;
+  flex-shrink: 0;
+}
+
+.af-ios-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.af-ios-thumb {
+  position: absolute;
+  inset: 0;
+  background: rgba(120, 120, 128, 0.16);
+  border-radius: 34px;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.af-ios-thumb::before {
+  content: '';
+  position: absolute;
+  height: 27px;
+  width: 27px;
+  right: 2px;
+  bottom: 2px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.af-ios-toggle input:checked + .af-ios-thumb {
+  background: #34C759;
+}
+
+.af-ios-toggle input:checked + .af-ios-thumb::before {
+  transform: translateX(-20px);
+}
+
+/* ── Upload zone ────────────────────────────────────────── */
+.af-upload-zone {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 24px;
+  gap: 12px;
+  background: rgba(12, 105, 255, 0.03);
+  border: 2px dashed #0C69FF;
+  border-radius: 10px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.af-upload-zone input[type="file"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.af-upload-icon-wrap {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0C69FF;
+}
+
+.af-upload-icon-wrap svg {
+  width: 42px;
+  height: 42px;
+}
+
+.af-upload-btn-text {
+  font-family: 'Assistant', system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 100%;
+  text-decoration: underline;
+  color: #0C69FF;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.af-upload-sub {
+  font-family: 'Assistant', system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  text-align: center;
+  color: rgba(12, 105, 255, 0.8);
+}
+
+/* ── File selected ──────────────────────────────────────── */
+.af-upload-title {
+  margin: 0 0 14px;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: rgba(24, 24, 24, 0.58);
+  text-align: right;
+}
+
+.af-file-row {
+  min-height: 96px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 14px;
+  background: #FFFFFF;
+  border-radius: 14px;
+}
+
+.af-file-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.af-file-name {
+  max-width: 100%;
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 700;
+  color: #212525;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.af-file-status {
+  display: inline-flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #DCF7C0;
+  color: #248A24;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.af-file-status-check {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #248A24;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.af-file-remove {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: #FF2D2D;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.af-file-remove svg {
+  width: 26px;
+  height: 26px;
+}
+
+.af-file-preview {
+  position: relative;
+  width: 48px;
+  height: 64px;
+  justify-self: end;
+  border-radius: 4px;
+  background: linear-gradient(135deg, transparent 0 16px, #DFE5EA 16px);
+  box-shadow: inset 0 -8px 0 rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.af-file-fold {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  background: #BFC8CE;
+  clip-path: polygon(0 0, 100% 100%, 100% 0);
+}
+
+.af-file-type {
+  position: absolute;
+  right: 7px;
+  bottom: 10px;
+  min-width: 40px;
+  height: 26px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #D2231E;
+  color: #FFFFFF;
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+@media (min-width: 640px) {
+  .af-file-row {
+    min-height: 108px;
+    grid-template-columns: 44px minmax(0, 1fr) 58px;
+    gap: 14px;
+    padding: 18px 24px;
+  }
+
+  .af-file-name {
+    font-size: 20px;
+  }
+
+  .af-file-status {
+    padding: 5px 12px;
+    font-size: 18px;
+  }
+
+  .af-file-preview {
+    width: 54px;
+    height: 72px;
+  }
+
+  .af-file-type {
+    right: 9px;
+    bottom: 11px;
+    min-width: 44px;
+    height: 29px;
+  }
+}
+
+/* ── Info notice ────────────────────────────────────────── */
+.af-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(12, 105, 255, 0.06);
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0C69FF;
+  text-align: right;
+}
+
+/* ── Error ──────────────────────────────────────────────── */
+.af-error-msg {
+  font-size: 13px;
+  color: #FF3B30;
+  text-align: right;
+  padding: 2px 4px;
+}
+
+.af-error-msg--form {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+/* ── Notes textarea ─────────────────────────────────────── */
+.af-notes-area {
+  width: 100%;
+  border: none;
+  background: #FFFFFF;
+  border-radius: 10px;
+  padding: 12px;
+  font-family: 'Assistant', system-ui, sans-serif;
+  font-size: 17px;
+  color: #181818;
+  resize: none;
+  outline: none;
+  text-align: right;
+  direction: rtl;
+  min-height: 80px;
+}
+
+.af-notes-area::placeholder {
+  color: rgba(24, 24, 24, 0.28);
+}
+
+/* ── Sticky footer ──────────────────────────────────────── */
+.af-footer {
+  position: sticky;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.85);
+  border-top: 1px solid #ECECEC;
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  padding: 12px 24px 24px;
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+}
+
+.af-btn-primary {
+  flex: 1;
+  height: 44px;
+  background: #0C69FF;
+  border-radius: 12px;
+  border: none;
+  font-family: 'Assistant', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 22px;
+  letter-spacing: -0.41px;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.af-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.af-btn-secondary {
+  flex: 1;
+  height: 44px;
+  background: transparent;
+  border: 1px solid rgba(12, 105, 255, 0.24);
+  border-radius: 12px;
+  font-family: 'Assistant', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 22px;
+  letter-spacing: -0.41px;
+  color: #0C69FF;
+  cursor: pointer;
+}
+
+/* ── Work-days badge ────────────────────────────────────── */
+.af-workdays-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(12, 105, 255, 0.06);
+  border-radius: 8px;
+  font-size: 14px;
+  color: rgba(24, 24, 24, 0.64);
+}
+
+/* ── Desktop layout (≥ 768px) ───────────────────────────── */
+@media (min-width: 768px) {
+  .af-overlay {
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: stretch;
+  }
+
+  .af-sheet {
+    width: 540px;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+  }
+
+  /* Hide the drag handle on desktop */
+  .af-handle {
+    display: none;
+  }
+
+  /* More breathing room on wider screens */
+  .af-scroll {
+    padding: 24px 32px 112px;
+    gap: 20px;
+  }
+
+  .af-title {
+    font-size: 24px;
+  }
+
+  /* Taller rows to match 1920-spec proportions */
+  .af-card-row {
+    min-height: 56px;
+    padding: 10px 16px;
+  }
+
+  .af-toggle-card-row {
+    padding: 12px 16px;
+    min-height: 56px;
+  }
+
+  /* Footer spans the full 540px panel */
+  .af-footer {
+    padding: 16px 32px 32px;
+  }
+}

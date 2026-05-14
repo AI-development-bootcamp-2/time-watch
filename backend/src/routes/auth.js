@@ -1,8 +1,9 @@
-'use strict';
+const router = require('express').Router()
+const { authenticate } = require('../middleware/auth')
+const { login, logout, me, changePassword } = require('../controllers/authController')
 
-const router = require('express').Router();
-const { login, logout, me, changePassword } = require('../controllers/authController');
-const { authenticate } = require('../middleware/auth');
+router.post('/login', login);
+router.post('/logout', logout);
 
 /**
  * @swagger
@@ -65,8 +66,6 @@ const { authenticate } = require('../middleware/auth');
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/login', login);
-
 /**
  * @swagger
  * /api/auth/logout:
@@ -88,7 +87,6 @@ router.post('/login', login);
  *                   type: string
  *                   example: התנתקת בהצלחה
  */
-router.post('/logout', logout);
 /**
  * @swagger
  * /api/auth/me:

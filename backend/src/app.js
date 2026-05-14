@@ -45,18 +45,22 @@ function createApp() {
     authenticate(req, res, next);
   });
 
-  app.use("/api-docs",       swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  app.use("/api/health",     healthRouter);
-  app.use("/api/auth",       authRouter);
-  app.use("/api/timer",      timerRouter);
-  app.use("/api/users",      usersRouter);
-  app.use("/api/clients",    clientsRouter);
-  app.use("/api/projects",   projectsRouter);
-  app.use("/api/tasks",      tasksRouter);
-  app.use("/api/reports",    reportsRouter);
-  app.use("/api/absences",   absencesRouter);
-  app.use("/api/months",     monthsRouter);
-  app.use("/api/admin",      adminRouter);
+  app.get("/api/health", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+  });
+
+  app.use("/api-docs",        swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.use("/api/health",      healthRouter);
+  app.use("/api/auth",        authRouter);
+  app.use("/api/timer",       timerRouter);
+  app.use("/api/users",       usersRouter);
+  app.use("/api/clients",     clientsRouter);
+  app.use("/api/projects",    projectsRouter);
+  app.use("/api/tasks",       tasksRouter);
+  app.use("/api/reports",     reportsRouter);
+  app.use("/api/absences",    absencesRouter);
+  app.use("/api/months",      monthsRouter);
+  app.use("/api/admin",       adminRouter);
   app.use("/api/work-entries", workEntriesRouter);
 
   app.use(errorHandler);

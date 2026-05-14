@@ -16,7 +16,7 @@ const uploadDocument = multer({
   },
 })
 
-const VALID_TYPES = ['vacation', 'half_vacation_day', 'sick', 'military_reserve', 'other']
+const VALID_TYPES = ['vacation', 'half_day_vac', 'sick', 'military_reserve']
 const FUTURE_ALLOWED_TYPES = ['sick', 'military_reserve']
 
 const DATE_RE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
@@ -63,7 +63,7 @@ router.get('/', async (req, res) => {
     const userId = req.user.id
     const { month } = req.query
 
-    let query = db('absence_entries')
+    let query = db('absences')
       .select('id', 'user_id', 'type', 'start_date', 'end_date', 'is_partial',
               'partial_hours', 'notes', 'document_filename', 'document_mimetype',
               'document_uploaded_at', 'created_at', 'updated_at', 'deleted_at')
@@ -116,8 +116,8 @@ async function validateAbsenceBody({ type, start_date, end_date, is_partial, par
   if (!FUTURE_ALLOWED_TYPES.includes(type) && start > today) {
     return { status: 400, error: 'Only sick leave and military reserve may be reported for future dates' }
   }
-  // half_vacation_day is always partial with fixed 4.5 h — skip manual partial_hours validation
-  if (type !== 'half_vacation_day' && is_partial) {
+  // half_day_vac is always partial with fixed 4.5 h — skip manual partial_hours validation
+  if (type !== 'half_day_vac' && is_partial) {
     const hours = Number(partial_hours)
     if (partial_hours === null || partial_hours === undefined || isNaN(hours) || hours <= 0 || hours >= 9) {
       return { status: 400, error: 'partial_hours must be a number greater than 0 and less than 9 when is_partial is true' }
@@ -138,7 +138,7 @@ async function validateAbsenceBody({ type, start_date, end_date, is_partial, par
 router.post('/', async (req, res) => {
   try {
     const { type, start_date, end_date, notes = null } = req.body
-    const isHalfDay = type === 'half_vacation_day'
+    const isHalfDay = type === 'half_day_vac'
     const is_partial = isHalfDay ? true : Boolean(req.body.is_partial)
     const partial_hours = isHalfDay ? 4.5 : (req.body.partial_hours ?? null)
     const userId = req.user.id
@@ -148,7 +148,7 @@ router.post('/', async (req, res) => {
       return res.status(validation.status).json({ error: validation.error })
     }
 
-    const [absence] = await db('absence_entries')
+    const [absence] = await db('absences')
       .insert({
         user_id: userId,
         type,
@@ -174,12 +174,12 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params
     if (!isPositiveInt(id)) return res.status(400).json({ error: 'Invalid absence id' })
     const { type, start_date, end_date } = req.body
-    const isHalfDay = type === 'half_vacation_day'
+    const isHalfDay = type === 'half_day_vac'
     const is_partial = isHalfDay ? true : Boolean(req.body.is_partial)
     const partial_hours = isHalfDay ? 4.5 : (req.body.partial_hours ?? null)
     const userId = req.user.id
 
-    const existing = await db('absence_entries').where({ id }).whereNull('deleted_at').first()
+    const existing = await db('absences').where({ id }).whereNull('deleted_at').first()
     if (!existing) {
       return res.status(404).json({ error: 'Absence not found' })
     }
@@ -195,7 +195,7 @@ router.put('/:id', async (req, res) => {
       return res.status(validation.status).json({ error: validation.error })
     }
 
-    const [updated] = await db('absence_entries')
+    const [updated] = await db('absences')
       .where({ id })
       .update({
         type,
@@ -239,7 +239,7 @@ router.post('/:id/document', (req, res) => {
       if (!isPositiveInt(id)) return res.status(400).json({ error: 'Invalid absence id' })
       let updated
       await db.transaction(async (trx) => {
-        const absence = await trx('absence_entries').where({ id }).whereNull('deleted_at').forUpdate().first()
+        const absence = await trx('absences').where({ id }).whereNull('deleted_at').forUpdate().first()
         if (!absence) throw Object.assign(new Error('Absence not found'), { httpStatus: 404 })
         if (absence.user_id !== req.user.id && req.user.role !== 'admin') {
           throw Object.assign(new Error('Forbidden'), { httpStatus: 403 })
@@ -247,7 +247,7 @@ router.post('/:id/document', (req, res) => {
         const d = new Date(absence.start_date)
         const lock = await trx('month_locks').where({ year: d.getFullYear(), month: d.getMonth() + 1 }).first()
         if (lock) throw Object.assign(new Error('This month is locked and cannot be modified'), { httpStatus: 423 })
-        ;[updated] = await trx('absence_entries')
+        ;[updated] = await trx('absences')
           .where({ id })
           .update({
             document_data: req.file.buffer,
@@ -273,7 +273,7 @@ router.get('/:id/document', async (req, res) => {
   try {
     const { id } = req.params
     if (!isPositiveInt(id)) return res.status(400).json({ error: 'Invalid absence id' })
-    const absence = await db('absence_entries')
+    const absence = await db('absences')
       .select('user_id', 'document_data', 'document_filename', 'document_mimetype')
       .where({ id })
       .whereNull('deleted_at')
@@ -301,7 +301,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params
     if (!isPositiveInt(id)) return res.status(400).json({ error: 'Invalid absence id' })
-    const existing = await db('absence_entries').where({ id }).whereNull('deleted_at').first()
+    const existing = await db('absences').where({ id }).whereNull('deleted_at').first()
     if (!existing) {
       return res.status(404).json({ error: 'Absence not found' })
     }
@@ -313,7 +313,7 @@ router.delete('/:id', async (req, res) => {
     if (lock) {
       return res.status(423).json({ error: 'This month is locked and cannot be modified' })
     }
-    await db('absence_entries').where({ id }).update({ deleted_at: db.fn.now(), updated_at: db.fn.now() })
+    await db('absences').where({ id }).update({ deleted_at: db.fn.now(), updated_at: db.fn.now() })
     res.status(204).send()
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' })
@@ -325,7 +325,7 @@ router.delete('/:id/document', async (req, res) => {
   try {
     const { id } = req.params
     if (!isPositiveInt(id)) return res.status(400).json({ error: 'Invalid absence id' })
-    const absence = await db('absence_entries').where({ id }).whereNull('deleted_at').first()
+    const absence = await db('absences').where({ id }).whereNull('deleted_at').first()
 
     if (!absence || !absence.document_data) {
       return res.status(404).json({ error: 'Absence or document not found' })
@@ -339,7 +339,7 @@ router.delete('/:id/document', async (req, res) => {
     const lock = await db('month_locks').where({ year: d.getFullYear(), month: d.getMonth() + 1 }).first()
     if (lock) return res.status(423).json({ error: 'This month is locked and cannot be modified' })
 
-    const [updated] = await db('absence_entries')
+    const [updated] = await db('absences')
       .where({ id })
       .update({
         document_data: null,

@@ -1,0 +1,142 @@
+/* Trigger button — looks like the old text-field box */
+.stp-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  height: 30px;
+  padding: 2px 8px 4px;
+  border: 1px solid #E1E7F3;
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 18px;
+  color: #212525;
+  cursor: pointer;
+  direction: ltr;
+  white-space: nowrap;
+}
+.stp-trigger:active { background: #f0f4fa; }
+
+/* Full-screen dimmed overlay */
+.stp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Bottom sheet */
+.stp-sheet {
+  width: 100%;
+  max-width: 540px;
+  background: #f2f2f7;
+  border-radius: 16px 16px 0 0;
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+  overflow: hidden;
+}
+
+.stp-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 10px;
+  border-bottom: 0.5px solid #c6c6c8;
+  direction: rtl;
+}
+
+.stp-sheet-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1c1c1e;
+  font-family: inherit;
+}
+
+.stp-done-btn {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  color: #0c69ff;
+  cursor: pointer;
+  padding: 4px 0;
+  min-height: 44px;
+}
+
+/* Drum container */
+.stp-drums {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 0 24px;
+}
+
+.stp-colon {
+  font-size: 28px;
+  font-weight: 300;
+  color: #1c1c1e;
+  line-height: 1;
+  margin-bottom: 2px;
+  user-select: none;
+}
+
+/* Individual drum */
+.stp-drum-wrap {
+  position: relative;
+  width: 80px;
+  height: 220px; /* 5 visible items × 44px */
+}
+
+.stp-drum {
+  position: absolute;
+  inset: 0;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.stp-drum::-webkit-scrollbar { display: none; }
+
+.stp-drum-pad {
+  height: 88px; /* 2 × ITEM_H — keeps first/last item centerable */
+  flex-shrink: 0;
+}
+
+.stp-drum-item {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 400;
+  color: rgba(28, 28, 30, 0.35);
+  scroll-snap-align: center;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s, font-weight 0.15s;
+}
+
+.stp-drum-item--selected {
+  color: #1c1c1e;
+  font-weight: 600;
+}
+
+/* Selection highlight band */
+.stp-drum-band {
+  pointer-events: none;
+  position: absolute;
+  top: 88px; /* same as pad height */
+  left: 0;
+  right: 0;
+  height: 44px;
+  border-top: 0.5px solid #c6c6c8;
+  border-bottom: 0.5px solid #c6c6c8;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.35);
+}

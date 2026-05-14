@@ -121,7 +121,6 @@ Options (Hebrew label → API value):
 - חצי יום חופש → `half_vacation_day` (fixed 4.5 hours — no `partial_hours` input needed)
 - מחלה → `sick`
 - מילואים → `military_reserve`
-- אחר → `other`
 
 When `half_vacation_day` is selected:
 - Force duration mode to **יום אחד** and hide the duration selector (only a single day makes sense).

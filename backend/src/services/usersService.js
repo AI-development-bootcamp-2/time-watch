@@ -1,6 +1,6 @@
 'use strict';
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const usersRepository = require('../repositories/usersRepository');
 const db = require('../db/knex');
 const { ConflictError, NotFoundError, BadRequestError } = require('../utils/errors');

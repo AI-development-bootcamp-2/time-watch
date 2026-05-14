@@ -12,6 +12,7 @@ import {
   startOfDay,
 } from 'date-fns'
 import { HebrewCalendar } from '@hebcal/core'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import EditEntryModal from './EditEntryModal'
 import { type Entry } from './EntryList'
 
@@ -221,6 +222,8 @@ function DayRow({ day, dayData, status, isExpanded, onToggle, isLocked, onEdit, 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function MonthlyCalendar() {
+  const navigate = useNavigate()
+  const [, setSearchParams] = useSearchParams()
   const [currentDate, setCurrentDate] = useState(startOfMonth(new Date()))
   const [dayDataMap, setDayDataMap] = useState<Record<string, DayData>>({})
   const [loading, setLoading] = useState(false)
@@ -310,6 +313,14 @@ export default function MonthlyCalendar() {
             >
               שימת הדיווחים היומיים - לחודש {monthName} {year}
             </p>
+            <button
+              type="button"
+              onClick={() => navigate(`/absences/new?month=${monthStr}`)}
+              className="mt-3 px-3 py-2 rounded-lg text-sm font-semibold text-white min-h-[44px]"
+              style={{ background: '#0C69FF' }}
+            >
+              דיווח היעדרות
+            </button>
           </div>
         </div>
 
@@ -341,7 +352,7 @@ export default function MonthlyCalendar() {
                   onToggle={() => setExpandedDate((prev) => (prev === dateKey ? null : dateKey))}
                   isLocked={isLocked}
                   onEdit={setEditingEntry}
-                  onAddEntry={(date) => console.log('add entry', date)}
+                  onAddEntry={(date) => setSearchParams({ report: 'work', date })}
                 />
               )
             })}

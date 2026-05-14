@@ -1,8 +1,16 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { renderWithAuth } from '../test-utils'
 import Layout from './Layout'
+
+const mockAuth = vi.hoisted(() => ({
+  value: { user: null, logout: vi.fn() },
+}))
+
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => mockAuth.value,
+}))
 
 // Suppress Outlet warning — Layout renders an Outlet that has no matched child in tests
 vi.mock('./LoadingSpinner', () => ({
@@ -10,6 +18,7 @@ vi.mock('./LoadingSpinner', () => ({
 }))
 
 function renderLayout(user) {
+  mockAuth.value = { user, logout: vi.fn() }
   return renderWithAuth(
     <MemoryRouter initialEntries={['/daily']}>
       <Layout />
@@ -49,5 +58,18 @@ describe('Layout — admin nav visibility', () => {
     expect(screen.getByRole('link', { name: /לוח חודשי/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /היעדרויות/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /ניהול/i })).toBeInTheDocument()
+  })
+
+  it('opens the work report form from the daily route query string', () => {
+    mockAuth.value = { user: { id: '2', role: 'employee' }, logout: vi.fn() }
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/daily?report=work&date=2026-05-10']}>
+        <Layout />
+      </MemoryRouter>,
+      { user: { id: '2', role: 'employee' }, isLoading: false }
+    )
+
+    expect(screen.getByRole('dialog', { name: /דיווח עבודה/i })).toBeInTheDocument()
+    expect(screen.getByText('יום א׳ 10/05/26')).toBeInTheDocument()
   })
 })

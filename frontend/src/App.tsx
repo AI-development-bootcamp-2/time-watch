@@ -7,7 +7,6 @@ import ChangePasswordPage from './features/auth/ChangePasswordPage'
 import AdminLayout from './features/admin/AdminLayout'
 import DailyReportPage from './features/daily-reporting/DailyReportPage'
 import MonthlyCalendar from './features/monthly-view/MonthlyCalendar'
-import AbsencePage from './features/absences/AbsencePage'
 import UsersPage from './features/admin/UsersPage'
 import ProjectsPage from './features/admin/ProjectsPage'
 
@@ -28,10 +27,9 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/daily"    element={<DailyReportPage />} />
             <Route path="/monthly"  element={<MonthlyCalendar />} />
-            <Route path="/absences" element={<AbsencePage />} />
-          </Route>
 
           {/* Admin routes — own full-screen layout with dark sidebar */}
+          </Route>
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Navigate to="users" replace />} />

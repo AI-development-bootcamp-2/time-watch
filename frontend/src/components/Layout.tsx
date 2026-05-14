@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
-import { useState, useEffect } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { NavLink, Outlet, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import AbsenceForm, { type AbsencePayload } from '../features/absences/AbsenceForm'
+import ReportForm, { type WorkPayload } from '../features/daily-reporting/ReportForm'
 import StopTimerModal from '../features/daily-reporting/StopTimerModal'
 
 // ─── Bottom nav items ─────────────────────────────────────────────────────────
@@ -42,10 +44,30 @@ function formatElapsed(seconds: number): string {
 
 export default function Layout() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user, logout } = useAuth() as { user: { role: string } | null; logout: () => Promise<void> }
 
   const [timerRunning, setTimerRunning] = useState(false)
   const [timerStarting, setTimerStarting] = useState(false)
+  const [showAbsenceForm, setShowAbsenceForm] = useState(false)
+  const [showWorkForm, setShowWorkForm] = useState(false)
+  const [workFormDate, setWorkFormDate] = useState<Date | undefined>()
+
+  const reportRequest = searchParams.get('report')
+  const reportDateParam = searchParams.get('date')
+
+  const requestedWorkDate = useMemo(() => {
+    if (!reportDateParam || !/^\d{4}-\d{2}-\d{2}$/.test(reportDateParam)) return undefined
+    const [year, month, day] = reportDateParam.split('-').map(Number)
+    return new Date(year, month - 1, day)
+  }, [reportDateParam])
+
+  useEffect(() => {
+    if (reportRequest !== 'work') return
+    setWorkFormDate(requestedWorkDate)
+    setShowAbsenceForm(false)
+    setShowWorkForm(true)
+  }, [reportRequest, requestedWorkDate])
   const [startTime, setStartTime] = useState<string | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [showStopModal, setShowStopModal] = useState(false)
@@ -97,6 +119,62 @@ export default function Layout() {
     }
   }
 
+  async function handleSaveWork(_payload: WorkPayload) {
+    setShowWorkForm(false)
+    setWorkFormDate(undefined)
+    if (reportRequest === 'work') setSearchParams({})
+  }
+
+  function handleSwitchToWork() {
+    setShowAbsenceForm(false)
+    setShowWorkForm(true)
+  }
+
+  function handleSwitchToAbsence() {
+    setShowWorkForm(false)
+    setShowAbsenceForm(true)
+    if (reportRequest === 'work') setSearchParams({})
+  }
+
+  async function handleSaveAbsence(absence: AbsencePayload) {
+    const createRes = await fetch('/api/absences', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: absence.type,
+        start_date: absence.startDate,
+        end_date: absence.endDate,
+        is_partial: false,
+        partial_hours: null,
+        notes: '',
+      }),
+    })
+
+    const created = await createRes.json().catch(() => null)
+    if (!createRes.ok) {
+      throw new Error(created?.error || 'שמירת הדיווח נכשלה')
+    }
+
+    if (absence.document instanceof File) {
+      const formData = new FormData()
+      formData.append('document', absence.document)
+
+      const uploadRes = await fetch(`/api/absences/${created.id}/document`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      })
+
+      if (!uploadRes.ok) {
+        const uploadError = await uploadRes.json().catch(() => null)
+        throw new Error(uploadError?.error || 'העלאת המסמך נכשלה')
+      }
+    }
+
+    setShowAbsenceForm(false)
+  }
+
   function handleTimerSaved() {
     setShowStopModal(false)
     setTimerRunning(false)
@@ -105,27 +183,30 @@ export default function Layout() {
   }
 
   return (
-    <div dir="rtl" className="min-h-screen flex flex-col" style={{ background: '#F2F2F7' }}>
+    <div dir="rtl" className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: '#F2F2F7' }}>
 
       {/* ── Top header ── */}
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-100 px-5 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3 flex flex-wrap items-center justify-between gap-2 sm:h-16 sm:flex-nowrap sm:px-5 sm:py-0">
 
         {/* RIGHT GROUP (RTL flex-start): logo + action buttons together */}
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:flex-none sm:flex-nowrap sm:gap-3">
 
           <img
             src="/abra-logo.png"
             alt="abra"
-            className="h-9 w-auto object-contain"
+            className="h-8 w-auto flex-shrink-0 object-contain sm:h-9"
           />
 
           {/* Divider */}
-          <div className="w-px h-7 bg-gray-200 mx-1" />
+          <div className="hidden w-px h-7 bg-gray-200 mx-1 sm:block" />
 
           {/* דיווח ידני — orange gradient pill */}
           <button
-            onClick={() => navigate('/daily')}
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white min-h-[40px] active:scale-95 transition-transform"
+            onClick={() => {
+              setWorkFormDate(undefined)
+              setShowWorkForm(true)
+            }}
+            className="flex min-w-[126px] flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-bold text-white min-h-[44px] active:scale-95 transition-transform sm:flex-none sm:px-4"
             style={{
               background: 'linear-gradient(135deg, #FFAA00 0%, #FF6D00 100%)',
               boxShadow: '0 4px 12px rgba(255,109,0,0.40)',
@@ -195,7 +276,7 @@ export default function Layout() {
         {/* LEFT (RTL flex-end): יציאה */}
         <button
           onClick={async () => { await logout(); navigate('/login') }}
-          className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-800 min-h-[40px] px-1 transition-colors"
+          className="flex flex-shrink-0 items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-800 min-h-[44px] px-1 transition-colors"
         >
           יציאה
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -205,7 +286,7 @@ export default function Layout() {
       </header>
 
       {/* ── Main content — no max-width constraint, each page owns its layout ── */}
-      <main className="flex-1 overflow-y-auto pb-20">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden pb-20">
         <Outlet />
       </main>
 
@@ -232,6 +313,27 @@ export default function Layout() {
           </NavLink>
         ))}
       </nav>
+
+      {showWorkForm && (
+        <ReportForm
+          date={workFormDate}
+          onClose={() => {
+            setShowWorkForm(false)
+            setWorkFormDate(undefined)
+            if (reportRequest === 'work') setSearchParams({})
+          }}
+          onSave={handleSaveWork}
+          onSwitchToAbsence={handleSwitchToAbsence}
+        />
+      )}
+
+      {showAbsenceForm && (
+        <AbsenceForm
+          onClose={() => setShowAbsenceForm(false)}
+          onSave={handleSaveAbsence}
+          onSwitchToWork={handleSwitchToWork}
+        />
+      )}
 
       {/* Stop timer modal — rendered at layout level so it's available from any page */}
       {showStopModal && (

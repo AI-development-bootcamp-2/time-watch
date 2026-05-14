@@ -130,6 +130,10 @@ router.post('/stop', async (req, res) => {
     const { task_id, location, description, timezone_offset_minutes } = req.body
     const offsetMin = typeof timezone_offset_minutes === 'number' ? timezone_offset_minutes : 0
 
+    if (!task_id || !location) {
+      return res.status(400).json({ message: 'task_id and location are required' })
+    }
+
     const timer = await findActiveTimer(userId)
     if (!timer) {
       return res.status(404).json({ message: 'No active timer' })

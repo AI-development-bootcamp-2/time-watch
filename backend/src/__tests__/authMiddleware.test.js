@@ -73,6 +73,34 @@ describe('authenticate middleware', () => {
     expect(req.user).toEqual({ id: 'user-uuid-123', role: 'employee' });
     expect(next).toHaveBeenCalledWith();
   });
+
+  it('valid Bearer token — accepted when no cookie is present', () => {
+    verifyToken.mockReturnValue({ sub: 'header-user-id', role: 'employee' });
+    const req = { cookies: {}, headers: { authorization: 'Bearer header.jwt.token' } };
+    const next = jest.fn();
+
+    authenticate(req, {}, next);
+
+    expect(verifyToken).toHaveBeenCalledWith('header.jwt.token');
+    expect(req.user).toEqual({ id: 'header-user-id', role: 'employee' });
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('cookie token takes priority when both cookie and Bearer header are present', () => {
+    verifyToken.mockReturnValue({ sub: 'cookie-user-id', role: 'admin' });
+    const req = {
+      cookies: { token: 'cookie.jwt.token' },
+      headers: { authorization: 'Bearer header.jwt.token' },
+    };
+    const next = jest.fn();
+
+    authenticate(req, {}, next);
+
+    expect(verifyToken).toHaveBeenCalledWith('cookie.jwt.token');
+    expect(verifyToken).not.toHaveBeenCalledWith('header.jwt.token');
+    expect(req.user).toEqual({ id: 'cookie-user-id', role: 'admin' });
+    expect(next).toHaveBeenCalledWith();
+  });
 });
 
 describe('requireRole middleware', () => {

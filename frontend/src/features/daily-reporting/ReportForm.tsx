@@ -1,15 +1,58 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import '../absences/AbsenceForm.css'
 import './ReportForm.css'
-import ProjectPicker from './ProjectPicker.jsx'
+import { apiFetch } from '../../api/client'
+import ProjectPicker, { type ClientGroup } from './ProjectPicker'
+import ScrollTimePicker from './ScrollTimePicker'
 
 const DAILY_STANDARD = 9
 const DAYS_HE = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש']
 const LOCATIONS = ['משרד', 'לקוח', 'בית']
-const TASKS = ['UX UI Design', 'Front-end', 'Back-end', 'QA']
-const ABSENCE_TYPES = ['חופשה', 'מחלה', 'מילואים', 'אחר']
-const ABSENCE_REQUIRES_DOC = new Set(['מחלה', 'מילואים'])
 
-function formatDateHe(date) {
+type ProjectRow = {
+  id: number
+  project: string
+  task: string
+  taskId: number | null
+  location: string
+  startTime: string
+  endTime: string
+  notes: string
+}
+
+type ProjectErrors = Partial<Record<'project' | 'task' | 'location' | 'endTime', string>>
+
+type WorkErrors = {
+  exitTime?: string
+  projects: Record<number, ProjectErrors>
+}
+
+export type WorkPayload = {
+  kind: 'work'
+  date: Date
+  entryTime: string
+  exitTime: string
+  projects: ProjectRow[]
+}
+
+type ReportFormProps = {
+  onClose?: () => void
+  onSave?: (payload: WorkPayload) => Promise<void> | void
+  onSwitchToAbsence?: () => void
+  date?: Date
+  isSubmitting?: boolean
+}
+
+type AssignedTaskRow = {
+  task_id: number
+  task_name: string
+  project_id: number
+  project_name: string
+  client_id: number
+  client_name: string
+}
+
+function formatDateHe(date: Date) {
   const day = DAYS_HE[date.getDay()]
   const dd = String(date.getDate()).padStart(2, '0')
   const mm = String(date.getMonth() + 1).padStart(2, '0')
@@ -17,32 +60,26 @@ function formatDateHe(date) {
   return `יום ${day}׳ ${dd}/${mm}/${yy}`
 }
 
-function toIsoDate(date) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function parseTime(t) {
+function parseTime(t: string) {
   if (!t) return null
   const [h, m] = t.split(':').map(Number)
   if (Number.isNaN(h)) return null
   return h + (Number.isNaN(m) ? 0 : m) / 60
 }
 
-function hoursBetween(start, end) {
+function hoursBetween(start: string, end: string) {
   const s = parseTime(start)
   const e = parseTime(end)
   if (s === null || e === null) return 0
   return Math.max(0, e - s)
 }
 
-function newProject(defaults = {}) {
+function newProject(defaults: Partial<ProjectRow> = {}): ProjectRow {
   return {
     id: Date.now() + Math.random(),
     project: '',
     task: '',
+    taskId: null,
     location: '',
     startTime: '',
     endTime: '',
@@ -51,29 +88,72 @@ function newProject(defaults = {}) {
   }
 }
 
-export default function ReportForm({ onClose, onSave, date = new Date(), isSubmitting = false }) {
-  const [activeTab, setActiveTab] = useState('work')
+function formatLocalDate(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
-  // --- Work-tab state ---
+function buildTaskGroups(rows: AssignedTaskRow[]): ClientGroup[] {
+  const clients = new Map<number, ClientGroup>()
+
+  rows.forEach(row => {
+    let clientGroup = clients.get(row.client_id)
+    if (!clientGroup) {
+      clientGroup = { client: row.client_name, clientId: row.client_id, projects: [] }
+      clients.set(row.client_id, clientGroup)
+    }
+
+    let projectNode = clientGroup.projects.find(project => project.id === row.project_id)
+    if (!projectNode) {
+      projectNode = { id: row.project_id, name: row.project_name, tasks: [] }
+      clientGroup.projects.push(projectNode)
+    }
+
+    projectNode.tasks.push({ id: row.task_id, name: row.task_name })
+  })
+
+  return Array.from(clients.values())
+}
+
+export default function ReportForm({ onClose, onSave, onSwitchToAbsence, date = new Date(), isSubmitting = false }: ReportFormProps) {
   const [entryTime, setEntryTime] = useState('09:00')
-  const [exitTime, setExitTime] = useState('18:00')
-  const [projects, setProjects] = useState([
-    newProject({ startTime: '09:00', endTime: '18:00' }),
-  ])
-  // When non-null, render the project picker for this row id instead of the form
-  const [pickerForProjectId, setPickerForProjectId] = useState(null)
+  const [exitTime, setExitTime] = useState('')
+  const [workLocation, setWorkLocation] = useState(LOCATIONS[0])
+  const [projects, setProjects] = useState<ProjectRow[]>([])
+  const [pickerForProjectId, setPickerForProjectId] = useState<number | null>(null)
+  const [errors, setErrors] = useState<WorkErrors>({ projects: {} })
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [taskGroups, setTaskGroups] = useState<ClientGroup[]>([])
+  const [tasksLoading, setTasksLoading] = useState(true)
+  const [tasksError, setTasksError] = useState<string | null>(null)
 
-  // --- Absence-tab state ---
-  const [absenceType, setAbsenceType] = useState('')
-  const [absenceStart, setAbsenceStart] = useState(toIsoDate(date))
-  const [absenceEnd, setAbsenceEnd] = useState(toIsoDate(date))
-  const [absencePartial, setAbsencePartial] = useState(false)
-  const [absenceNotes, setAbsenceNotes] = useState('')
-  const [absenceDocName, setAbsenceDocName] = useState('')
+  useEffect(() => {
+    let cancelled = false
 
-  // --- Validation errors ---
-  // Shape: { exitTime?: string, projects: { [id]: { project?, task?, location?, endTime? } } }
-  const [errors, setErrors] = useState({ projects: {} })
+    async function loadTasks() {
+      setTasksLoading(true)
+      setTasksError(null)
+      try {
+        const rows = await apiFetch('/api/tasks/mine') as AssignedTaskRow[]
+        if (!cancelled) setTaskGroups(buildTaskGroups(rows))
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setTasksError(err instanceof Error ? err.message : 'טעינת המשימות נכשלה')
+        }
+      } finally {
+        if (!cancelled) setTasksLoading(false)
+      }
+    }
+
+    loadTasks()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const totalHours = useMemo(
     () => projects.reduce((sum, p) => sum + hoursBetween(p.startTime, p.endTime), 0),
@@ -82,364 +162,275 @@ export default function ReportForm({ onClose, onSave, date = new Date(), isSubmi
   const remaining = Math.max(0, DAILY_STANDARD - totalHours)
   const progressPct = Math.min(100, (totalHours / DAILY_STANDARD) * 100)
 
-  const updateProject = (id, field, value) => {
-    setProjects(prev => prev.map(p => (p.id === id ? { ...p, [field]: value } : p)))
+  const updateProject = (id: number, updates: Partial<Omit<ProjectRow, 'id'>>) => {
+    setProjects(prev => prev.map(p => (p.id === id ? { ...p, ...updates } : p)))
   }
-  const addProject = () => setProjects(prev => [...prev, newProject()])
-  const removeProject = id => setProjects(prev => prev.filter(p => p.id !== id))
+  const addProject = () => setProjects(prev => [
+    ...prev,
+    newProject({ location: workLocation, startTime: entryTime, endTime: exitTime }),
+  ])
+  const removeProject = (id: number) => setProjects(prev => prev.filter(p => p.id !== id))
 
-  const validateWork = () => {
-    const errs = { projects: {} }
-
+  const validateWork = (): WorkErrors => {
+    const errs: WorkErrors = { projects: {} }
     const entryMin = parseTime(entryTime)
     const exitMin = parseTime(exitTime)
     if (entryMin !== null && exitMin !== null && exitMin <= entryMin) {
       errs.exitTime = 'שעת היציאה חייבת להיות אחרי שעת הכניסה'
     }
-
+    if (projects.length === 0) {
+      errs.exitTime = errs.exitTime ?? 'יש להוסיף לפחות פרויקט אחד'
+    }
     projects.forEach(p => {
-      const pErrs = {}
-      if (!p.project) pErrs.project = 'נדרש לבחור פרויקט'
-      if (!p.task) pErrs.task = 'נדרש לבחור משימה'
+      const pErrs: ProjectErrors = {}
+      if (p.taskId === null) pErrs.task = 'נדרש לבחור משימה'
       if (!p.location) pErrs.location = 'נדרש לבחור מיקום'
-
       const s = parseTime(p.startTime)
       const e = parseTime(p.endTime)
       if (s !== null && e !== null && e <= s) {
         pErrs.endTime = 'שעת הסיום חייבת להיות אחרי שעת ההתחלה'
       }
-
       if (Object.keys(pErrs).length > 0) errs.projects[p.id] = pErrs
     })
-
     return errs
   }
 
-  const workHasErrors = errs =>
+  const workHasErrors = (errs: WorkErrors) =>
     Boolean(errs.exitTime) || Object.keys(errs.projects).length > 0
 
-  const handleSave = () => {
-    if (activeTab === 'work') {
-      const errs = validateWork()
-      if (workHasErrors(errs)) {
-        setErrors(errs)
-        return
-      }
-      setErrors({ projects: {} })
+  const handleSave = async () => {
+    const errs = validateWork()
+    if (workHasErrors(errs)) {
+      setErrors(errs)
+      return
     }
-
-    const payload =
-      activeTab === 'work'
-        ? { kind: 'work', date, entryTime, exitTime, projects }
-        : {
-            kind: 'absence',
-            type: absenceType,
-            startDate: absenceStart,
-            endDate: absenceEnd,
-            partialDay: absencePartial,
-            notes: absenceNotes,
-            documentName: absenceDocName,
-          }
-    if (onSave) onSave(payload)
-    else console.log('Save report', payload)
+    setErrors({ projects: {} })
+    setSaveError(null)
+    setSaving(true)
+    try {
+      const payload: WorkPayload = { kind: 'work', date, entryTime, exitTime, projects }
+      await apiFetch('/api/work-entries', {
+        method: 'POST',
+        body: JSON.stringify({
+          date: formatLocalDate(date),
+          entries: projects.map(p => ({
+            start_time: p.startTime,
+            end_time: p.endTime,
+            location: p.location || null,
+            task_id: p.taskId,
+            description: p.notes || null,
+          })),
+        }),
+      })
+      if (onSave) await onSave(payload)
+      onClose?.()
+    } catch (err: unknown) {
+      setSaveError(err instanceof Error ? err.message : 'שמירת הדיווח נכשלה')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const formatHours = h => (Number.isInteger(h) ? h : h.toFixed(1))
+  const formatHours = (h: number) => (Number.isInteger(h) ? h : h.toFixed(1))
+  const isBusy = saving || isSubmitting || tasksLoading
 
-  // Picker view replaces the form view while open (form state is preserved
-  // because this component remains mounted)
-  if (pickerForProjectId !== null) {
-    const current = projects.find(p => p.id === pickerForProjectId)
-    return (
+  return (
+    <>
+    {pickerForProjectId !== null && (
       <ProjectPicker
-        selected={current?.project}
-        onSelect={value => {
-          updateProject(pickerForProjectId, 'project', value)
+        groups={taskGroups}
+        selected={projects.find(p => p.id === pickerForProjectId)?.taskId ?? null}
+        onSelect={(taskId: number, taskName: string, projectName: string) => {
+          updateProject(pickerForProjectId, { task: taskName, taskId, project: projectName })
           setPickerForProjectId(null)
         }}
         onClose={() => setPickerForProjectId(null)}
+        onBack={() => setPickerForProjectId(null)}
       />
-    )
-  }
+    )}
+    <div className="af-overlay" role="dialog" aria-modal="true" aria-label="דיווח עבודה"
+      onClick={e => { if (e.target === e.currentTarget) onClose?.() }}
+      dir="rtl"
+    >
+      <div className="af-sheet">
+        <div className="af-handle" aria-hidden="true" />
 
-  const isWork = activeTab === 'work'
-  const docRequired = ABSENCE_REQUIRES_DOC.has(absenceType)
+        <div className="af-scroll">
+          <div className="af-header">
+            <h2 className="af-title">דיווח עבודה</h2>
+            <button type="button" className="af-close-btn" aria-label="סגור" onClick={onClose}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
 
-  return (
-    <div className="report-form" dir="rtl">
-      <header className="rf-header">
-        <h2 className="rf-title">דיווח ידני</h2>
-        <button className="rf-close" onClick={onClose} aria-label="סגור">×</button>
-      </header>
+          <div className="af-segmented" role="tablist" aria-label="בחירת סוג דיווח">
+            <button type="button" className="af-seg-option af-seg-option--active" role="tab" aria-selected="true">
+              דיווח עבודה
+            </button>
+            <button type="button" className="af-seg-option af-seg-option--inactive" role="tab" aria-selected="false" onClick={onSwitchToAbsence}>
+              דיווח היעדרות
+            </button>
+          </div>
 
-      <div className="rf-tabs" role="tablist">
-        <button
-          role="tab"
-          aria-selected={isWork}
-          className={isWork ? 'rf-tab active' : 'rf-tab'}
-          onClick={() => setActiveTab('work')}
-        >
-          דיווח עבודה
-        </button>
-        <button
-          role="tab"
-          aria-selected={!isWork}
-          className={!isWork ? 'rf-tab active' : 'rf-tab'}
-          onClick={() => setActiveTab('absence')}
-        >
-          דיווח העדרות
-        </button>
-      </div>
+          {saveError && (
+            <p className="af-error-msg af-error-msg--form" role="alert">{saveError}</p>
+          )}
+          {tasksError && (
+            <p className="af-error-msg af-error-msg--form" role="alert">{tasksError}</p>
+          )}
 
-      {isWork ? (
-        <>
-          <div className="rf-date-row">
-            <span className="rf-date">{formatDateHe(date)}</span>
-            <span className="rf-badge">
-              <span className="rf-badge-dot">✓</span>
+          <div className="rf-day-summary">
+            <span className="rf-standard-badge">
+              <span className="rf-badge-dot" aria-hidden="true" />
               תקן יומי 9 שעות
             </span>
+            <span className="rf-date-value">{formatDateHe(date)}</span>
           </div>
 
-          <div className="rf-field">
-            <label className="rf-label" htmlFor="entry-time">כניסה</label>
-            <input
-              id="entry-time"
-              type="time"
-              className="rf-input"
-              value={entryTime}
-              onChange={e => setEntryTime(e.target.value)}
-            />
+          <div className="af-card">
+            <div className={`af-card-row${errors.exitTime ? ' rf-row-error' : ''}`}>
+              <span className="af-row-tag">כניסה</span>
+              <ScrollTimePicker value={entryTime} onChange={setEntryTime} label="שעת כניסה" />
+            </div>
+            <div className={`af-card-row${errors.exitTime ? ' rf-row-error' : ''}`}>
+              <span className="af-row-tag">יציאה</span>
+              <ScrollTimePicker value={exitTime} onChange={setExitTime} label="שעת יציאה" />
+            </div>
+            <div className="af-card-row rf-location-row">
+              <span className="af-row-tag">מיקום</span>
+              <select
+                className="rf-location-select"
+                value={workLocation}
+                onChange={e => setWorkLocation(e.target.value)}
+              >
+                {LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+              </select>
+              <span className="af-chevron" aria-hidden="true">›</span>
+            </div>
           </div>
-          <div className={errors.exitTime ? 'rf-field has-error' : 'rf-field'}>
-            <label className="rf-label" htmlFor="exit-time">יציאה</label>
-            <input
-              id="exit-time"
-              type="time"
-              className="rf-input"
-              value={exitTime}
-              onChange={e => setExitTime(e.target.value)}
-            />
-          </div>
-          {errors.exitTime && <div className="rf-error">{errors.exitTime}</div>}
+          {errors.exitTime && <p className="af-error-msg" role="alert">{errors.exitTime}</p>}
 
-          <h3 className="rf-section">דיווח פרויקטים</h3>
+          {projects.length > 0 && (
+            <div className="rf-section-label">דיווח פרויקטים</div>
+          )}
 
           {projects.map(p => {
             const pErrs = errors.projects[p.id] || {}
             return (
-              <div key={p.id} className="rf-project">
+              <div key={p.id} className="af-card rf-project-card">
                 <button
                   type="button"
-                  className={pErrs.project ? 'rf-field-button has-error' : 'rf-field-button'}
+                  className="af-card-row af-card-row-button"
                   onClick={() => setPickerForProjectId(p.id)}
                 >
-                  <span className="rf-label">פרויקט</span>
-                  <span className={p.project ? 'rf-field-value' : 'rf-field-value placeholder'}>
-                    {p.project || ''}
-                    <span className="rf-field-chevron"> ⌄</span>
+                  <span className="af-row-tag">פרויקט</span>
+                  <span className={p.project ? 'af-row-title' : 'af-row-title rf-placeholder'}>
+                    {p.project || 'לא נבחר'}
                   </span>
+                  <span className="af-chevron" aria-hidden="true">›</span>
                 </button>
-                {pErrs.project && <div className="rf-error">{pErrs.project}</div>}
 
-                <div className={pErrs.task ? 'rf-field has-error' : 'rf-field'}>
-                  <label className="rf-label">משימה</label>
-                  <select
-                    className="rf-input rf-select"
-                    value={p.task}
-                    onChange={e => updateProject(p.id, 'task', e.target.value)}
-                  >
-                    <option value=""></option>
-                    {TASKS.map(t => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-                {pErrs.task && <div className="rf-error">{pErrs.task}</div>}
+                <button
+                  type="button"
+                  className={`af-card-row af-card-row-button${pErrs.task ? ' rf-row-error' : ''}`}
+                  onClick={() => setPickerForProjectId(p.id)}
+                >
+                  <span className="af-row-tag">משימה</span>
+                  <span className={p.task ? 'af-row-title' : 'af-row-title rf-placeholder'}>
+                    {p.task || 'בחר משימה'}
+                  </span>
+                  <span className="af-chevron" aria-hidden="true">›</span>
+                </button>
+                {pErrs.task && <p className="af-error-msg">{pErrs.task}</p>}
 
-                <div className={pErrs.location ? 'rf-field has-error' : 'rf-field'}>
-                  <label className="rf-label">מיקום</label>
+                <div className={`af-card-row${pErrs.location ? ' rf-row-error' : ''}`}>
+                  <span className="af-row-tag">מיקום</span>
                   <select
-                    className="rf-input rf-select"
+                    className="rf-select"
                     value={p.location}
-                    onChange={e => updateProject(p.id, 'location', e.target.value)}
+                    onChange={e => updateProject(p.id, { location: e.target.value })}
                   >
-                    <option value=""></option>
-                    {LOCATIONS.map(loc => (
-                      <option key={loc} value={loc}>{loc}</option>
-                    ))}
+                    <option value="">בחר מיקום</option>
+                    {LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
                   </select>
                 </div>
-                {pErrs.location && <div className="rf-error">{pErrs.location}</div>}
+                {pErrs.location && <p className="af-error-msg">{pErrs.location}</p>}
 
-                <div className="rf-field">
-                  <label className="rf-label">שעת התחלה</label>
-                  <input
-                    type="time"
-                    className="rf-input"
+                <div className="af-card-row">
+                  <span className="af-row-tag">שעת התחלה</span>
+                  <ScrollTimePicker
                     value={p.startTime}
-                    onChange={e => updateProject(p.id, 'startTime', e.target.value)}
+                    onChange={v => updateProject(p.id, { startTime: v })}
+                    label="שעת התחלה"
                   />
                 </div>
-                <div className={pErrs.endTime ? 'rf-field has-error' : 'rf-field'}>
-                  <label className="rf-label">שעת סיום</label>
-                  <input
-                    type="time"
-                    className="rf-input"
+                <div className={`af-card-row${pErrs.endTime ? ' rf-row-error' : ''}`}>
+                  <span className="af-row-tag">שעת סיום</span>
+                  <ScrollTimePicker
                     value={p.endTime}
-                    onChange={e => updateProject(p.id, 'endTime', e.target.value)}
+                    onChange={v => updateProject(p.id, { endTime: v })}
+                    label="שעת סיום"
                   />
                 </div>
-                {pErrs.endTime && <div className="rf-error">{pErrs.endTime}</div>}
+                {pErrs.endTime && <p className="af-error-msg">{pErrs.endTime}</p>}
 
-                <input
-                  type="text"
-                  className="rf-notes"
-                  placeholder="הוספת פירוט..."
-                  value={p.notes}
-                  onChange={e => updateProject(p.id, 'notes', e.target.value)}
-                />
-                {projects.length > 1 && (
-                  <button className="rf-delete" onClick={() => removeProject(p.id)}>
-                    מחיקת פרויקט
-                  </button>
-                )}
+                <div className="af-card-row">
+                  <input
+                    type="text"
+                    className="rf-notes-input"
+                    placeholder="הוספת פירוט..."
+                    value={p.notes}
+                    onChange={e => updateProject(p.id, { notes: e.target.value })}
+                  />
+                </div>
+
+                <button type="button" className="rf-delete-btn" onClick={() => removeProject(p.id)}>
+                  מחיקת פרויקט
+                </button>
               </div>
             )
           })}
 
-          <button className="rf-add" onClick={addProject}>
+          <button type="button" className="rf-add-btn" onClick={addProject}>
             הוספת פרויקט
-            <span className="rf-plus">+</span>
+            <span className="rf-plus-circle">+</span>
           </button>
 
-          <footer className="rf-footer">
+          {projects.length > 0 && (
+          <div className="rf-progress-wrap">
             <div className="rf-progress-row">
-              <span className="rf-progress-count">
-                {formatHours(totalHours)} מתוך {DAILY_STANDARD} שעות
-              </span>
-              <span className="rf-progress-status">
-                חסרות {formatHours(remaining)} שעות לדיווח
-              </span>
+              <span className="rf-progress-count">{formatHours(totalHours)} מתוך {DAILY_STANDARD} שעות</span>
+              <span className="rf-progress-status">חסרות {formatHours(remaining)} שעות לדיווח</span>
             </div>
             <div className="rf-progress-bar">
               <div className="rf-progress-fill" style={{ width: `${progressPct}%` }} />
             </div>
-            <div className="rf-actions">
-              <button
-                className="rf-btn rf-btn-primary"
-                onClick={handleSave}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'שומר...' : 'שמירה'}
-              </button>
-              <button
-                className="rf-btn rf-btn-secondary"
-                onClick={onClose}
-                disabled={isSubmitting}
-              >
-                ביטול
-              </button>
-            </div>
-          </footer>
-        </>
-      ) : (
-        <>
-          <div className="rf-field">
-            <label className="rf-label" htmlFor="absence-type">סוג היעדרות</label>
-            <select
-              id="absence-type"
-              className="rf-input rf-select"
-              value={absenceType}
-              onChange={e => setAbsenceType(e.target.value)}
-            >
-              <option value=""></option>
-              {ABSENCE_TYPES.map(t => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
           </div>
-
-          <div className="rf-field">
-            <label className="rf-label" htmlFor="absence-start">תאריך התחלה</label>
-            <input
-              id="absence-start"
-              type="date"
-              className="rf-input"
-              value={absenceStart}
-              onChange={e => setAbsenceStart(e.target.value)}
-            />
-          </div>
-          <div className="rf-field">
-            <label className="rf-label" htmlFor="absence-end">תאריך סיום</label>
-            <input
-              id="absence-end"
-              type="date"
-              className="rf-input"
-              value={absenceEnd}
-              onChange={e => setAbsenceEnd(e.target.value)}
-            />
-          </div>
-
-          <div className="rf-field">
-            <label className="rf-label" htmlFor="absence-partial">היעדרות חלקית</label>
-            <input
-              id="absence-partial"
-              type="checkbox"
-              className="rf-input"
-              checked={absencePartial}
-              onChange={e => setAbsencePartial(e.target.checked)}
-            />
-          </div>
-
-          <div className="rf-field rf-field-upload">
-            <label className="rf-label">
-              מסמך מצורף{docRequired ? ' *' : ''}
-            </label>
-            <label className="rf-upload-btn">
-              <input
-                type="file"
-                onChange={e => setAbsenceDocName(e.target.files?.[0]?.name || '')}
-                hidden
-              />
-              {absenceDocName || 'בחירת קובץ'}
-            </label>
-          </div>
-
-          <input
-            type="text"
-            className="rf-notes"
-            placeholder="הערות..."
-            value={absenceNotes}
-            onChange={e => setAbsenceNotes(e.target.value)}
-          />
-
-          {docRequired && !absenceDocName && (
-            <div className="rf-warning">
-              נדרש מסמך מצורף עבור {absenceType}
-            </div>
           )}
+        </div>
 
-          <footer className="rf-footer">
-            <div className="rf-actions">
-              <button
-                className="rf-btn rf-btn-primary"
-                onClick={handleSave}
-                disabled={isSubmitting || !absenceType || (docRequired && !absenceDocName)}
-              >
-                {isSubmitting ? 'שומר...' : 'שמירה'}
-              </button>
-              <button
-                className="rf-btn rf-btn-secondary"
-                onClick={onClose}
-                disabled={isSubmitting}
-              >
-                ביטול
-              </button>
-            </div>
-          </footer>
-        </>
-      )}
+        <footer className="af-footer">
+          <button
+            type="button"
+            className="af-btn-primary"
+            onClick={handleSave}
+            disabled={isBusy}
+          >
+            {tasksLoading ? 'טוען משימות...' : saving || isSubmitting ? 'שומר...' : 'שמירה'}
+          </button>
+          <button
+            type="button"
+            className="af-btn-secondary"
+            onClick={onClose}
+            disabled={isBusy}
+          >
+            ביטול
+          </button>
+        </footer>
+      </div>
     </div>
+    </>
   )
 }

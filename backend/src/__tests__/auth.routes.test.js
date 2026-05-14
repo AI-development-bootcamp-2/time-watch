@@ -4,7 +4,7 @@ process.env.JWT_SECRET = 'test-secret-used-only-in-jest-at-least-32-chars!!';
 
 const request = require('supertest');
 const knex = require('knex');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const knexConfigs = require('../../knexfile.cjs');
 const { createApp } = require('../app');

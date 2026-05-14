@@ -3,10 +3,10 @@
 process.env.JWT_SECRET = 'test-secret-used-only-in-jest-at-least-32-chars!!';
 
 jest.mock('../repositories/usersRepository');
-jest.mock('../db/knex', () => ({ db: { transaction: jest.fn() } }));
+jest.mock('../db/knex', () => ({ transaction: jest.fn() }));
 
 const usersRepository = require('../repositories/usersRepository');
-const { db } = require('../db/knex');
+const db = require('../db/knex');
 const { createUser, updateUser, deactivateUser } = require('../services/usersService');
 const { PasswordComplexityError, BadRequestError } = require('../utils/errors');
 

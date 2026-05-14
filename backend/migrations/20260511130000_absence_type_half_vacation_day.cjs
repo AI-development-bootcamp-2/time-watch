@@ -1,4 +1,4 @@
-// Extends the type check constraint on absences to include half_vacation_day.
+// Replaces absence type constraint: adds half_day_vac, removes other.
 exports.up = async function (knex) {
   await knex.schema.raw(`
     ALTER TABLE absences
@@ -7,7 +7,7 @@ exports.up = async function (knex) {
   await knex.schema.raw(`
     ALTER TABLE absences
       ADD CONSTRAINT absences_type_check
-      CHECK (type IN ('vacation', 'half_vacation_day', 'sick', 'military_reserve', 'other'))
+      CHECK (type IN ('vacation', 'half_day_vac', 'sick', 'military_reserve'))
   `)
 }
 

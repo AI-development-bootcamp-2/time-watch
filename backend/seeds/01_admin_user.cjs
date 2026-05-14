@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 exports.seed = async (knex) => {
   const existing = await knex('users').where({ email: 'admin@timewatch.local' }).first();
@@ -8,7 +8,7 @@ exports.seed = async (knex) => {
   await knex('users').insert({
     email: 'admin@timewatch.local',
     password_hash,
-    full_name: 'מנהל מערכת',
+    full_name: 'Manager',
     role: 'admin',
     is_active: true,
   });
