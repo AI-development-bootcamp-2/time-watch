@@ -29,22 +29,36 @@ type SearchResult = {
 }
 
 type ProjectPickerProps = {
+  mode?: 'project' | 'task'
   selected?: number | null
+  selectedProjectId?: number | null
   onSelect: (taskId: number, taskName: string, projectName: string) => void
+  onSelectProject?: (projectId: number, projectName: string, clientName: string) => void
   onClose: () => void
   onBack?: () => void
   groups?: ClientGroup[]
 }
 
 export default function ProjectPicker({
+  mode = 'task',
   selected = null,
+  selectedProjectId = null,
   onSelect,
+  onSelectProject,
   onClose,
   onBack,
   groups = [],
 }: ProjectPickerProps) {
   const [query, setQuery] = useState('')
-  const [view, setView] = useState<PickerView>({ level: 'grouped' })
+  const [view, setView] = useState<PickerView>(() => {
+    if (mode === 'task' && selectedProjectId) {
+      for (const group of groups) {
+        const project = group.projects.find(p => p.id === selectedProjectId)
+        if (project) return { level: 'tasks', clientGroup: group, projectNode: project }
+      }
+    }
+    return { level: 'grouped' }
+  })
 
   const searchResults = useMemo<SearchResult[]>(() => {
     const q = query.trim().toLowerCase()
@@ -72,12 +86,13 @@ export default function ProjectPicker({
   }
 
   const title =
-    isSearching ? 'חיפוש משימה' :
+    isSearching ? (mode === 'project' ? 'חיפוש פרויקט' : 'חיפוש משימה') :
     view.level === 'tasks' ? view.projectNode.name :
-    'בחירת פרויקט'
+    mode === 'project' ? 'בחירת פרויקט' : 'בחירת משימה'
 
-  // Handle project row tap in grouped view — go to tasks or auto-select single task
+  // Handle project row tap — notify parent of project choice then drill into tasks
   const handleProjectTap = (group: ClientGroup, project: ProjectNode) => {
+    if (mode === 'project') onSelectProject?.(project.id, project.name, group.client)
     if (project.tasks.length === 1) {
       onSelect(project.tasks[0].id, project.tasks[0].name, project.name)
     } else if (project.tasks.length > 1) {
@@ -87,7 +102,7 @@ export default function ProjectPicker({
 
   return (
     <div className="pp-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="pp-sheet" dir="rtl" role="dialog" aria-modal="true" aria-label="בחירת פרויקט">
+      <div className="pp-sheet" dir="rtl" role="dialog" aria-modal="true" aria-label="בחירת משימה">
         <div className="pp-handle" aria-hidden="true" />
 
         <div className="pp-scroll">
@@ -200,7 +215,7 @@ export default function ProjectPicker({
         <div className="pp-bottom-bar">
           <div className="pp-bottom-row">
             <button type="button" className="pp-btn-primary" onClick={onClose}>
-              המשך ובחר משימה
+              {mode === 'task' ? 'סגור' : 'המשך ובחר משימה'}
             </button>
             <button type="button" className="pp-btn-outline" onClick={onClose}>
               ביטול

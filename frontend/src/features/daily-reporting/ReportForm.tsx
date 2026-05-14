@@ -12,6 +12,7 @@ const LOCATIONS = ['משרד', 'לקוח', 'בית']
 type ProjectRow = {
   id: number
   project: string
+  projectId: number | null
   task: string
   taskId: number | null
   location: string
@@ -80,6 +81,7 @@ function newProject(defaults: Partial<ProjectRow> = {}): ProjectRow {
   return {
     id: Date.now() + Math.random(),
     project: '',
+    projectId: null,
     task: '',
     taskId: null,
     location: '',
@@ -125,6 +127,7 @@ export default function ReportForm({ onClose, onSave, onSwitchToAbsence, date = 
   const [workLocation, setWorkLocation] = useState(LOCATIONS[0])
   const [projects, setProjects] = useState<ProjectRow[]>([])
   const [pickerForProjectId, setPickerForProjectId] = useState<number | null>(null)
+  const [pickerTarget, setPickerTarget] = useState<'project' | 'task'>('task')
   const [errors, setErrors] = useState<WorkErrors>({ projects: {} })
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -240,11 +243,22 @@ export default function ReportForm({ onClose, onSave, onSwitchToAbsence, date = 
     <>
     {pickerForProjectId !== null && (
       <ProjectPicker
+        mode={pickerTarget}
         groups={taskGroups}
-        selected={projects.find(p => p.id === pickerForProjectId)?.taskId ?? null}
-        onSelect={(taskId: number, taskName: string, projectName: string) => {
+        selected={pickerTarget === 'task' ? (projects.find(p => p.id === pickerForProjectId)?.taskId ?? null) : null}
+        selectedProjectId={pickerTarget === 'task' ? (projects.find(p => p.id === pickerForProjectId)?.projectId ?? null) : null}
+        onSelect={(taskId, taskName, projectName) => {
           updateProject(pickerForProjectId, { task: taskName, taskId, project: projectName })
           setPickerForProjectId(null)
+        }}
+        onSelectProject={(projectId, projectName) => {
+          const current = projects.find(p => p.id === pickerForProjectId)
+          const clearTask = current?.projectId !== projectId
+          updateProject(pickerForProjectId!, {
+            project: projectName,
+            projectId,
+            ...(clearTask ? { task: '', taskId: null } : {}),
+          })
         }}
         onClose={() => setPickerForProjectId(null)}
         onBack={() => setPickerForProjectId(null)}
@@ -325,7 +339,7 @@ export default function ReportForm({ onClose, onSave, onSwitchToAbsence, date = 
                 <button
                   type="button"
                   className="af-card-row af-card-row-button"
-                  onClick={() => setPickerForProjectId(p.id)}
+                  onClick={() => { setPickerTarget('project'); setPickerForProjectId(p.id) }}
                 >
                   <span className="af-row-tag">פרויקט</span>
                   <span className={p.project ? 'af-row-title' : 'af-row-title rf-placeholder'}>
@@ -337,7 +351,7 @@ export default function ReportForm({ onClose, onSave, onSwitchToAbsence, date = 
                 <button
                   type="button"
                   className={`af-card-row af-card-row-button${pErrs.task ? ' rf-row-error' : ''}`}
-                  onClick={() => setPickerForProjectId(p.id)}
+                  onClick={() => { setPickerTarget('task'); setPickerForProjectId(p.id) }}
                 >
                   <span className="af-row-tag">משימה</span>
                   <span className={p.task ? 'af-row-title' : 'af-row-title rf-placeholder'}>
