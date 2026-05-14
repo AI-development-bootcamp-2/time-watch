@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "https://time-watch-backend.onrender.com/api/$1"
-    }
-  ]
-}
