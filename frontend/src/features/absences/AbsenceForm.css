@@ -45,6 +45,12 @@
   gap: 16px;
 }
 
+/* Children are flex items — without this they shrink below their content
+   instead of overflowing, so the scrollbar never appears. */
+.af-scroll > * {
+  flex-shrink: 0;
+}
+
 /* ── Header row ─────────────────────────────────────────── */
 .af-header {
   display: flex;
