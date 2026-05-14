@@ -84,15 +84,25 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ message: 'month must be in YYYY-MM format' })
     }
 
-    // Resolve userId — stub: default to 1 (auth middleware comes later)
+    // Resolve userId from the JWT — never trust a userId from the client unless the
+    // caller is an admin (admins may inspect other users' monthly summaries).
+    const authUserId = req.user && req.user.id
+    if (!authUserId) {
+      return res.status(401).json({ message: 'Authentication required' })
+    }
+
     let userId
     if (!userIdParam || userIdParam === 'me') {
-      userId = 1
+      userId = authUserId
     } else {
-      userId = parseInt(userIdParam, 10)
-      if (isNaN(userId)) {
+      const parsed = parseInt(userIdParam, 10)
+      if (isNaN(parsed)) {
         return res.status(400).json({ message: 'userId must be an integer' })
       }
+      if (parsed !== authUserId && req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Forbidden' })
+      }
+      userId = parsed
     }
 
     // Fetch data from repositories

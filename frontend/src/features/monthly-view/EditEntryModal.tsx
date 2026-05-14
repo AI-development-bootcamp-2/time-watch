@@ -27,6 +27,7 @@ export default function EditEntryModal({ entry, onClose, onSaved }: Props) {
     try {
       const res = await fetch(`/api/reports/${entry.id}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ location, start_time: startTime, end_time: endTime, description }),
       })
