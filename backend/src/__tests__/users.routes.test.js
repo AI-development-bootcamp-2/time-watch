@@ -459,7 +459,7 @@ describe('PATCH /api/users/:id/deactivate', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('BAD_REQUEST');
-    expect(res.body.message).toBe('Cannot deactivate the last active admin');
+    expect(res.body.message).toBe('לא ניתן להשבית את המנהל האחרון הפעיל');
   });
 
   it('6.9 — already-inactive user → 200 idempotent', async () => {

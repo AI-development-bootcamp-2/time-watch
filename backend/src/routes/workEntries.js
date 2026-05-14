@@ -3,6 +3,9 @@
 const router = require('express').Router()
 const { getMonthlyEntries, getMonthlyAbsences, insertWorkEntry } = require('../repositories/workEntryRepository')
 const { computeDayStatus } = require('../utils/dayStatus')
+const db = require('../db/knex')
+
+const VALID_LOCATIONS = ['משרד', 'לקוח', 'בית']
 
 /**
  * @swagger
@@ -228,9 +231,31 @@ router.post('/', async (req, res) => {
       if (entry.end_time <= entry.start_time) {
         return res.status(400).json({ message: 'end_time must be after start_time' })
       }
+      if (!VALID_LOCATIONS.includes(entry.location)) {
+        return res.status(400).json({ message: `location must be one of: ${VALID_LOCATIONS.join(', ')}` })
+      }
     }
 
     const userId = req.user.id
+
+    // Verify every task_id belongs to the requesting user's assigned open tasks
+    const taskIds = entries.map(e => e.task_id).filter(id => id != null)
+    if (taskIds.length > 0) {
+      const assignedRows = await db('user_tasks')
+        .join('tasks', 'user_tasks.task_id', 'tasks.id')
+        .whereIn('user_tasks.task_id', taskIds)
+        .where('user_tasks.user_id', userId)
+        .where('tasks.status', 'open')
+        .whereNull('user_tasks.deleted_at')
+        .whereNull('tasks.deleted_at')
+        .select('user_tasks.task_id')
+
+      const assignedSet = new Set(assignedRows.map(r => r.task_id))
+      const unauthorized = taskIds.find(id => !assignedSet.has(id))
+      if (unauthorized != null) {
+        return res.status(403).json({ message: 'task_id is not assigned to you or is not open' })
+      }
+    }
 
     const created = await Promise.all(
       entries.map(entry => insertWorkEntry(userId, { date, ...entry }))

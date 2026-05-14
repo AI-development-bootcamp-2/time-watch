@@ -216,7 +216,7 @@ export default function ReportForm({ onClose, onSave, onSwitchToAbsence, date = 
           entries: projects.map(p => ({
             start_time: p.startTime,
             end_time: p.endTime,
-            location: p.location || null,
+            location: p.location,
             task_id: p.taskId,
             description: p.notes || null,
           })),
