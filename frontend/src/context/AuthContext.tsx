@@ -5,6 +5,7 @@ type User = {
   email: string
   role: string
   full_name: string
+  must_change_password?: boolean
 }
 
 type AuthContextValue = {
@@ -12,6 +13,7 @@ type AuthContextValue = {
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  patchUser: (patch: Partial<User>) => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -49,8 +51,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }
 
+  // Merge a partial update into the current user without re-fetching /api/auth/me
+  function patchUser(patch: Partial<User>) {
+    setUser(prev => (prev ? { ...prev, ...patch } : null))
+  }
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, patchUser }}>
       {children}
     </AuthContext.Provider>
   )
