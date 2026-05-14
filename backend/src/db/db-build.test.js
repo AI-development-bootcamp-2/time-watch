@@ -154,10 +154,11 @@ describe('Step 5 — Migration tracking', () => {
     expect(rows[2].name).toMatch(/create_admin_audit_tables/);
   });
 
-  it('all 3 migrations landed in batch 1', async () => {
-    const rows = await db('knex_migrations').select('batch');
-    const batches = [...new Set(rows.map((r) => r.batch))];
-    expect(batches).toEqual([1]);
+  it('migrations landed in sequential batches — one per up() call', async () => {
+    const rows = await db('knex_migrations').orderBy('id').select('batch');
+    const batches = rows.map((r) => r.batch);
+    // Each migrate.up() call increments the batch counter, so 3 calls → batches [1, 2, 3]
+    expect(batches).toEqual([1, 2, 3]);
   });
 });
 

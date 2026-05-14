@@ -29,6 +29,6 @@ describe('Admin-only route guards', () => {
       .set('Cookie', adminCookie());
     expect(res.status).not.toBe(401);
     expect(res.status).not.toBe(403);
-    expect(res.status).toBe(404); // guard passed; no GET handler on the skeleton route
+    expect(res.status).toBe(200); // guard passed; handler returns empty array
   });
 });
